@@ -158,9 +158,9 @@ target_link_libraries (app ${MinVR_LIBRARIES} ${LIBS_DEBUG} ${LIBS_OPT} ${LIBS_A
 #These subdirectories must contain their own CMakeLists.txt
 #add_subdirectory (mysubproject)
 
-install(DIRECTORY app/include/ DESTINATION include)
+#install(DIRECTORY app/include/ DESTINATION include)
 
-install( TARGETS AnchoredGestures app
-         LIBRARY DESTINATION lib
-         ARCHIVE DESTINATION lib
-         RUNTIME DESTINATION bin)
+#install( TARGETS AnchoredGestures app
+#         LIBRARY DESTINATION lib
+#         ARCHIVE DESTINATION lib
+#         RUNTIME DESTINATION bin)

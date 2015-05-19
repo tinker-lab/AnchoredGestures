@@ -30,3 +30,5 @@ private:
 
 	std::map<int, GLuint> _vboId;
 };
+
+#endif /* APP_H_ */

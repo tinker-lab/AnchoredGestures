@@ -1,4 +1,4 @@
-#include <example/include/ExampleVrApp.h>
+#include <app/include/App.h>
 
 // using namespace MinVR;
 
@@ -33,7 +33,7 @@ void App::initializeContextSpecificVars(int threadId,
 	}
 }
 
-void ExampleVrApp::initVBO(int threadId)
+void App::initVBO(int threadId)
 {
 	// cube ///////////////////////////////////////////////////////////////////////
 	//    v6----- v5
@@ -125,7 +125,7 @@ void ExampleVrApp::initVBO(int threadId)
 	}
 }
 
-void ExampleVrApp::initGL()
+void App::initGL()
 {
 	glShadeModel(GL_SMOOTH);                    // shading mathod: GL_SMOOTH or GL_FLAT
     glPixelStorei(GL_UNPACK_ALIGNMENT, 4);      // 4-byte pixel alignment
@@ -152,7 +152,7 @@ void ExampleVrApp::initGL()
 	}
 }
 
-void ExampleVrApp::initLights()
+void App::initLights()
 {
 	// set up light colors (ambient, diffuse, specular)
     GLfloat lightKa[] = {.2f, .2f, .2f, 1.0f};  // ambient light
@@ -174,10 +174,10 @@ void ExampleVrApp::initLights()
 	}
 }
 
-void ExampleVrApp::postInitialization() {
+void App::postInitialization() {
 }
 
-void ExampleVrApp::drawGraphics(int threadId, MinVR::AbstractCameraRef camera,
+void App::drawGraphics(int threadId, MinVR::AbstractCameraRef camera,
 		MinVR::WindowRef window) {
 	GLenum err;
 	while((err = glGetError()) != GL_NO_ERROR) {
