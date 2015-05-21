@@ -25,10 +25,14 @@ endif()
 set (SOURCEFILES 
 		app/source/main.cpp
 		app/source/App.cpp
-		app/source/AnchoredHCI.cpp)
+		app/source/AnchoredHCI.cpp
+		app/source/GPUMesh.cpp
+		app/source/GLSLProgram.cpp)
 set (HEADERFILES 
 		app/include/App.h
-		app/include/AnchoredHCI.h)
+		app/include/AnchoredHCI.h
+		app/include/GPUMesh.h
+		app/include/GLSLProgram.h)
 source_group("Header Files" FILES ${HEADERFILES})
 
 ############################################################
