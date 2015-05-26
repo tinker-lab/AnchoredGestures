@@ -35,6 +35,10 @@ set (HEADERFILES
 		app/include/GLSLProgram.h)
 source_group("Header Files" FILES ${HEADERFILES})
 
+if(USE_BOOST)
+	add_definitions(-DUSE_BOOST)
+endif()
+
 ############################################################
 #Start of library detection
 #Any libraries outside of your source should have a corresponding

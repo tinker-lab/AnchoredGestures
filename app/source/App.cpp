@@ -1,6 +1,11 @@
 #include <app/include/App.h>
+#include "app/include/GLSLProgram.h"
+#include "app/include/GPUMesh.h"
+#include <glm/gtc/matrix_inverse.hpp>
+#include <MVRCore/CameraOffAxis.H>
 
-// using namespace MinVR;
+
+using namespace MinVR;
 
 App::App() : MinVR::AbstractMVRApp() {
 
@@ -14,9 +19,9 @@ App::~App() {
 
 void App::doUserInputAndPreDrawComputation(
 		const std::vector<MinVR::EventRef>& events, double synchronizedTime) {
-	//for(int i=0; i < events.size(); i++) {
-	//	std::cout << events[i]->getName() <<std::endl;
-	//}
+	for(int i=0; i < events.size(); i++) {
+		std::cout << events[i]->toString() <<std::endl;
+	}
 }
 
 void App::initializeContextSpecificVars(int threadId,
@@ -25,7 +30,7 @@ void App::initializeContextSpecificVars(int threadId,
 	initVBO(threadId);
 	initLights();
 
-	glClearColor(0.f, 0.f, 0.f, 0.f);
+	glClearColor(0.f, 0.5f, 0.f, 0.f);
 
 	GLenum err;
 	if((err = glGetError()) != GL_NO_ERROR) {
@@ -105,6 +110,22 @@ void App::initVBO(int threadId)
 							0, 0, 1,   0, 0, 0,   0, 1, 0,      // v4-v7-v6 (back)
 							0, 1, 0,   0, 1, 1,   0, 0, 1 };    // v6-v5-v4
 
+	//making cubeData
+	std::vector<int> cubeIndices;
+	std::vector<GPUMesh::Vertex> cubeData;
+	GPUMesh::Vertex vert;
+	for(int i=0; i < 108; i = i +3){
+		vert.position = glm::dvec3(vertices[i],vertices[i+1],vertices[i+2]);
+		vert.normal = glm::normalize(glm::dvec3(normals[i],normals[i+1],normals[i+2]));
+		vert.texCoord0 = glm::dvec2(01,0.9);
+		cubeData.push_back(vert);
+		cubeIndices.push_back(cubeData.size()-1);
+
+	}
+	
+	//initialize Mesh Object
+
+	cubeMesh.reset(new GPUMesh(GL_STATIC_DRAW, sizeof(GPUMesh::Vertex)*cubeData.size(), sizeof(int)*cubeIndices.size(),0,cubeData,sizeof(int)*cubeIndices.size(), &cubeIndices[0]));
 
     // create vertex buffer objects, you need to delete them when program exits
     // Try to put both vertex coords array, vertex normal array and vertex color in the same buffer object.
@@ -112,12 +133,12 @@ void App::initVBO(int threadId)
     // Copy actual data with 2 calls of glBufferSubDataARB, one for vertex coords and one for normals.
     // target flag is GL_ARRAY_BUFFER_ARB, and usage flag is GL_STATIC_DRAW_ARB
 	_vboId[threadId] = GLuint(0);
-	glGenBuffersARB(1, &_vboId[threadId]);
-    glBindBufferARB(GL_ARRAY_BUFFER_ARB, _vboId[threadId]);
-    glBufferDataARB(GL_ARRAY_BUFFER_ARB, sizeof(vertices)+sizeof(normals)+sizeof(colors), 0, GL_STATIC_DRAW_ARB);
-    glBufferSubDataARB(GL_ARRAY_BUFFER_ARB, 0, sizeof(vertices), vertices);                             // copy vertices starting from 0 offest
-    glBufferSubDataARB(GL_ARRAY_BUFFER_ARB, sizeof(vertices), sizeof(normals), normals);                // copy normals after vertices
-    glBufferSubDataARB(GL_ARRAY_BUFFER_ARB, sizeof(vertices)+sizeof(normals), sizeof(colors), colors);  // copy colours after normals
+	//glGenBuffersARB(1, &_vboId[threadId]);
+ //   glBindBufferARB(GL_ARRAY_BUFFER_ARB, _vboId[threadId]);
+ //   glBufferDataARB(GL_ARRAY_BUFFER_ARB, sizeof(vertices)+sizeof(normals)+sizeof(colors), 0, GL_STATIC_DRAW_ARB);
+ //   glBufferSubDataARB(GL_ARRAY_BUFFER_ARB, 0, sizeof(vertices), vertices);                             // copy vertices starting from 0 offest
+ //   glBufferSubDataARB(GL_ARRAY_BUFFER_ARB, sizeof(vertices), sizeof(normals), normals);                // copy normals after vertices
+ //   glBufferSubDataARB(GL_ARRAY_BUFFER_ARB, sizeof(vertices)+sizeof(normals), sizeof(colors), colors);  // copy colours after normals
 
 	GLenum err;
 	if((err = glGetError()) != GL_NO_ERROR) {
@@ -145,6 +166,14 @@ void App::initGL()
     glClearStencil(0);                          // clear stencil buffer
     glClearDepth(1.0f);                         // 0 is near, 1 is far
     glDepthFunc(GL_LEQUAL);
+	
+	//load in shaders
+	std::map<std::string, std::string> args, dummyArgs;
+	shader.reset(new GLSLProgram());
+	shader->compileShader(MinVR::DataFileUtils::findDataFile("phong.vert").c_str(), GLSLShader::VERTEX, dummyArgs);
+	shader->compileShader(MinVR::DataFileUtils::findDataFile("phong.frag").c_str(), GLSLShader::FRAGMENT, args);
+	shader->link();
+
 
 	GLenum err;
 	if((err = glGetError()) != GL_NO_ERROR) {
@@ -184,29 +213,41 @@ void App::drawGraphics(int threadId, MinVR::AbstractCameraRef camera,
 		std::cout << "GLERROR: "<<err<<std::endl;
 	}
 
-	glBindBufferARB(GL_ARRAY_BUFFER_ARB, _vboId[threadId]);
+	const int numIndices = (int)(cubeMesh->getFilledIndexByteSize()/sizeof(int));
+
+	//glBindBufferARB(GL_ARRAY_BUFFER_ARB, _vboId[threadId]);
 
     // enable vertex arrays
-    glEnableClientState(GL_NORMAL_ARRAY);
+  /*  glEnableClientState(GL_NORMAL_ARRAY);
     glEnableClientState(GL_COLOR_ARRAY);
-    glEnableClientState(GL_VERTEX_ARRAY);
+    glEnableClientState(GL_VERTEX_ARRAY);*/
 
     // before draw, specify vertex and index arrays with their offsets
-    glNormalPointer(GL_FLOAT, 0, (void*)(sizeof(GLfloat)*108));
-    glColorPointer(3, GL_FLOAT, 0, (void*)((sizeof(GLfloat)*108)+(sizeof(GLfloat)*108)));
-    glVertexPointer(3, GL_FLOAT, 0, 0);
+ //   glNormalPointer(GL_FLOAT, 0, (void*)(sizeof(GLfloat)*108));
+ //   glColorPointer(3, GL_FLOAT, 0, (void*)((sizeof(GLfloat)*108)+(sizeof(GLfloat)*108)));
+ //   glVertexPointer(3, GL_FLOAT, 0, 0);
 
 	glm::dmat4 translate = glm::translate(glm::dmat4(1.0f), glm::dvec3(0.0f, 0.0f, -5.0f));
 	glm::dvec2 rotAngles(-20.0, 45.0);
 	glm::dmat4 rotate1 = glm::rotate(translate, rotAngles.y, glm::dvec3(0.0,1.0,0.0));
 	camera->setObjectToWorldMatrix(glm::rotate(rotate1, rotAngles.x, glm::dvec3(1.0,0,0)));
-	glDrawArrays(GL_TRIANGLES, 0, 36);
+	//glDrawArrays(GL_TRIANGLES, 0, 36);
 
-    glDisableClientState(GL_VERTEX_ARRAY);  // disable vertex arrays
-    glDisableClientState(GL_COLOR_ARRAY);
-    glDisableClientState(GL_NORMAL_ARRAY);
+	MinVR::CameraOffAxis* offAxisCam = dynamic_cast<MinVR::CameraOffAxis*>(camera.get());
 
-    glBindBufferARB(GL_ARRAY_BUFFER_ARB, 0);
+	shader->use();
+	shader->setUniform("projection_mat", offAxisCam->getLastAppliedProjectionMatrix());
+	shader->setUniform("view_mat", offAxisCam->getLastAppliedViewMatrix());
+	shader->setUniform("model_mat", offAxisCam->getLastAppliedModelMatrix());
+	//shader->setUniform("normal_matrix", glm::dmat3(offAxisCam->getLastAppliedModelMatrix()));
+	glm::dvec3 eye_world = glm::dvec3(glm::column(glm::inverse(offAxisCam->getLastAppliedViewMatrix()), 3));
+	shader->setUniform("eye_world", eye_world);
+
+ //   glDisableClientState(GL_VERTEX_ARRAY);  // disable vertex arrays
+ //   glDisableClientState(GL_COLOR_ARRAY);
+ //   glDisableClientState(GL_NORMAL_ARRAY);
+
+ //   glBindBufferARB(GL_ARRAY_BUFFER_ARB, 0);
 
 	/*
 	camera->setObjectToWorldMatrix(glm::mat4(1.0));
@@ -219,4 +260,6 @@ void App::drawGraphics(int threadId, MinVR::AbstractCameraRef camera,
 	glVertex3f(0.f, 0.3f, -1.f);
 	glEnd();
 	*/
+	glBindVertexArray(cubeMesh->getVAOID());
+	glDrawArrays(GL_TRIANGLES, 0, numIndices);
 }
