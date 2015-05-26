@@ -14,8 +14,10 @@
 #include <GLFW/glfw3.h>
 #include <vector>
 #include <map>
-#include "app/include/GPUMesh.H"
-#include "app/include/GLSLProgram.H"
+#include "app/include/GPUMesh.h"
+#include "app/include/GLSLProgram.h"
+#include "app/include/TuioHCI.h"
+#include "app/include/AbstractHCI.h"
 
 class App : public MinVR::AbstractMVRApp {
 public:
@@ -33,8 +35,9 @@ private:
 	void initLights();
 	std::shared_ptr<GPUMesh> cubeMesh;
 	std::shared_ptr<GLSLProgram> shader;
-
 	std::map<int, GLuint> _vboId;
+	std::shared_ptr<AbstractHCI> currentHCI;
+	std::shared_ptr<CFrameMgr> cFrameMgr;
 };
 
 #endif /* APP_H_ */

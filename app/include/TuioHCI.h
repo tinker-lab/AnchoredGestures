@@ -3,16 +3,21 @@
 
 #include "AbstractHCI.h"
 #include "MVRCore/AbstractCamera.H"
+#include <MVRCore/CameraOffAxis.H>
+#include "CFrameMgr.H"
+
 
 class TuioHCI : public AbstractHCI {
 
 public:
-	TuioHCI();
+	TuioHCI(MinVR::AbstractCameraRef camera, CFrameMgrRef cFrameMgr);
 	virtual ~TuioHCI();
-	void update(std::vector<MinVR::Event> events) ;
+	void update(const std::vector<MinVR::EventRef> &events) ;
     void draw(int threadId, MinVR::AbstractCameraRef camera, MinVR::WindowRef window);
+	glm::dvec3 convertScreenToRoomCoordinates(glm::dvec2 screenCoords);
 private:
-	CFrameMgrRef CFrameRef;
+	std::shared_ptr<MinVR::CameraOffAxis> offAxisCamera;
+
 
 };
 

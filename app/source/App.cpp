@@ -22,6 +22,7 @@ void App::doUserInputAndPreDrawComputation(
 	for(int i=0; i < events.size(); i++) {
 		std::cout << events[i]->toString() <<std::endl;
 	}
+	currentHCI->update(events);
 }
 
 void App::initializeContextSpecificVars(int threadId,
@@ -36,6 +37,8 @@ void App::initializeContextSpecificVars(int threadId,
 	if((err = glGetError()) != GL_NO_ERROR) {
 		std::cout << "openGL ERROR in initializeContextSpecificVars: "<<err<<std::endl;
 	}
+	cFrameMgr.reset(new CFrameMgr());
+	currentHCI.reset(new TuioHCI(window->getCamera(0), cFrameMgr));
 }
 
 void App::initVBO(int threadId)
@@ -262,4 +265,6 @@ void App::drawGraphics(int threadId, MinVR::AbstractCameraRef camera,
 	*/
 	glBindVertexArray(cubeMesh->getVAOID());
 	glDrawArrays(GL_TRIANGLES, 0, numIndices);
+
+	currentHCI->draw(threadId,camera,window);
 }
