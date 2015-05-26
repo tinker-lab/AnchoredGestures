@@ -27,12 +27,17 @@ set (SOURCEFILES
 		app/source/App.cpp
 		app/source/AnchoredHCI.cpp
 		app/source/GPUMesh.cpp
-		app/source/GLSLProgram.cpp)
+		app/source/GLSLProgram.cpp
+		app/source/TuioHCI.cpp
+		app/source/CFrameMgr.cpp)
 set (HEADERFILES 
 		app/include/App.h
 		app/include/AnchoredHCI.h
 		app/include/GPUMesh.h
-		app/include/GLSLProgram.h)
+		app/include/GLSLProgram.h
+		app/include/AbstractHCI.h
+		app/include/CFrameMgr.h
+		app/include/TuioHCI.h)
 source_group("Header Files" FILES ${HEADERFILES})
 
 if(USE_BOOST)
