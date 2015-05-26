@@ -15,8 +15,10 @@ public:
 	void update(const std::vector<MinVR::EventRef> &events) ;
     void draw(int threadId, MinVR::AbstractCameraRef camera, MinVR::WindowRef window);
 	glm::dvec3 convertScreenToRoomCoordinates(glm::dvec2 screenCoords);
+
 private:
 	std::shared_ptr<MinVR::CameraOffAxis> offAxisCamera;
+	std::map<int, MinVR::EventRef> registeredEvents; 
 
 
 };

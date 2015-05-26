@@ -18,11 +18,14 @@ App::~App() {
 }
 
 void App::doUserInputAndPreDrawComputation(
-		const std::vector<MinVR::EventRef>& events, double synchronizedTime) {
+	const std::vector<MinVR::EventRef>& events, double synchronizedTime) {
 	for(int i=0; i < events.size(); i++) {
-		std::cout << events[i]->toString() <<std::endl;
+		if (events[i]->getName() == "kbd_ESC_down") {
+			exit(0);
+		}
 	}
-	currentHCI->update(events);
+	
+		currentHCI->update(events);
 }
 
 void App::initializeContextSpecificVars(int threadId,
