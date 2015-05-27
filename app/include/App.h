@@ -18,6 +18,7 @@
 #include "app/include/GLSLProgram.h"
 #include "app/include/TuioHCI.h"
 #include "app/include/AbstractHCI.h"
+#include "app/include/TextureMgr.h"
 
 class App : public MinVR::AbstractMVRApp {
 public:
@@ -38,6 +39,7 @@ private:
 	std::map<int, GLuint> _vboId;
 	std::shared_ptr<AbstractHCI> currentHCI;
 	std::shared_ptr<CFrameMgr> cFrameMgr;
+	TextureMgrRef texMan; 
 };
 
 #endif /* APP_H_ */

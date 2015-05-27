@@ -19,6 +19,7 @@ public:
 	virtual void draw(int threadId, MinVR::AbstractCameraRef camera, MinVR::WindowRef window) = 0;
 	virtual void initializeContextSpecificVars(int threadId,MinVR::WindowRef window) = 0;
 	virtual void initVBO(int threadId) = 0;
+	virtual void initGL() = 0;
 protected:
 	CFrameMgrRef cFrameMgr;
 	

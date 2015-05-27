@@ -9,6 +9,11 @@
 #include "CFrameMgr.H"
 #include "app/include/GPUMesh.h"
 #include "app/include/GLSLProgram.h"
+#include <glm/glm.hpp>
+#include <glm/gtc/matrix_access.hpp>
+#include <glm/gtc/matrix_transform.hpp>
+#include <glm/gtc/type_ptr.hpp>
+#include <MVRCore/DataFileUtils.H>
 
 
 class TuioHCI : public AbstractHCI {
@@ -21,6 +26,7 @@ public:
 	glm::dvec3 convertScreenToRoomCoordinates(glm::dvec2 screenCoords);
 	void initializeContextSpecificVars(int threadId,MinVR::WindowRef window);
 	void TuioHCI::initVBO(int threadId);
+	void initGL() ;
 
 private:
 	std::shared_ptr<MinVR::CameraOffAxis> offAxisCamera;

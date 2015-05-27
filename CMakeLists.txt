@@ -9,7 +9,7 @@
 cmake_minimum_required (VERSION 2.8.2) 
 project (AnchoredGestures)
 
-set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "$ENV{MinVR_DIR}/cmake/modules")
+set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "$ENV{MinVR_DIR}/cmake/modules" "$ENV{FreeImage_DIR}")
 
 if (CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
     set (CMAKE_INSTALL_PREFIX "${CMAKE_BINARY_DIR}/../install" CACHE PATH "default install path" FORCE )
@@ -25,11 +25,14 @@ endif()
 set (SOURCEFILES 
 		app/source/main.cpp
 		app/source/App.cpp
+		app/source/AbstractHCI.cpp
 		app/source/AnchoredHCI.cpp
 		app/source/GPUMesh.cpp
 		app/source/GLSLProgram.cpp
 		app/source/TuioHCI.cpp
-		app/source/CFrameMgr.cpp)
+		app/source/CFrameMgr.cpp
+		app/source/Texture.cpp
+		app/source/TextureMgr.cpp)
 set (HEADERFILES 
 		app/include/App.h
 		app/include/AnchoredHCI.h
@@ -37,7 +40,10 @@ set (HEADERFILES
 		app/include/GLSLProgram.h
 		app/include/AbstractHCI.h
 		app/include/CFrameMgr.h
-		app/include/TuioHCI.h)
+		app/include/TuioHCI.h
+		app/include/Texture.h
+		app/include/TextureMgr.h)
+
 source_group("Header Files" FILES ${HEADERFILES})
 
 if(USE_BOOST)
@@ -54,6 +60,9 @@ endif()
 set(MinVR_DIR $ENV{MinVR_DIR})
 find_package(MinVR COMPONENTS MVRCore AppKit_GLFW REQUIRED)
 include_directories(${MinVR_INCLUDE_DIRS})
+
+find_package(FreeImage REQUIRED)
+include_directories(${FREEIMAGE_INCLUDE_DIRS})
 
 ############################################################
 #End external library searching
@@ -161,7 +170,8 @@ add_executable(app ${HEADERFILES} ${SOURCEFILES})
 #indepdent way it would appear in the command line (i.e. -l<libtoadd>)
 #If the second is way is used you need to sure the directory the lib is
 #in will be found
-target_link_libraries (app ${MinVR_LIBRARIES} ${LIBS_DEBUG} ${LIBS_OPT} ${LIBS_ALL})
+target_link_libraries (app ${MinVR_LIBRARIES} ${LIBS_DEBUG} ${LIBS_OPT} ${LIBS_ALL} ${FREEIMAGE_OPT_LIBRARIES} ${FREEIMAGE_DEBUG_LIBRARIES})
+
 
 #Second an example of a library target
 #It should default to making a static library

@@ -1,6 +1,4 @@
 #include <app/include/App.h>
-#include "app/include/GLSLProgram.h"
-#include "app/include/GPUMesh.h"
 #include <glm/gtc/matrix_inverse.hpp>
 #include <MVRCore/CameraOffAxis.H>
 
@@ -30,18 +28,24 @@ void App::doUserInputAndPreDrawComputation(
 
 void App::initializeContextSpecificVars(int threadId,
 		MinVR::WindowRef window) {
+
+	cFrameMgr.reset(new CFrameMgr());
+	currentHCI.reset(new TuioHCI(window->getCamera(0), cFrameMgr));
+
 	initGL();
 	initVBO(threadId);
 	initLights();
 
 	glClearColor(0.f, 0.5f, 0.f, 0.f);
 
+	texMan.reset(new TextureMgr());
+	texMan->loadTexturesFromConfigVal(threadId, "LoadTextures");
+
 	GLenum err;
 	if((err = glGetError()) != GL_NO_ERROR) {
 		std::cout << "openGL ERROR in initializeContextSpecificVars: "<<err<<std::endl;
 	}
-	cFrameMgr.reset(new CFrameMgr());
-	currentHCI.reset(new TuioHCI(window->getCamera(0), cFrameMgr));
+	
 	currentHCI->initializeContextSpecificVars(threadId, window);
 }
 
@@ -181,6 +185,9 @@ void App::initGL()
 	shader->compileShader(MinVR::DataFileUtils::findDataFile("phong.frag").c_str(), GLSLShader::FRAGMENT, args);
 	shader->link();
 
+	//initGL for the HCIs
+	currentHCI->initGL();
+
 
 	GLenum err;
 	if((err = glGetError()) != GL_NO_ERROR) {
@@ -234,15 +241,21 @@ void App::drawGraphics(int threadId, MinVR::AbstractCameraRef camera,
  //   glColorPointer(3, GL_FLOAT, 0, (void*)((sizeof(GLfloat)*108)+(sizeof(GLfloat)*108)));
  //   glVertexPointer(3, GL_FLOAT, 0, 0);
 
-	glm::dmat4 translate = glm::translate(glm::dmat4(1.0f), glm::dvec3(0.0f, 0.0f, -5.0f));
-	glm::dvec2 rotAngles(-20.0, 45.0);
-	glm::dmat4 rotate1 = glm::rotate(translate, rotAngles.y, glm::dvec3(0.0,1.0,0.0));
-	camera->setObjectToWorldMatrix(glm::rotate(rotate1, rotAngles.x, glm::dvec3(1.0,0,0)));
+	//glm::dmat4 translate = glm::translate(glm::dmat4(1.0f), glm::dvec3(0.0f, 0.0f, -5.0f));
+	//glm::dvec2 rotAngles(-20.0, 45.0);
+	//glm::dmat4 rotate1 = glm::rotate(translate, rotAngles.y, glm::dvec3(0.0,1.0,0.0));
+	//camera->setObjectToWorldMatrix(glm::rotate(rotate1, rotAngles.x, glm::dvec3(1.0,0,0)));
+	camera->setObjectToWorldMatrix(glm::translate(glm::dmat4(1.0f), glm::dvec3(0.0f, -3.5f, -3.0f)));
 	//glDrawArrays(GL_TRIANGLES, 0, 36);
 
 	MinVR::CameraOffAxis* offAxisCam = dynamic_cast<MinVR::CameraOffAxis*>(camera.get());
 
 	shader->use();
+
+	// need to put in variable for texture in shaders
+	//shader->setUniform("lambertian_texture", 0); //lambertian_texture is the name of a sampler in glsl
+	texMan->getTexture(threadId, "Koala")->bind(0);
+
 	shader->setUniform("projection_mat", offAxisCam->getLastAppliedProjectionMatrix());
 	shader->setUniform("view_mat", offAxisCam->getLastAppliedViewMatrix());
 	shader->setUniform("model_mat", offAxisCam->getLastAppliedModelMatrix());
@@ -267,8 +280,8 @@ void App::drawGraphics(int threadId, MinVR::AbstractCameraRef camera,
 	glVertex3f(0.f, 0.3f, -1.f);
 	glEnd();
 	*/
-	glBindVertexArray(cubeMesh->getVAOID());
-	glDrawArrays(GL_TRIANGLES, 0, numIndices);
+	//glBindVertexArray(cubeMesh->getVAOID());
+	//glDrawArrays(GL_TRIANGLES, 0, numIndices);
 
 	currentHCI->draw(threadId,camera,window);
 }
