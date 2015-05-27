@@ -42,6 +42,7 @@ void App::initializeContextSpecificVars(int threadId,
 	}
 	cFrameMgr.reset(new CFrameMgr());
 	currentHCI.reset(new TuioHCI(window->getCamera(0), cFrameMgr));
+	currentHCI->initializeContextSpecificVars(threadId, window);
 }
 
 void App::initVBO(int threadId)
