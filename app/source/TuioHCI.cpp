@@ -4,8 +4,10 @@
 #include "app/include/GPUMesh.h"
 
 
-TuioHCI::TuioHCI(MinVR::AbstractCameraRef camera, CFrameMgrRef cFrameMgr) : AbstractHCI(cFrameMgr){
+TuioHCI::TuioHCI(MinVR::AbstractCameraRef camera, CFrameMgrRef cFrameMgr, TextureMgrRef texMan) : AbstractHCI(cFrameMgr){
 	offAxisCamera = std::dynamic_pointer_cast<MinVR::CameraOffAxis>(camera);
+	this->texMan = texMan;
+	
 }
 
 TuioHCI::~TuioHCI(){
@@ -22,14 +24,12 @@ void TuioHCI::initializeContextSpecificVars(int threadId,
 	if((err = glGetError()) != GL_NO_ERROR) {
 		std::cout << "openGL ERROR in initializeContextSpecificVars: "<<err<<std::endl;
 	}
-
-	cFrameMgr.reset(new CFrameMgr());
-	
 }
 
 void TuioHCI::initVBO(int threadId) {
 	GLfloat vertices[]  = { 0.25f, 0.0f, 0.25f,  -0.25f, 0.0f, -0.25f,  -0.25f, 0.0f, 0.25f};
 	GLfloat normals[]   = { 0, 1, 0,   0, 1, 0,   0, 1, 0};
+	GLfloat texture[] = {1,1,0, 0,0,0, 0,1,0 };//thrid coordinate is never use. only have it so the for loop could work
 	
 	std::vector<int> cubeIndices;
 	std::vector<GPUMesh::Vertex> cubeData;
@@ -37,7 +37,7 @@ void TuioHCI::initVBO(int threadId) {
 	for(int i=0; i < 9; i = i +3){
 		vert.position = glm::dvec3(vertices[i],vertices[i+1],vertices[i+2]);
 		vert.normal = glm::normalize(glm::dvec3(normals[i],normals[i+1],normals[i+2]));
-		vert.texCoord0 = glm::dvec2(0.1,0.9);
+		vert.texCoord0 = glm::dvec2(texture[i],texture[i+1]);
 		cubeData.push_back(vert);
 		cubeIndices.push_back(cubeData.size()-1);
 
@@ -62,8 +62,8 @@ void TuioHCI::initGL() {
 	//load in shaders
 	std::map<std::string, std::string> args, dummyArgs;
 	shader.reset(new GLSLProgram());
-	shader->compileShader(MinVR::DataFileUtils::findDataFile("phong.vert").c_str(), GLSLShader::VERTEX, dummyArgs);
-	shader->compileShader(MinVR::DataFileUtils::findDataFile("phong.frag").c_str(), GLSLShader::FRAGMENT, args);
+	shader->compileShader(MinVR::DataFileUtils::findDataFile("tuioPhong.vert").c_str(), GLSLShader::VERTEX, dummyArgs);
+	shader->compileShader(MinVR::DataFileUtils::findDataFile("tuioPhong.frag").c_str(), GLSLShader::FRAGMENT, args);
 	shader->link();
 
 }
@@ -71,7 +71,6 @@ void TuioHCI::initGL() {
 // this function produces a map, which we can later query to draw things.
 void TuioHCI::update(const std::vector<MinVR::EventRef> &events){
 
-	// touch down, move, up
 	for(int i=0; i < events.size(); i++) {
 		std::string name = events[i]->getName();
 		int id = events[i]->getId();
@@ -82,29 +81,58 @@ void TuioHCI::update(const std::vector<MinVR::EventRef> &events){
 			// delete the cursor down associated with this up event
 
 			// This is to update the map
-			std::map<int, MinVR::EventRef>::iterator it = registeredEvents.find(id); 
-			if (it != registeredEvents.end()) { // if id is found
-				registeredEvents.erase(it);		//erase value associate with that it
+			std::map<int, TouchDataRef>::iterator it = registeredTouchData.find(id); 
+			if (it != registeredTouchData.end()) { // if id is found
+				registeredTouchData.erase(it);		//erase value associate with that it
 				std::cout << "UP" <<std::endl;
 			}
 
 			
 		} else if (boost::algorithm::starts_with(name, "TUIO_Cursor_down")) {
 			// always add a new one on DOWN
-			registeredEvents.insert(std::pair<int, MinVR::EventRef>(id, events[i]));
+			glm::dvec3 roomCoord = convertScreenToRoomCoordinates(events[i]->get2DData());
+			TouchDataRef datum(new TouchData(events[i], roomCoord));
+
+			registeredTouchData.insert(std::pair<int, TouchDataRef>(id, datum));
 			//cubeMesh->updateVertexData(int startByteOffset, int vertexOffset, const std::vector<Vertex> &data);
 
 			std::cout << "DOWN" <<std::endl;
+			//glm::dvec2 data = events[i]->get2DData();
+			//std::cout << data.x << ", " << data.y /*<< ", " << data.z << ", " << data.w  */<< std::endl;
+
 		} else if (boost::algorithm::starts_with(name, "TUIO_CursorMove")) {
 			// update the map with the move event
 			// if the corresponding id was down, make it a move event
 
+			std::map<int, TouchDataRef>::iterator it = registeredTouchData.find(id); 
 
-			std::map<int, MinVR::EventRef>::iterator it = registeredEvents.find(id); 
-			if (it != registeredEvents.end()) { // if id is found
-				it->second = events[i];			// update the map
-				std::cout << "MOVE" <<std::endl;
+			if (it != registeredTouchData.end()) { // if id is found
+				glm::dvec3 roomCoord = convertScreenToRoomCoordinates(events[i]->get2DData());
+				//it->second->setCurrentEvent(events[i]);
+				it->second->setCurrRoomPos(roomCoord);
+				
+				std::cout << "MOVE ";
+
+				if (registeredTouchData.size() == 1) {//only one finger on screen
+					glm::dmat4 transMat(glm::translate(glm::dmat4(1.0f), -1.0*it->second->roomPositionDifference()));
+					// negate the translation so this is actually virtual to room space
+					glm::dmat4 newTransform = cFrameMgr->getRoomToVirtualSpaceFrame()*transMat;
+					cFrameMgr->setRoomToVirtualSpaceFrame(newTransform);
+					std::cout<<"by "<<glm::length(it->second->roomPositionDifference())<<std::endl;
+					
+				}
+				else {
+					std::cout<<registeredTouchData.size()<<std::endl;
+				}
+
+			
 			}
+
+			// update the cframe which will rotate the cube from App
+			// cframe is pass by reference, so just mutate it here.
+
+			//single finger touch point: then do translation
+			
 
 
 			
@@ -112,34 +140,14 @@ void TuioHCI::update(const std::vector<MinVR::EventRef> &events){
 	}
 
 
-	
 
-	// store current position in a map, id is keys (touch objects if class for touch exists)
-
-	// gesture recognition, which uses the map produced above, and maybe some addtl. data
-	// this chooses what kind of matrix transforms we use
-
-	// current position will need a mat transform, virtual to room
-
-	// new class called touch?
-
-	// show content:
-  /*for (std::map<int,MinVR::EventRef>::iterator it = registeredEvents.begin(); it != registeredEvents.end(); ++it) {
-    std::cout << it->first << " => " << it->second->toString() << '\n';
-  }*/
-	
 }
 
 
 
 void TuioHCI::draw(int threadId, MinVR::AbstractCameraRef camera, MinVR::WindowRef window){
 
-	// want to draw for each event.
-	//std::map<int,MinVR::EventRef>::iterator it;
-	//for (it = registeredEvents.begin(); it != registeredEvents.end(); ++it) {
-	//	//draw each events
-	//}
-	
+
 	/*glm::dmat4 translate = glm::translate(glm::dmat4(1.0f), glm::dvec3(0.0f, 0.0f, -5.0f));
 	camera->setObjectToWorldMatrix(glm::translate(glm::dmat4(1.0f), glm::dvec3(0.0f, -3.5f, -3.0f)));
 	glm::dvec2 rotAngles(-20.0, 45.0);
@@ -153,31 +161,27 @@ void TuioHCI::draw(int threadId, MinVR::AbstractCameraRef camera, MinVR::WindowR
 	shader->setUniform("view_mat", offAxisCam->getLastAppliedViewMatrix());
 	
 	//shader->setUniform("normal_matrix", glm::dmat3(offAxisCam->getLastAppliedModelMatrix()));
-	glm::dvec3 eye_world = glm::dvec3(glm::column(glm::inverse(offAxisCam->getLastAppliedViewMatrix()), 3));
-	shader->setUniform("eye_world", eye_world);
+	//glm::dvec3 eye_world = glm::dvec3(glm::column(glm::inverse(offAxisCam->getLastAppliedViewMatrix()), 3));
+	//shader->setUniform("eye_world", eye_world);
+	texMan->getTexture(threadId, "Koala2")->bind(0);
+	shader->setUniform("koalaTextureSampler",0);
 
-	std::map<int,MinVR::EventRef>::iterator it;
+
+	std::map<int, TouchDataRef>::iterator it;
 	glm::dvec3 roomCoord;
 
 	glBindVertexArray(cubeMesh->getVAOID());
 
-	for(it = registeredEvents.begin(); it != registeredEvents.end(); ++it) {
+	for(it = registeredTouchData.begin(); it != registeredTouchData.end(); ++it) {
+		
+		TouchDataRef event = it->second;
+		
+		roomCoord = event->getCurrRoomPos();
+		
 		// new matrix for each triangle
-		MinVR::EventRef event = it->second;
-		
-		
-		// only two events in map: a move and a down
-		if (boost::algorithm::starts_with(event->getName(), "TUIO_Cursor_down")) {
-			roomCoord = convertScreenToRoomCoordinates(event->get2DData());
-		} else { // move event
-			roomCoord = convertScreenToRoomCoordinates( glm::dvec2(event->get4DData()) );
-		}
-		
 		camera->setObjectToWorldMatrix(glm::translate(glm::dmat4(1.0f), roomCoord));
-		//camera->setObjectToWorldMatrix(glm::dmat4(1.0f));
 		shader->setUniform("model_mat", offAxisCam->getLastAppliedModelMatrix());
-		// draw triangl
-		std::cout << roomCoord.x << ", " << roomCoord.y << ", " << roomCoord.z << std::endl;
+		// draw triangle
 		glDrawArrays(GL_TRIANGLES, 0, 3);
 		
 	}
@@ -185,7 +189,7 @@ void TuioHCI::draw(int threadId, MinVR::AbstractCameraRef camera, MinVR::WindowR
 	
 	// need to put in variable for texture in shaders
 	//shader->setUniform("lambertian_texture", 0); //lambertian_texture is the name of a sampler in glsl
-	//texMan->getTexture(threadId, "Koala")->bind(0);
+	
 
 }
 

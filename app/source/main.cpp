@@ -7,7 +7,7 @@ int main(int argc, char** argv)
 {
 	MinVR::DataFileUtils::addFileSearchPath("$(MinVR_DIR)/share/vrsetup");
 	MinVR::DataFileUtils::addFileSearchPath("$(MinVR_DIR)/share/shaders");
-	MinVR::DataFileUtils::addFileSearchPath("C:/Users/Jenweil/Desktop/ExampleVR/example/shaders");
+	MinVR::DataFileUtils::addFileSearchPath("C:/Users/Jenweil/Desktop/AnchoredGestures/app/shaders");
 
 	FreeImage_Initialise();
 

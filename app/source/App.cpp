@@ -23,14 +23,17 @@ void App::doUserInputAndPreDrawComputation(
 		}
 	}
 	
-		currentHCI->update(events);
+	currentHCI->update(events);
 }
 
 void App::initializeContextSpecificVars(int threadId,
 		MinVR::WindowRef window) {
 
+	texMan.reset(new TextureMgr());
+	texMan->loadTexturesFromConfigVal(threadId, "LoadTextures");
+
 	cFrameMgr.reset(new CFrameMgr());
-	currentHCI.reset(new TuioHCI(window->getCamera(0), cFrameMgr));
+	currentHCI.reset(new TuioHCI(window->getCamera(0), cFrameMgr,texMan));
 
 	initGL();
 	initVBO(threadId);
@@ -38,8 +41,7 @@ void App::initializeContextSpecificVars(int threadId,
 
 	glClearColor(0.f, 0.5f, 0.f, 0.f);
 
-	texMan.reset(new TextureMgr());
-	texMan->loadTexturesFromConfigVal(threadId, "LoadTextures");
+	
 
 	GLenum err;
 	if((err = glGetError()) != GL_NO_ERROR) {
@@ -245,7 +247,7 @@ void App::drawGraphics(int threadId, MinVR::AbstractCameraRef camera,
 	//glm::dvec2 rotAngles(-20.0, 45.0);
 	//glm::dmat4 rotate1 = glm::rotate(translate, rotAngles.y, glm::dvec3(0.0,1.0,0.0));
 	//camera->setObjectToWorldMatrix(glm::rotate(rotate1, rotAngles.x, glm::dvec3(1.0,0,0)));
-	camera->setObjectToWorldMatrix(glm::translate(glm::dmat4(1.0f), glm::dvec3(0.0f, -3.5f, -3.0f)));
+	camera->setObjectToWorldMatrix(glm::translate(cFrameMgr->getVirtualToRoomSpaceFrame(), glm::dvec3(0.0f, -3.5f, -3.0f)));
 	//glDrawArrays(GL_TRIANGLES, 0, 36);
 
 	MinVR::CameraOffAxis* offAxisCam = dynamic_cast<MinVR::CameraOffAxis*>(camera.get());
@@ -254,7 +256,7 @@ void App::drawGraphics(int threadId, MinVR::AbstractCameraRef camera,
 
 	// need to put in variable for texture in shaders
 	//shader->setUniform("lambertian_texture", 0); //lambertian_texture is the name of a sampler in glsl
-	texMan->getTexture(threadId, "Koala")->bind(0);
+	texMan->getTexture(threadId, "Koala1")->bind(0);
 
 	shader->setUniform("projection_mat", offAxisCam->getLastAppliedProjectionMatrix());
 	shader->setUniform("view_mat", offAxisCam->getLastAppliedViewMatrix());
@@ -280,8 +282,12 @@ void App::drawGraphics(int threadId, MinVR::AbstractCameraRef camera,
 	glVertex3f(0.f, 0.3f, -1.f);
 	glEnd();
 	*/
-	//glBindVertexArray(cubeMesh->getVAOID());
-	//glDrawArrays(GL_TRIANGLES, 0, numIndices);
+	glBindVertexArray(cubeMesh->getVAOID());
+	glDrawArrays(GL_TRIANGLES, 0, numIndices);
+
+	//std::cout<<glm::to_string(cFrameMgr->getVirtualToRoomSpaceFrame())<<std::endl;
 
 	currentHCI->draw(threadId,camera,window);
+
+
 }

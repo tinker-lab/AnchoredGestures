@@ -1,6 +1,7 @@
 #version 400
 
 in vec3 position_world, normal_world;
+in vec2 texture_coordinates;
 uniform vec3 eye_world;
 
 // fixed point light properties
@@ -16,6 +17,7 @@ vec3 Ka = vec3 (1.0, 1.0, 1.0); // fully reflect ambient light
 float specular_exponent = 100.0; // specular 'power'
 
 uniform sampler2D koalaTextureSampler;
+
 
 out vec4 fragment_colour; // final colour of surface
 
@@ -42,6 +44,6 @@ void main () {
 	// final colour
 	fragment_colour = vec4 (Is + Id + Ia, 1.0);
 
-	fragment_color = texture( koalaTextureSampler, UV ).rgb;
+	fragment_colour = vec4(texture( koalaTextureSampler, texture_coordinates ).rgb, 1.0 );
 	
 }

@@ -10,6 +10,7 @@
 #include <glm/gtc/matrix_access.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
+#include <glm/gtx/string_cast.hpp>
 #include "MVRCore/Event.H"
 #include <GLFW/glfw3.h>
 #include <vector>
@@ -19,6 +20,7 @@
 #include "app/include/TuioHCI.h"
 #include "app/include/AbstractHCI.h"
 #include "app/include/TextureMgr.h"
+#include "app/include/TouchData.h"
 
 class App : public MinVR::AbstractMVRApp {
 public:

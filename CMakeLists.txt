@@ -32,7 +32,8 @@ set (SOURCEFILES
 		app/source/TuioHCI.cpp
 		app/source/CFrameMgr.cpp
 		app/source/Texture.cpp
-		app/source/TextureMgr.cpp)
+		app/source/TextureMgr.cpp
+		app/source/TouchData.cpp)
 set (HEADERFILES 
 		app/include/App.h
 		app/include/AnchoredHCI.h
@@ -42,7 +43,8 @@ set (HEADERFILES
 		app/include/CFrameMgr.h
 		app/include/TuioHCI.h
 		app/include/Texture.h
-		app/include/TextureMgr.h)
+		app/include/TextureMgr.h
+		app/include/TouchData.h)
 
 source_group("Header Files" FILES ${HEADERFILES})
 

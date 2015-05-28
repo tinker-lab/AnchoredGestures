@@ -14,14 +14,15 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
 #include <MVRCore/DataFileUtils.H>
-
+#include "app/include/TextureMgr.h"
+#include "app/include/TouchData.h"
 
 class TuioHCI : public AbstractHCI {
 
 public:
-	TuioHCI(MinVR::AbstractCameraRef camera, CFrameMgrRef cFrameMgr);
+	TuioHCI(MinVR::AbstractCameraRef camera, CFrameMgrRef cFrameMgr, TextureMgrRef textMan);
 	virtual ~TuioHCI();
-	void update(const std::vector<MinVR::EventRef> &events) ;
+	void update(const std::vector<MinVR::EventRef> &events);
     void draw(int threadId, MinVR::AbstractCameraRef camera, MinVR::WindowRef window);
 	glm::dvec3 convertScreenToRoomCoordinates(glm::dvec2 screenCoords);
 	void initializeContextSpecificVars(int threadId,MinVR::WindowRef window);
@@ -30,11 +31,11 @@ public:
 
 private:
 	std::shared_ptr<MinVR::CameraOffAxis> offAxisCamera;
-	std::map<int, MinVR::EventRef> registeredEvents; 
+	std::map<int, TouchDataRef> registeredTouchData; 
 	std::shared_ptr<GPUMesh> cubeMesh;
 	std::shared_ptr<GLSLProgram> shader;
 	std::map<int, GLuint> _vboId;
-	std::shared_ptr<CFrameMgr> cFrameMgr;
+	TextureMgrRef texMan; 
 
 
 };
