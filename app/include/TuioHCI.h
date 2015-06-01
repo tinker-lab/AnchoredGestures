@@ -16,6 +16,7 @@
 #include <MVRCore/DataFileUtils.H>
 #include "app/include/TextureMgr.h"
 #include "app/include/TouchData.h"
+#include <glm/gtx/string_cast.hpp>
 
 class TuioHCI : public AbstractHCI {
 

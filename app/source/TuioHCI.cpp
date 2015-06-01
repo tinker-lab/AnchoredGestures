@@ -107,10 +107,11 @@ void TuioHCI::update(const std::vector<MinVR::EventRef> &events){
 			std::map<int, TouchDataRef>::iterator it = registeredTouchData.find(id); 
 
 			if (it != registeredTouchData.end()) { // if id is found
-				glm::dvec3 roomCoord = convertScreenToRoomCoordinates(events[i]->get2DData());
+				glm::dvec3 roomCoord = convertScreenToRoomCoordinates(glm::dvec2(events[i]->get4DData()));
 				//it->second->setCurrentEvent(events[i]);
 				it->second->setCurrRoomPos(roomCoord);
-				
+
+				std::cout << glm::to_string(roomCoord) << std::endl;
 				std::cout << "MOVE ";
 
 				if (registeredTouchData.size() == 1) {//only one finger on screen
@@ -118,7 +119,7 @@ void TuioHCI::update(const std::vector<MinVR::EventRef> &events){
 					// negate the translation so this is actually virtual to room space
 					glm::dmat4 newTransform = cFrameMgr->getRoomToVirtualSpaceFrame()*transMat;
 					cFrameMgr->setRoomToVirtualSpaceFrame(newTransform);
-					std::cout<<"by "<<glm::length(it->second->roomPositionDifference())<<std::endl;
+					std::cout<<"by "<<glm::to_string(it->second->roomPositionDifference())<<std::endl;
 					
 				}
 				else {
@@ -185,12 +186,6 @@ void TuioHCI::draw(int threadId, MinVR::AbstractCameraRef camera, MinVR::WindowR
 		glDrawArrays(GL_TRIANGLES, 0, 3);
 		
 	}
-	
-	
-	// need to put in variable for texture in shaders
-	//shader->setUniform("lambertian_texture", 0); //lambertian_texture is the name of a sampler in glsl
-	
-
 }
 
 glm::dvec3 TuioHCI::convertScreenToRoomCoordinates(glm::dvec2 screenCoords) {
