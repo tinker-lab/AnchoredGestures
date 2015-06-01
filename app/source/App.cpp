@@ -130,7 +130,7 @@ void App::initVBO(int threadId)
 	for(int i=0; i < 108; i = i +3){
 		vert.position = glm::dvec3(vertices[i],vertices[i+1],vertices[i+2]);
 		vert.normal = glm::normalize(glm::dvec3(normals[i],normals[i+1],normals[i+2]));
-		vert.texCoord0 = glm::dvec2(01,0.9);
+		vert.texCoord0 = glm::dvec2(colors[i],colors[i+1]);
 		cubeData.push_back(vert);
 		cubeIndices.push_back(cubeData.size()-1);
 
@@ -247,7 +247,7 @@ void App::drawGraphics(int threadId, MinVR::AbstractCameraRef camera,
 	//glm::dvec2 rotAngles(-20.0, 45.0);
 	//glm::dmat4 rotate1 = glm::rotate(translate, rotAngles.y, glm::dvec3(0.0,1.0,0.0));
 	//camera->setObjectToWorldMatrix(glm::rotate(rotate1, rotAngles.x, glm::dvec3(1.0,0,0)));
-	camera->setObjectToWorldMatrix(glm::translate(cFrameMgr->getVirtualToRoomSpaceFrame(), glm::dvec3(0.0f, -3.5f, -3.0f)));
+	camera->setObjectToWorldMatrix(glm::translate(cFrameMgr->getVirtualToRoomSpaceFrame(), glm::dvec3(0.0f, -1.0f, 0.0f)));
 	//glDrawArrays(GL_TRIANGLES, 0, 36);
 
 	MinVR::CameraOffAxis* offAxisCam = dynamic_cast<MinVR::CameraOffAxis*>(camera.get());

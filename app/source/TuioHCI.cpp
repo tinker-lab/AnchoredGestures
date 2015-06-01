@@ -108,10 +108,10 @@ void TuioHCI::update(const std::vector<MinVR::EventRef> &events){
 
 			if (it != registeredTouchData.end()) { // if id is found
 				glm::dvec3 roomCoord = convertScreenToRoomCoordinates(glm::dvec2(events[i]->get4DData()));
-				//it->second->setCurrentEvent(events[i]);
+				it->second->setCurrentEvent(events[i]);
 				it->second->setCurrRoomPos(roomCoord);
 
-				std::cout << glm::to_string(roomCoord) << std::endl;
+				
 				std::cout << "MOVE ";
 
 				if (registeredTouchData.size() == 1) {//only one finger on screen
@@ -119,15 +119,54 @@ void TuioHCI::update(const std::vector<MinVR::EventRef> &events){
 					// negate the translation so this is actually virtual to room space
 					glm::dmat4 newTransform = cFrameMgr->getRoomToVirtualSpaceFrame()*transMat;
 					cFrameMgr->setRoomToVirtualSpaceFrame(newTransform);
-					std::cout<<"by "<<glm::to_string(it->second->roomPositionDifference())<<std::endl;
+					
+				} else if (registeredTouchData.size() == 2) {
+					
+					// translate to origin, the other touch point
+					glm::dvec3 centOfRot;
+					std::map<int, TouchDataRef>::iterator iter;
+
+					for (iter = registeredTouchData.begin(); iter != registeredTouchData.end(); iter++) { // finding other touch point.
+						if (id != iter->second->getCurrentEvent()->getId()) { // found other touch point
+							centOfRot = iter->second->getCurrRoomPos();
+							std::cout<<"center of rotation found"<<std::endl;
+							std::cout<<"it id"<<id<<std::endl;
+							std::cout<<"iter id"<<iter->second->getCurrentEvent()->getId()<<std::endl;
+							break;
+						}
+					}
+					glm::dmat4 transMat(glm::translate(glm::dmat4(1.0), -1.0*centOfRot));
+
+					// rotate
+					glm::dvec3 prevDiffBetweenTwoPoints = glm::normalize(it->second->getPrevRoomPos() - centOfRot);
+					glm::dvec3 currDiffBetweenTwoPoints = glm::normalize(roomCoord - centOfRot);
+					glm::dvec3 crossProd = glm::cross(prevDiffBetweenTwoPoints,currDiffBetweenTwoPoints);
+					double theta = glm::dot(prevDiffBetweenTwoPoints,currDiffBetweenTwoPoints);
+					if(crossProd.y < 0){
+						theta = -theta;
+					}
+					glm::dmat4 rotMat = glm::rotate(glm::dmat4(1.0) , -theta, glm::dvec3(0,1,0));
+					glm::dmat4 transBack(glm::translate(glm::dmat4(1.0), centOfRot));
+					
+					std::cout<<"rotMat"<<glm::to_string(rotMat)<<std::endl;
+					
+
+					// scale
+					
+					//glm::dmat4 scaleMat = glm::scale(
+						//glm::dmat4(1.0f),
+						//scaleBy); 
+
+					//glm::dmat4 rotScale;
+					glm::dmat4 newTransform = cFrameMgr->getRoomToVirtualSpaceFrame() * transBack * rotMat * transMat;
+					cFrameMgr->setRoomToVirtualSpaceFrame(newTransform);
 					
 				}
-				else {
-					std::cout<<registeredTouchData.size()<<std::endl;
-				}
 
-			
+
 			}
+
+
 
 			// update the cframe which will rotate the cube from App
 			// cframe is pass by reference, so just mutate it here.
