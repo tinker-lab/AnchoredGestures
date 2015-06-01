@@ -148,17 +148,22 @@ void TuioHCI::update(const std::vector<MinVR::EventRef> &events){
 					glm::dmat4 rotMat = glm::rotate(glm::dmat4(1.0) , -theta, glm::dvec3(0,1,0));
 					glm::dmat4 transBack(glm::translate(glm::dmat4(1.0), centOfRot));
 					
-					std::cout<<"rotMat"<<glm::to_string(rotMat)<<std::endl;
+					//std::cout<<"rotMat"<<glm::to_string(rotMat)<<std::endl;
 					
 
 					// scale
-					
-					//glm::dmat4 scaleMat = glm::scale(
-						//glm::dmat4(1.0f),
-						//scaleBy); 
 
-					//glm::dmat4 rotScale;
-					glm::dmat4 newTransform = cFrameMgr->getRoomToVirtualSpaceFrame() * transBack * rotMat * transMat;
+					// multiply by 0.5 because the scale will be done with both hands
+					double prevDistanceDiff = glm::length(it->second->getPrevRoomPos() - centOfRot);
+					double currDistanceDiff = glm::length(roomCoord - centOfRot);
+					glm::dvec3 scaleBy = glm::dvec3(prevDistanceDiff/currDistanceDiff);
+					glm::dmat4 scaleMat = glm::scale(
+						glm::dmat4(1.0f),
+						scaleBy); 
+
+					std::cout<<"rotMat"<<glm::to_string(scaleMat)<<std::endl;
+					
+					glm::dmat4 newTransform = cFrameMgr->getRoomToVirtualSpaceFrame() * transBack * scaleMat *rotMat * transMat;
 					cFrameMgr->setRoomToVirtualSpaceFrame(newTransform);
 					
 				}
