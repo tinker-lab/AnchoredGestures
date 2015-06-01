@@ -17,6 +17,7 @@
 #include "app/include/TextureMgr.h"
 #include "app/include/TouchData.h"
 #include <glm/gtx/string_cast.hpp>
+#include "app/include/OneEuroFilter.h"
 
 class TuioHCI : public AbstractHCI {
 
@@ -29,6 +30,7 @@ public:
 	void initializeContextSpecificVars(int threadId,MinVR::WindowRef window);
 	void TuioHCI::initVBO(int threadId);
 	void initGL() ;
+	
 
 private:
 	std::shared_ptr<MinVR::CameraOffAxis> offAxisCamera;
@@ -37,6 +39,8 @@ private:
 	std::shared_ptr<GLSLProgram> shader;
 	std::map<int, GLuint> _vboId;
 	TextureMgrRef texMan; 
+	OneEuroFilter xFilter;
+	OneEuroFilter yFilter;
 
 
 };

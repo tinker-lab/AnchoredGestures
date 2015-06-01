@@ -22,6 +22,7 @@
 #include "app/include/TextureMgr.h"
 #include "app/include/TouchData.h"
 
+
 class App : public MinVR::AbstractMVRApp {
 public:
 	App();

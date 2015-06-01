@@ -44,7 +44,8 @@ set (HEADERFILES
 		app/include/TuioHCI.h
 		app/include/Texture.h
 		app/include/TextureMgr.h
-		app/include/TouchData.h)
+		app/include/TouchData.h
+		app/include/OneEuroFilter.h)
 
 source_group("Header Files" FILES ${HEADERFILES})
 

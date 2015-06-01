@@ -112,7 +112,7 @@ void TuioHCI::update(const std::vector<MinVR::EventRef> &events){
 				it->second->setCurrRoomPos(roomCoord);
 
 				
-				std::cout << "MOVE ";
+				//std::cout << "MOVE ";
 
 				if (registeredTouchData.size() == 1) {//only one finger on screen
 					glm::dmat4 transMat(glm::translate(glm::dmat4(1.0f), -1.0*it->second->roomPositionDifference()));
@@ -129,9 +129,9 @@ void TuioHCI::update(const std::vector<MinVR::EventRef> &events){
 					for (iter = registeredTouchData.begin(); iter != registeredTouchData.end(); iter++) { // finding other touch point.
 						if (id != iter->second->getCurrentEvent()->getId()) { // found other touch point
 							centOfRot = iter->second->getCurrRoomPos();
-							std::cout<<"center of rotation found"<<std::endl;
+							/*std::cout<<"center of rotation found"<<std::endl;
 							std::cout<<"it id"<<id<<std::endl;
-							std::cout<<"iter id"<<iter->second->getCurrentEvent()->getId()<<std::endl;
+							std::cout<<"iter id"<<iter->second->getCurrentEvent()->getId()<<std::endl;*/
 							break;
 						}
 					}
@@ -161,7 +161,7 @@ void TuioHCI::update(const std::vector<MinVR::EventRef> &events){
 						glm::dmat4(1.0f),
 						scaleBy); 
 
-					std::cout<<"rotMat"<<glm::to_string(scaleMat)<<std::endl;
+					//std::cout<<"rotMat"<<glm::to_string(scaleMat)<<std::endl;
 					
 					glm::dmat4 newTransform = cFrameMgr->getRoomToVirtualSpaceFrame() * transBack * scaleMat *rotMat * transMat;
 					cFrameMgr->setRoomToVirtualSpaceFrame(newTransform);
@@ -227,7 +227,7 @@ void TuioHCI::draw(int threadId, MinVR::AbstractCameraRef camera, MinVR::WindowR
 		camera->setObjectToWorldMatrix(glm::translate(glm::dmat4(1.0f), roomCoord));
 		shader->setUniform("model_mat", offAxisCam->getLastAppliedModelMatrix());
 		// draw triangle
-		glDrawArrays(GL_TRIANGLES, 0, 3);
+		//glDrawArrays(GL_TRIANGLES, 0, 3);
 		
 	}
 }

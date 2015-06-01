@@ -8,6 +8,7 @@
 #include "MVRCore/Event.H"
 #include "MVRCore/AbstractCamera.h" 
 
+
 typedef std::shared_ptr<class AbstractHCI> AbstractHCIRef;
 
 class AbstractHCI
@@ -20,6 +21,7 @@ public:
 	virtual void initializeContextSpecificVars(int threadId,MinVR::WindowRef window) = 0;
 	virtual void initVBO(int threadId) = 0;
 	virtual void initGL() = 0;
+
 protected:
 	CFrameMgrRef cFrameMgr;
 	
