@@ -1,12 +1,12 @@
 #include "app/include/TuioHCI.h"
-#include <boost/algorithm/string/predicate.hpp>
-#include "app/include/GLSLProgram.h"
-#include "app/include/GPUMesh.h"
+
+const double THRESH = 0.00134;
 
 
 TuioHCI::TuioHCI(MinVR::AbstractCameraRef camera, CFrameMgrRef cFrameMgr, TextureMgrRef texMan) : AbstractHCI(cFrameMgr){
 	offAxisCamera = std::dynamic_pointer_cast<MinVR::CameraOffAxis>(camera);
 	this->texMan = texMan;
+	startTime = getCurrentTime();
 	
 }
 
@@ -14,15 +14,14 @@ TuioHCI::~TuioHCI(){
 
 }
 
-void TuioHCI::initializeContextSpecificVars(int threadId,
-		MinVR::WindowRef window) {
-	
+void TuioHCI::initializeContextSpecificVars(int threadId,MinVR::WindowRef window) {
+
 	initVBO(threadId);
 	std::cout<<"TuioHCIinit is been called"<<std::endl;
 
 	GLenum err;
 	if((err = glGetError()) != GL_NO_ERROR) {
-		std::cout << "openGL ERROR in initializeContextSpecificVars: "<<err<<std::endl;
+		std::cout << "openGL ERROR in initializeContextSpecificVars: "<< err << std::endl;
 	}
 }
 
@@ -71,7 +70,13 @@ void TuioHCI::initGL() {
 // this function produces a map, which we can later query to draw things.
 void TuioHCI::update(const std::vector<MinVR::EventRef> &events){
 
+	MinVR::TimeStamp timestamp;
+
+
 	for(int i=0; i < events.size(); i++) {
+		timestamp = events[i]->getTimestamp();
+		
+		
 		std::string name = events[i]->getName();
 		int id = events[i]->getId();
 
@@ -91,14 +96,11 @@ void TuioHCI::update(const std::vector<MinVR::EventRef> &events){
 		} else if (boost::algorithm::starts_with(name, "TUIO_Cursor_down")) {
 			// always add a new one on DOWN
 			glm::dvec3 roomCoord = convertScreenToRoomCoordinates(events[i]->get2DData());
-			TouchDataRef datum(new TouchData(events[i], roomCoord));
 
+			TouchDataRef datum(new TouchData(events[i], roomCoord));
 			registeredTouchData.insert(std::pair<int, TouchDataRef>(id, datum));
-			//cubeMesh->updateVertexData(int startByteOffset, int vertexOffset, const std::vector<Vertex> &data);
 
 			std::cout << "DOWN" <<std::endl;
-			//glm::dvec2 data = events[i]->get2DData();
-			//std::cout << data.x << ", " << data.y /*<< ", " << data.z << ", " << data.w  */<< std::endl;
 
 		} else if (boost::algorithm::starts_with(name, "TUIO_CursorMove")) {
 			// update the map with the move event
@@ -107,12 +109,13 @@ void TuioHCI::update(const std::vector<MinVR::EventRef> &events){
 			std::map<int, TouchDataRef>::iterator it = registeredTouchData.find(id); 
 
 			if (it != registeredTouchData.end()) { // if id is found
+				glm::dvec2 screenCoord (events[i]->get4DData());
 				glm::dvec3 roomCoord = convertScreenToRoomCoordinates(glm::dvec2(events[i]->get4DData()));
+
+				// update map
 				it->second->setCurrentEvent(events[i]);
 				it->second->setCurrRoomPos(roomCoord);
 
-				
-				//std::cout << "MOVE ";
 
 				if (registeredTouchData.size() == 1) {//only one finger on screen
 					glm::dmat4 transMat(glm::translate(glm::dmat4(1.0f), -1.0*it->second->roomPositionDifference()));
@@ -122,47 +125,55 @@ void TuioHCI::update(const std::vector<MinVR::EventRef> &events){
 					
 				} else if (registeredTouchData.size() == 2) {
 					
-					// translate to origin, the other touch point
+					// translate to origin using coord of the other touch point
 					glm::dvec3 centOfRot;
 					std::map<int, TouchDataRef>::iterator iter;
 
 					for (iter = registeredTouchData.begin(); iter != registeredTouchData.end(); iter++) { // finding other touch point.
 						if (id != iter->second->getCurrentEvent()->getId()) { // found other touch point
 							centOfRot = iter->second->getCurrRoomPos();
-							/*std::cout<<"center of rotation found"<<std::endl;
-							std::cout<<"it id"<<id<<std::endl;
-							std::cout<<"iter id"<<iter->second->getCurrentEvent()->getId()<<std::endl;*/
 							break;
 						}
 					}
+
+					// translate to origin
 					glm::dmat4 transMat(glm::translate(glm::dmat4(1.0), -1.0*centOfRot));
 
-					// rotate
-					glm::dvec3 prevDiffBetweenTwoPoints = glm::normalize(it->second->getPrevRoomPos() - centOfRot);
-					glm::dvec3 currDiffBetweenTwoPoints = glm::normalize(roomCoord - centOfRot);
-					glm::dvec3 crossProd = glm::cross(prevDiffBetweenTwoPoints,currDiffBetweenTwoPoints);
-					double theta = glm::dot(prevDiffBetweenTwoPoints,currDiffBetweenTwoPoints);
-					if(crossProd.y < 0){
-						theta = -theta;
+
+				
+					glm::dmat4 rotMat = glm::dmat4(1.0);
+					glm::dmat4 scaleMat = glm::dmat4(1.0);
+					if(glm::abs(glm::length(it->second->getPrevRoomPos()) - glm::length(it->second->getCurrRoomPos())) > THRESH){
+
+						std::cout<<"using the filtered pos in rotate and scale"<<std::endl;
+						// rotate
+						glm::dvec3 prevDiffBetweenTwoPoints = glm::normalize(it->second->getPrevRoomPos() - centOfRot);
+						glm::dvec3 currDiffBetweenTwoPoints = glm::normalize(roomCoord - centOfRot);
+						glm::dvec3 crossProd = glm::cross(prevDiffBetweenTwoPoints,currDiffBetweenTwoPoints);
+						double theta = glm::dot(prevDiffBetweenTwoPoints,currDiffBetweenTwoPoints);
+						if(crossProd.y < 0){
+							theta = -theta;
+						}
+						rotMat = glm::rotate(glm::dmat4(1.0) , -theta, glm::dvec3(0.0, 1.0, 0.0));
+
+						// scale
+						double prevDistanceDiff = glm::length(it->second->getPrevRoomPos() - centOfRot);
+						double currDistanceDiff = glm::length(roomCoord - centOfRot);
+
+						std::cout << prevDistanceDiff/currDistanceDiff << std::endl;
+
+						glm::dvec3 scaleBy = glm::dvec3(prevDistanceDiff/currDistanceDiff);
+						scaleMat = glm::scale(
+							glm::dmat4(1.0),
+							scaleBy); 
+
 					}
-					glm::dmat4 rotMat = glm::rotate(glm::dmat4(1.0) , -theta, glm::dvec3(0,1,0));
+
+					
+					// translate back
 					glm::dmat4 transBack(glm::translate(glm::dmat4(1.0), centOfRot));
-					
-					//std::cout<<"rotMat"<<glm::to_string(rotMat)<<std::endl;
-					
 
-					// scale
-
-					// multiply by 0.5 because the scale will be done with both hands
-					double prevDistanceDiff = glm::length(it->second->getPrevRoomPos() - centOfRot);
-					double currDistanceDiff = glm::length(roomCoord - centOfRot);
-					glm::dvec3 scaleBy = glm::dvec3(prevDistanceDiff/currDistanceDiff);
-					glm::dmat4 scaleMat = glm::scale(
-						glm::dmat4(1.0f),
-						scaleBy); 
-
-					//std::cout<<"rotMat"<<glm::to_string(scaleMat)<<std::endl;
-					
+					// combine transforms
 					glm::dmat4 newTransform = cFrameMgr->getRoomToVirtualSpaceFrame() * transBack * scaleMat *rotMat * transMat;
 					cFrameMgr->setRoomToVirtualSpaceFrame(newTransform);
 					

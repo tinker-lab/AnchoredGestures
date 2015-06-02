@@ -1,6 +1,5 @@
 #include <app/include/App.h>
-#include <glm/gtc/matrix_inverse.hpp>
-#include <MVRCore/CameraOffAxis.H>
+
 
 
 using namespace MinVR;

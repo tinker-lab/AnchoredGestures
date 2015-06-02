@@ -17,7 +17,11 @@
 #include "app/include/TextureMgr.h"
 #include "app/include/TouchData.h"
 #include <glm/gtx/string_cast.hpp>
-#include "app/include/OneEuroFilter.h"
+#include <boost/algorithm/string/predicate.hpp>
+#include "app/include/GLSLProgram.h"
+#include "app/include/GPUMesh.h"
+#include <MVRCore/Time.h>
+
 
 class TuioHCI : public AbstractHCI {
 
@@ -39,8 +43,7 @@ private:
 	std::shared_ptr<GLSLProgram> shader;
 	std::map<int, GLuint> _vboId;
 	TextureMgrRef texMan; 
-	OneEuroFilter xFilter;
-	OneEuroFilter yFilter;
+	MinVR::TimeStamp startTime;
 
 
 };

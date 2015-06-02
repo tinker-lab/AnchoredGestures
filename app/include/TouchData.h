@@ -4,6 +4,9 @@
 #include "MVRCore/Event.H"
 #include <glm/glm.hpp>
 #include <memory>
+#include "OneEuroFilter.h"
+#include <GLFW/glfw3.h>
+#include <glm/gtx/string_cast.hpp>
 
 typedef std::shared_ptr<class TouchData> TouchDataRef;
 
@@ -31,7 +34,8 @@ private:
 	// so we can use the cframe to transform
 	glm::dvec3 currRoomPos;
 	glm::dvec3 prevRoomPos;
-
+	std::shared_ptr<OneEuroFilter> xFilter;
+	std::shared_ptr<OneEuroFilter> zFilter;
 };
 
 #endif /* TOUCHDATA_H_ */

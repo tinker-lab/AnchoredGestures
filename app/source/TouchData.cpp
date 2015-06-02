@@ -1,8 +1,23 @@
 #include "app/include/TouchData.h"
 
 TouchData::TouchData(MinVR::EventRef event, glm::dvec3 currRoomPos) {
-	prevEvent = event; // should I do this?
+	prevEvent = event;
 	currEvent = event;
+
+	double freq = 60.0;
+	double mincutoff = 50.0;
+	double beta = 3.0;
+	double dcutoff = 1.2;
+
+	xFilter.reset(new OneEuroFilter(freq, mincutoff, beta, dcutoff));
+	zFilter.reset(new OneEuroFilter(freq, mincutoff, beta, dcutoff));
+
+	double timeForFilter = glfwGetTime();
+
+	double xClean = xFilter->filter(currRoomPos.x, timeForFilter);
+	double zClean = zFilter->filter(currRoomPos.z, timeForFilter);
+
+	currRoomPos = glm::dvec3(xClean, currRoomPos.y, zClean);
 
 	this->currRoomPos = currRoomPos;
 	prevRoomPos = currRoomPos;
@@ -28,7 +43,16 @@ MinVR::EventRef TouchData::getPreviousEvent() {
 
 void TouchData::setCurrRoomPos(glm::dvec3 pos) {
 	prevRoomPos = currRoomPos;
+
+	double timeForFilter = glfwGetTime();
+
+	std::cout << glm::to_string(pos) << std::endl;
+	double xClean = xFilter->filter(pos.x, timeForFilter);
+	double zClean = zFilter->filter(pos.z, timeForFilter);
+
+	pos = glm::dvec3(xClean, currRoomPos.y, zClean);
 	currRoomPos = pos;
+	std::cout << glm::to_string(pos) << std::endl;
 }
 
 glm::dvec3 TouchData::getCurrRoomPos() {

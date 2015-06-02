@@ -21,6 +21,8 @@
 #include "app/include/AbstractHCI.h"
 #include "app/include/TextureMgr.h"
 #include "app/include/TouchData.h"
+#include <glm/gtc/matrix_inverse.hpp>
+#include <MVRCore/CameraOffAxis.H>
 
 
 class App : public MinVR::AbstractMVRApp {
