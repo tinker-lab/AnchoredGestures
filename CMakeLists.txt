@@ -33,7 +33,8 @@ set (SOURCEFILES
 		app/source/CFrameMgr.cpp
 		app/source/Texture.cpp
 		app/source/TextureMgr.cpp
-		app/source/TouchData.cpp)
+		app/source/TouchData.cpp
+		app/source/TestHCI.cpp)
 set (HEADERFILES 
 		app/include/App.h
 		app/include/AnchoredHCI.h
@@ -45,7 +46,8 @@ set (HEADERFILES
 		app/include/Texture.h
 		app/include/TextureMgr.h
 		app/include/TouchData.h
-		app/include/OneEuroFilter.h)
+		app/include/OneEuroFilter.h
+		app/include/TestHCI.h)
 
 source_group("Header Files" FILES ${HEADERFILES})
 

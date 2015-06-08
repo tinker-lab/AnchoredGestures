@@ -20,6 +20,7 @@ void App::doUserInputAndPreDrawComputation(
 		if (events[i]->getName() == "kbd_ESC_down") {
 			exit(0);
 		}
+
 	}
 	
 	currentHCI->update(events);
@@ -32,13 +33,14 @@ void App::initializeContextSpecificVars(int threadId,
 	texMan->loadTexturesFromConfigVal(threadId, "LoadTextures");
 
 	cFrameMgr.reset(new CFrameMgr());
-	currentHCI.reset(new TuioHCI(window->getCamera(0), cFrameMgr,texMan));
+	//currentHCI.reset(new TuioHCI(window->getCamera(0), cFrameMgr,texMan));
+	currentHCI.reset(new TestHCI(window->getCamera(0), cFrameMgr,texMan));
 
 	initGL();
 	initVBO(threadId);
 	initLights();
 
-	glClearColor(0.f, 0.5f, 0.f, 0.f);
+	//glClearColor(0.f, 0.5f, 0.f, 0.f);
 
 	
 

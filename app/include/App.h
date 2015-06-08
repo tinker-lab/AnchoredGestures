@@ -18,6 +18,7 @@
 #include "app/include/GPUMesh.h"
 #include "app/include/GLSLProgram.h"
 #include "app/include/TuioHCI.h"
+#include "app/include/TestHCI.h"
 #include "app/include/AbstractHCI.h"
 #include "app/include/TextureMgr.h"
 #include "app/include/TouchData.h"

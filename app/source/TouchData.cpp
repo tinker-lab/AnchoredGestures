@@ -46,13 +46,13 @@ void TouchData::setCurrRoomPos(glm::dvec3 pos) {
 
 	double timeForFilter = glfwGetTime();
 
-	std::cout << glm::to_string(pos) << std::endl;
+	//std::cout << glm::to_string(pos) << std::endl;
 	double xClean = xFilter->filter(pos.x, timeForFilter);
 	double zClean = zFilter->filter(pos.z, timeForFilter);
 
 	pos = glm::dvec3(xClean, currRoomPos.y, zClean);
 	currRoomPos = pos;
-	std::cout << glm::to_string(pos) << std::endl;
+	//std::cout << glm::to_string(pos) << std::endl;
 }
 
 glm::dvec3 TouchData::getCurrRoomPos() {
