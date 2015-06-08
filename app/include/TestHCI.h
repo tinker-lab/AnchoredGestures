@@ -34,6 +34,9 @@ public:
 	void initializeContextSpecificVars(int threadId,MinVR::WindowRef window);
 	void TestHCI::initVBO(int threadId);
 	void initGL() ;
+
+	void closestTouchPair(const std::vector<MinVR::EventRef> &events, glm::dvec2 &pos1, glm::dvec2 &pos2, double &minDistance);
+
 	
 
 private:
@@ -44,6 +47,10 @@ private:
 	std::map<int, GLuint> _vboId;
 	TextureMgrRef texMan; 
 	MinVR::TimeStamp startTime;
+	MinVR::EventRef hand1;
+	MinVR::EventRef hand2;
+	glm::dvec3 prevHandPos;
+	glm::dvec3 currHandPos;
 
 
 };

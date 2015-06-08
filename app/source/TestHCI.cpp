@@ -18,6 +18,7 @@ void TestHCI::initializeContextSpecificVars(int threadId,MinVR::WindowRef window
 
 	initVBO(threadId);
 	std::cout<<"TuioHCIinit is been called"<<std::endl;
+	prevHandPos = glm::dvec3(0.0, -1.0, 0.0);
 
 	GLenum err;
 	if((err = glGetError()) != GL_NO_ERROR) {
@@ -70,17 +71,31 @@ void TestHCI::initGL() {
 // this function produces a map, which we can later query to draw things.
 void TestHCI::update(const std::vector<MinVR::EventRef> &events){
 
+
+	double minDistance = DBL_MAX; //later to be pass into closestTouchPair function
+
 	MinVR::TimeStamp timestamp;
 
-
 	for(int i=0; i < events.size(); i++) {
+
+		glm::dvec2 touchCentre;
 		timestamp = events[i]->getTimestamp();
-		
-		
 		std::string name = events[i]->getName();
 		int id = events[i]->getId();
 
-		
+		if (name == "Hand_Tracker1") {
+			hand1 = events[i];
+		}
+
+		if (name == "Hand_Tracker2") {
+			hand2 = events[i];
+		}
+
+		if (registeredTouchData.size() > 1) {
+			glm::dvec2 xPos;
+			glm::dvec2 yPos;		
+			closestTouchPair(events,xPos,yPos,minDistance);
+		}
 
 		if (boost::algorithm::starts_with(name, "TUIO_Cursor_up")) {
 			// delete the cursor down associated with this up event
@@ -108,7 +123,7 @@ void TestHCI::update(const std::vector<MinVR::EventRef> &events){
 
 			std::map<int, TouchDataRef>::iterator it = registeredTouchData.find(id); 
 
-			std::cout << "Move " << events[i]->getId() <<std::endl;
+			//std::cout << "Move " << events[i]->getId() <<std::endl;
 
 			if (it != registeredTouchData.end()) { // if id is found
 				glm::dvec2 screenCoord (events[i]->get4DData());
@@ -184,19 +199,82 @@ void TestHCI::update(const std::vector<MinVR::EventRef> &events){
 
 			}
 
-		} else if (name == "Hand_Tracker") {
-			/*std::cout << "Hand event: " << name << std::endl;
-			std::cout << "Hand pos: " << glm::to_string(events[i]->getCoordinateFrameData()[3]) << std::endl;*/
+		} // end of TUIO if/else-if block
+
+		//only enter one time to init prevHandPos
+		if (prevHandPos.y == -1.0){
+			glm::dvec3 currHandPos (events[i]->getCoordinateFrameData()[3]);
+			prevHandPos = currHandPos;
+		}
+
+		if(minDistance < 0.05 /*some arb value*/){
+
+			prevHandPos = currHandPos;
+			currHandPos = glm::dvec3(events[i]->getCoordinateFrameData()[3]);
+
+			glm::dvec3 prevHandToTouch;
+
+			//calculate the current handToTouch vector
+			glm::dvec3 roomTouchCentre = convertScreenToRoomCoordinates(touchCentre);
+			glm::dvec3 currHandToTouch = roomTouchCentre - currHandPos;
+			glm::dvec3 prevHandToTouch = roomTouchCentre - prevHandPos;
+
+			double alpha = glm::dot(currHandToTouch,prevHandToTouch); // angle between both vectors
+
+			// get cross prod
+			glm::dvec3 cross = glm::cross(currHandToTouch, prevHandToTouch); 
+
+			// project cross prod onto the screen, get a length
+			double lengthOfProjection = glm::dot(cross, glm::normalize(glm::dvec3(cross.x, 0.0, cross.z))); 
+
+			// projected cross prod 
+			glm::dvec3 projectedCrossProd = lengthOfProjection * glm::normalize(cross); 
+
+			// modified angle that we rotate with
+			alpha = alpha * lengthOfProjection;
+
+			// make a matrix transform, one for x rotation, one for z
+			// we're rotating around projectedCrossProd
+
+			glm::dmat4 XZRotMat = glm::rotate(glm::dmat4(1.0), -alpha, projectedCrossProd);
 
 
+			// put it into the matrix stack			
+			cFrameMgr->setRoomToVirtualSpaceFrame(cFrameMgr->getRoomToVirtualSpaceFrame() * XZRotMat);
+			
+		}
+		
+			
 
-		} // end of event determination
+
+		 // end of event determination
 			
 	}
 
 }
 
-
+void TestHCI::closestTouchPair(const std::vector<MinVR::EventRef> &events, glm::dvec2 &pos1, glm::dvec2 &pos2, double &minDistance) {
+	for(int x=0; x < events.size(); x++){
+		if(boost::algorithm::starts_with(events[x]->getName(), "TUIO_Cursor_down")){
+			 pos1 = events[x]->get2DData();
+		}
+		else{
+			 pos1 = glm::dvec2(events[x]->get4DData());
+		}
+		for(int y=0; y < events.size(); y++){
+			if(boost::algorithm::starts_with(events[y]->getName(), "TUIO_Cursor_down")){
+				pos2= events[y]->get2DData();
+			}
+			else{
+				pos2 = glm::dvec2(events[y]->get4DData());
+			}
+			if(minDistance > glm::abs(glm::length(pos1-pos2))){
+				minDistance = glm::abs(glm::length(pos1-pos2));
+	
+			}
+		}
+	}
+}
 
 void TestHCI::draw(int threadId, MinVR::AbstractCameraRef camera, MinVR::WindowRef window){
 
