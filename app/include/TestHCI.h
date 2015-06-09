@@ -21,6 +21,7 @@
 #include "app/include/GLSLProgram.h"
 #include "app/include/GPUMesh.h"
 #include <MVRCore/Time.h>
+#include <iterator>
 
 
 class TestHCI : public AbstractHCI {
@@ -35,7 +36,7 @@ public:
 	void TestHCI::initVBO(int threadId);
 	void initGL() ;
 
-	void closestTouchPair(const std::vector<MinVR::EventRef> &events, glm::dvec2 &pos1, glm::dvec2 &pos2, double &minDistance);
+	void closestTouchPair(std::map<int, TouchDataRef> thisRegisteredTouchData, glm::dvec3 &pos1, glm::dvec3 &pos2, double &minDistance);
 
 	
 
