@@ -52,7 +52,14 @@ private:
 	MinVR::EventRef hand2;
 	glm::dvec3 prevHandPos;
 	glm::dvec3 currHandPos;
+	bool xzRotFlag;
+	bool initRoomPos;
+	glm::dvec3 initRoomTouchCentre;
 
+
+	// for debugging
+	glm::dvec3 tCtr;
+	glm::dvec3 axis;
 
 };
 
