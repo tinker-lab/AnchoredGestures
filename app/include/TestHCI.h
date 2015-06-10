@@ -37,6 +37,7 @@ public:
 	void initGL() ;
 
 	void closestTouchPair(std::map<int, TouchDataRef> thisRegisteredTouchData, glm::dvec3 &pos1, glm::dvec3 &pos2, double &minDistance);
+	void updateHandPos(const std::vector<MinVR::EventRef>& events); 
 
 	
 
@@ -55,11 +56,6 @@ private:
 	bool xzRotFlag;
 	bool initRoomPos;
 	glm::dvec3 initRoomTouchCentre;
-
-
-	// for debugging
-	glm::dvec3 tCtr;
-	glm::dvec3 axis;
 
 };
 

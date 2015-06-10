@@ -132,13 +132,13 @@ void TestHCI::update(const std::vector<MinVR::EventRef> &events){
 				it->second->setCurrRoomPos(roomCoord);
 
 
-				if (registeredTouchData.size() == 10) {//only one finger on screen
+				if (registeredTouchData.size() == 1 && !xzRotFlag) {//only one finger on screen
 					glm::dmat4 transMat(glm::translate(glm::dmat4(1.0f), -1.0*it->second->roomPositionDifference()));
 					// negate the translation so this is actually virtual to room space
 					glm::dmat4 newTransform = cFrameMgr->getRoomToVirtualSpaceFrame()*transMat;
 					cFrameMgr->setRoomToVirtualSpaceFrame(newTransform);
 					
-				} else if (registeredTouchData.size() == 20) {
+				} else if (registeredTouchData.size() == 2 && !xzRotFlag) {
 					
 					// translate to origin using coord of the other touch point
 					glm::dvec3 centOfRot;
@@ -163,7 +163,7 @@ void TestHCI::update(const std::vector<MinVR::EventRef> &events){
 						std::cout<<"using the filtered pos in rotate and scale"<<std::endl;
 						// rotate
 						glm::dvec3 prevDiffBetweenTwoPoints = glm::normalize(it->second->getPrevRoomPos() - centOfRot);
-						glm::dvec3 currDiffBetweenTwoPoints = glm::normalize(roomCoord - centOfRot);
+						glm::dvec3 currDiffBetweenTwoPoints = glm::normalize(roomCoord - centOfRot); // throws error sometimes as 0 vector
 						glm::dvec3 crossProd = glm::cross(prevDiffBetweenTwoPoints,currDiffBetweenTwoPoints);
 						double theta = glm::dot(prevDiffBetweenTwoPoints,currDiffBetweenTwoPoints);
 						if(crossProd.y < 0){
@@ -229,10 +229,10 @@ void TestHCI::update(const std::vector<MinVR::EventRef> &events){
 				//std::cout<< "CurHandPos " << glm::to_string(currHandPos) << std::endl;
 				//std::cout<< "PrevHandPos " << glm::to_string(prevHandPos) << std::endl;
 			} 
+			
 
 
-
-			if (minDistance < 0.1 /*some arb value*/ && currHandPos != prevHandPos) {
+			if (minDistance < 0.1 && currHandPos != prevHandPos) {
 				
 				xzRotFlag = true;
 				std::cout << "Inside XZRot Mode" << std::endl;
@@ -292,10 +292,10 @@ void TestHCI::update(const std::vector<MinVR::EventRef> &events){
 				// put it into the matrix stack			
 				cFrameMgr->setRoomToVirtualSpaceFrame(cFrameMgr->getRoomToVirtualSpaceFrame() * XZRotMat);
 
-				/*glBegin(GL_LINES);
-					glVertex3f(roomTouchCentre.x, roomTouchCentre.y, roomTouchCentre.z);
-					glVertex3f(roomTouchCentre.x + projectedCrossProd.x, roomTouchCentre.y + projectedCrossProd.y, roomTouchCentre.z + projectedCrossProd.z);
-				glEnd();*/
+				//glBegin(GL_LINES);
+				//	glVertex3f(roomTouchCentre.x, roomTouchCentre.y, roomTouchCentre.z);
+				//	glVertex3f(roomTouchCentre.x + projectedCrossProd.x, roomTouchCentre.y + projectedCrossProd.y, roomTouchCentre.z + projectedCrossProd.z);
+				//glEnd();
 
 				//checking to see if there is at least 
 				
@@ -316,7 +316,7 @@ void TestHCI::update(const std::vector<MinVR::EventRef> &events){
 						//std::cout<<"iter->second->getCurrRoomPos().z > lowLeft.z:  "<<(iter->second->getCurrRoomPos().z > lowLeft.z)<<std::endl; = true
 						
 
-
+						// not exactly sure why roomPos > z 
 						if(!(iter->second->getCurrRoomPos().x > upRight.x || iter->second->getCurrRoomPos().z > upRight.z ||iter->second->getCurrRoomPos().x < lowLeft.x ||iter->second->getCurrRoomPos().z < lowLeft.z)){ //you are in the box
 							
 							std::cout << "fingers in bound so STILL IN XZRot Mode" << std::endl;
@@ -348,6 +348,7 @@ void TestHCI::update(const std::vector<MinVR::EventRef> &events){
 			
 	}
 
+	//updateHandPos(events);
 }
 
 void TestHCI::closestTouchPair(std::map<int, TouchDataRef> thisRegisteredTouchData, glm::dvec3 &pos1, glm::dvec3 &pos2, double &minDistance) {
@@ -418,4 +419,185 @@ glm::dvec3 TestHCI::convertScreenToRoomCoordinates(glm::dvec2 screenCoords) {
 	glm::dvec3 xVec = offAxisCamera->getTopRight() - offAxisCamera->getTopLeft();
 	glm::dvec3 yVec = offAxisCamera->getBottomRight() - offAxisCamera->getTopRight();
 	return offAxisCamera->getTopLeft() + (screenCoords.x * xVec) + (screenCoords.y * yVec);
+}
+
+void TestHCI::updateHandPos(const std::vector<MinVR::EventRef>& events) {
+	//later to be pass into closestTouchPair function
+	glm::dvec3 pos1;
+	glm::dvec3 pos2;	
+	double minDistance = DBL_MAX;
+	glm::dvec3 initroomTouchCentre;
+
+	// find closest pair of TouchPoints
+	if (registeredTouchData.size() > 1) {
+		closestTouchPair(registeredTouchData , pos1, pos2, minDistance);
+
+			
+	}
+
+	// Get the current head position from motive
+	glm::dmat4 headTracker;
+	bool foundHead = false;
+	int i = (int)events.size()-1;
+	while ((i >= 0) && (events[i]->getName() != "Head_Tracker")) {
+		i--;
+	}
+	if (i >= 0) {
+		headTracker = events[i]->getCoordinateFrameData();
+		foundHead = true;
+	}
+	glm::dvec3 headPos(glm::column(headTracker, 3));
+
+	if (foundHead) {
+		// Find the kinect skeleton id who's head is closest to the motive head
+		std::string closest = "";
+		double closestDist = 99999999999;
+		for(int i=0; i < events.size(); i++) {
+			std::string name = events[i]->getName();
+			if (MinVR::startsWith(name, "SpineBase")) {
+				std::cout<<"FOUND A SKELETON"<<std::endl;
+				glm::dvec3 kinectHead = glm::dvec3(glm::column(events[i]->getCoordinateFrameData(),3));
+				double distance = glm::length(kinectHead - headPos);
+				if (distance < closestDist) {
+					closest = name.substr(9, 1);
+					closestDist = distance;
+				}
+			}
+		}
+		if (closest != "") {
+			// Now find the hand positions that coorespond with that skeleton
+			for(int i=0; i < events.size(); i++) {
+				std::string name = events[i]->getName();
+		
+				if (name == "HandRight"+closest) {
+					std::cout<<name<<std::endl;
+					if (prevHandPos.y == -1.0){
+						glm::dvec3 currHandPos (events[i]->getCoordinateFrameData()[3]);
+						prevHandPos = currHandPos;
+						initRoomPos = true;
+					} else {
+						prevHandPos = currHandPos;
+						currHandPos = glm::dvec3(events[i]->getCoordinateFrameData()[3]);
+
+					} 
+
+					if (minDistance < 0.1 /*some arb value*/ && currHandPos != prevHandPos) {
+				
+						xzRotFlag = true;
+						std::cout << "Inside XZRot Mode" << std::endl;
+			
+					}
+
+				
+					if (xzRotFlag) {
+
+			
+						if(initRoomPos){
+					
+							initRoomTouchCentre = 0.5*(pos1 + pos2);
+							initRoomPos = false;
+
+						}
+				
+				
+						glm::dvec3 prevHandToTouch;
+
+						//calculate the current handToTouch vector
+						glm::dvec3 roomTouchCentre = 0.5*(pos1 + pos2);
+						glm::dvec3 currHandToTouch = roomTouchCentre - currHandPos;
+						prevHandToTouch = roomTouchCentre - prevHandPos;
+
+						//set up the 2 vertices for a squre boundry for the gesture
+						glm::dvec3 upRight = glm::dvec3(initRoomTouchCentre.x+0.2, 0.0, initRoomTouchCentre.z+0.2);
+						glm::dvec3 lowLeft = glm::dvec3(initRoomTouchCentre.x-0.2, 0.0, initRoomTouchCentre.z-0.2);
+
+
+
+						double alpha = glm::dot(currHandToTouch,prevHandToTouch); // angle between both vectors
+
+						// get cross prod
+						glm::dvec3 cross = glm::cross(currHandToTouch, prevHandToTouch); 
+						glm::dvec3 normProjCross = glm::normalize(glm::dvec3(cross.x, 0.0, cross.z));
+
+
+						//std::cout << "Cross: " << glm::to_string(cross) << std::endl;
+
+						// project cross prod onto the screen, get a length
+						double lengthOfProjection = glm::dot(cross, normProjCross); 
+
+						// projected cross prod 
+						glm::dvec3 projectedCrossProd = lengthOfProjection * normProjCross; 
+
+						// modified angle that we rotate with
+						// 73.5 to make it more sensitive
+						alpha = 73.5 * alpha * lengthOfProjection;
+
+						// make a matrix transform, one for x rotation, one for z
+						// we're rotating around projectedCrossProd
+
+						glm::dmat4 XZRotMat = glm::rotate(glm::dmat4(1.0), alpha, normProjCross);
+
+
+						// put it into the matrix stack			
+						cFrameMgr->setRoomToVirtualSpaceFrame(cFrameMgr->getRoomToVirtualSpaceFrame() * XZRotMat);
+
+						/*glBegin(GL_LINES);
+							glVertex3f(roomTouchCentre.x, roomTouchCentre.y, roomTouchCentre.z);
+							glVertex3f(roomTouchCentre.x + projectedCrossProd.x, roomTouchCentre.y + projectedCrossProd.y, roomTouchCentre.z + projectedCrossProd.z);
+						glEnd();*/
+
+						//checking to see if there is at least 
+				
+
+						std::map<int, TouchDataRef>::iterator iter;
+						if(registeredTouchData.size() == 0){ //if no touch on screen then automatically exit the xzrot mode
+							xzRotFlag = false;
+							initRoomPos = true;
+							std::cout<<"no touchyyy so I quit"<<std::endl;
+						}
+						else{ //if there are touch(s) then check if the touch is in bound of the rectangle
+
+							for (iter = registeredTouchData.begin(); iter != registeredTouchData.end(); iter++) {
+						
+								//std::cout<<"iter->second->getCurrRoomPos().x > upRight.x:  "<<(iter->second->getCurrRoomPos().x > upRight.x) <<std::endl; = false
+								//std::cout<<" iter->second->getCurrRoomPos().z < upRight.z: "<<(iter->second->getCurrRoomPos().z < upRight.z)<<std::endl; = true
+								//std::cout<<"iter->second->getCurrRoomPos().x < lowLeft.x: "<<(iter->second->getCurrRoomPos().x < lowLeft.x )<<std::endl; =false
+								//std::cout<<"iter->second->getCurrRoomPos().z > lowLeft.z:  "<<(iter->second->getCurrRoomPos().z > lowLeft.z)<<std::endl; = true
+						
+
+								// not exactly sure why roomPos > z 
+								if(!(iter->second->getCurrRoomPos().x > upRight.x || iter->second->getCurrRoomPos().z > upRight.z ||iter->second->getCurrRoomPos().x < lowLeft.x ||iter->second->getCurrRoomPos().z < lowLeft.z)){ //you are in the box
+							
+									std::cout << "fingers in bound so STILL IN XZRot Mode" << std::endl;
+									break;
+							
+						
+								}
+								if(iter == std::prev(registeredTouchData.end(),1)){
+									xzRotFlag = false;
+									initRoomPos = true;
+									std::cout << "all fingers went out of bound so Out of XZRot Mode" << std::endl;
+								}
+							}
+					
+						}
+
+
+
+				
+
+
+
+
+			
+					}
+		
+
+				}
+				//else if (name == "HandLeft"+closest) {
+				//	//TODO do something with the new handpos
+				//}
+			}
+		}
+	}
 }
