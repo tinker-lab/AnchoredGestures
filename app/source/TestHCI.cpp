@@ -162,14 +162,31 @@ void TestHCI::update(const std::vector<MinVR::EventRef> &events){
 
 						std::cout<<"using the filtered pos in rotate and scale"<<std::endl;
 						// rotate
-						glm::dvec3 prevDiffBetweenTwoPoints = glm::normalize(it->second->getPrevRoomPos() - centOfRot);
-						glm::dvec3 currDiffBetweenTwoPoints = glm::normalize(roomCoord - centOfRot); // throws error sometimes as 0 vector
+
+						//// 0 vector guard
+						glm::dvec3 prevDiffBetweenTwoPoints;
+						if (glm::length(roomCoord - centOfRot) >= 0.0002) {
+							prevDiffBetweenTwoPoints = glm::normalize(it->second->getPrevRoomPos() - centOfRot);
+						} 
+							
+						//// 0 vector guard
+						glm::dvec3 currDiffBetweenTwoPoints;
+						if (glm::length(roomCoord - centOfRot) >= 0.0002) {
+							currDiffBetweenTwoPoints = glm::normalize(roomCoord - centOfRot);
+						} 
+							
+						
+						
+						// both distances are normalized
 						glm::dvec3 crossProd = glm::cross(prevDiffBetweenTwoPoints,currDiffBetweenTwoPoints);
-						double theta = glm::dot(prevDiffBetweenTwoPoints,currDiffBetweenTwoPoints);
+						double theta = glm::acos(glm::dot(prevDiffBetweenTwoPoints,currDiffBetweenTwoPoints));
 						if(crossProd.y < 0){
 							theta = -theta;
 						}
-						rotMat = glm::rotate(glm::dmat4(1.0) , -theta, glm::dvec3(0.0, 1.0, 0.0));
+
+						//std::cout << "Rotation Angle Theta: " << theta << std::endl;
+						// glm::rotate takes degrees! Madness.
+						rotMat = glm::rotate(glm::dmat4(1.0) , glm::degrees(-theta), glm::dvec3(0.0, 1.0, 0.0));
 
 						// scale
 						double prevDistanceDiff = glm::length(it->second->getPrevRoomPos() - centOfRot);
@@ -249,8 +266,8 @@ void TestHCI::update(const std::vector<MinVR::EventRef> &events){
 					initRoomPos = false;
 
 				}
-				
-				
+
+				glm::dvec3 centOfRot (0.0);
 				glm::dvec3 prevHandToTouch;
 
 				//calculate the current handToTouch vector
@@ -263,11 +280,49 @@ void TestHCI::update(const std::vector<MinVR::EventRef> &events){
 				glm::dvec3 lowLeft = glm::dvec3(initRoomTouchCentre.x-0.2, 0.0, initRoomTouchCentre.z-0.2);
 
 
+				// this if-else block for setting xzRotFlag,
+				// also for grabbing xzCentOfRot
+				if(registeredTouchData.size() == 0) { //if no touch on screen then automatically exit the xzrot mode
+					xzRotFlag = false;
+					initRoomPos = true;
+					std::cout<<"no touchyyy so I quit"<<std::endl;
+				}
+				else { //if there are touch(s) then check if the touch is in bound of the rectangle
 
-				double alpha = glm::dot(currHandToTouch,prevHandToTouch); // angle between both vectors
+					bool setxzRotFlag = true;
+					std::map<int, TouchDataRef>::iterator iter;
+					for (iter = registeredTouchData.begin(); iter != registeredTouchData.end(); iter++) {
+
+
+						// not exactly sure why roomPos. > upRight.z , I think it should be <. but that doesn't work
+						if(!(iter->second->getCurrRoomPos().x > upRight.x || iter->second->getCurrRoomPos().z > upRight.z ||iter->second->getCurrRoomPos().x < lowLeft.x ||iter->second->getCurrRoomPos().z < lowLeft.z)){ //you are in the box
+
+							std::cout << "fingers in bound so STILL IN XZRot Mode" << std::endl;
+							setxzRotFlag = false; 
+
+						} else { // touch point not in box, assume as center of rotation
+							centOfRot = iter->second->getCurrRoomPos();
+							std::cout << "Cent of Rot set" << std::endl;
+						}
+
+						// only tries to change the xzRotFlag at the end of the data in the map
+						if(iter == std::prev(registeredTouchData.end(),1) && setxzRotFlag){
+							xzRotFlag = false;
+							initRoomPos = true;
+							std::cout << "all fingers went out of bound so Out of XZRot Mode" << std::endl;
+						}
+					} // end for loop over registeredTouchData
+
+				} // end if/else block
+				
+				
+				
+
+
+				double alpha = glm::acos(glm::dot(currHandToTouch,prevHandToTouch)); // angle between both vectors
 
 				// get cross prod
-				glm::dvec3 cross = glm::cross(currHandToTouch, prevHandToTouch); 
+				glm::dvec3 cross = glm::cross(glm::normalize(currHandToTouch), glm::normalize(prevHandToTouch)); 
 				glm::dvec3 normProjCross = glm::normalize(glm::dvec3(cross.x, 0.0, cross.z));
 
 
@@ -281,58 +336,32 @@ void TestHCI::update(const std::vector<MinVR::EventRef> &events){
 
 				// modified angle that we rotate with
 				// 73.5 to make it more sensitive
-				alpha = 73.5 * alpha * lengthOfProjection;
+				alpha = alpha * lengthOfProjection;
 
 				// make a matrix transform, one for x rotation, one for z
 				// we're rotating around projectedCrossProd
 
-				glm::dmat4 XZRotMat = glm::rotate(glm::dmat4(1.0), alpha, normProjCross);
+				glm::dmat4 XZRotMat = glm::rotate(glm::dmat4(1.0), glm::degrees(alpha), normProjCross);
 
+				// have translations when we have a touch point not in the bounding box
+
+				// translate to origin
+				glm::dmat4 transMat(glm::translate(glm::dmat4(1.0), -1.0*centOfRot));
+				// translate back
+				glm::dmat4 transBack(glm::translate(glm::dmat4(1.0), centOfRot));	
 
 				// put it into the matrix stack			
-				cFrameMgr->setRoomToVirtualSpaceFrame(cFrameMgr->getRoomToVirtualSpaceFrame() * XZRotMat);
+				cFrameMgr->setRoomToVirtualSpaceFrame(cFrameMgr->getRoomToVirtualSpaceFrame() * transBack * XZRotMat * transMat);
 
 				//glBegin(GL_LINES);
 				//	glVertex3f(roomTouchCentre.x, roomTouchCentre.y, roomTouchCentre.z);
 				//	glVertex3f(roomTouchCentre.x + projectedCrossProd.x, roomTouchCentre.y + projectedCrossProd.y, roomTouchCentre.z + projectedCrossProd.z);
 				//glEnd();
-
-				//checking to see if there is at least 
 				
 
-				std::map<int, TouchDataRef>::iterator iter;
-				if(registeredTouchData.size() == 0){ //if no touch on screen then automatically exit the xzrot mode
-					xzRotFlag = false;
-					initRoomPos = true;
-					std::cout<<"no touchyyy so I quit"<<std::endl;
-				}
-				else{ //if there are touch(s) then check if the touch is in bound of the rectangle
+				
 
-					for (iter = registeredTouchData.begin(); iter != registeredTouchData.end(); iter++) {
-						
-						//std::cout<<"iter->second->getCurrRoomPos().x > upRight.x:  "<<(iter->second->getCurrRoomPos().x > upRight.x) <<std::endl; = false
-						//std::cout<<" iter->second->getCurrRoomPos().z < upRight.z: "<<(iter->second->getCurrRoomPos().z < upRight.z)<<std::endl; = true
-						//std::cout<<"iter->second->getCurrRoomPos().x < lowLeft.x: "<<(iter->second->getCurrRoomPos().x < lowLeft.x )<<std::endl; =false
-						//std::cout<<"iter->second->getCurrRoomPos().z > lowLeft.z:  "<<(iter->second->getCurrRoomPos().z > lowLeft.z)<<std::endl; = true
-						
-
-						// not exactly sure why roomPos > z 
-						if(!(iter->second->getCurrRoomPos().x > upRight.x || iter->second->getCurrRoomPos().z > upRight.z ||iter->second->getCurrRoomPos().x < lowLeft.x ||iter->second->getCurrRoomPos().z < lowLeft.z)){ //you are in the box
-							
-							std::cout << "fingers in bound so STILL IN XZRot Mode" << std::endl;
-							break;
-							
-						
-						}
-						if(iter == std::prev(registeredTouchData.end(),1)){
-							xzRotFlag = false;
-							initRoomPos = true;
-							std::cout << "all fingers went out of bound so Out of XZRot Mode" << std::endl;
-						}
-					}
-					
-				}
-
+				// GL_STREAM_DRAW
 
 
 				
@@ -559,13 +588,8 @@ void TestHCI::updateHandPos(const std::vector<MinVR::EventRef>& events) {
 
 							for (iter = registeredTouchData.begin(); iter != registeredTouchData.end(); iter++) {
 						
-								//std::cout<<"iter->second->getCurrRoomPos().x > upRight.x:  "<<(iter->second->getCurrRoomPos().x > upRight.x) <<std::endl; = false
-								//std::cout<<" iter->second->getCurrRoomPos().z < upRight.z: "<<(iter->second->getCurrRoomPos().z < upRight.z)<<std::endl; = true
-								//std::cout<<"iter->second->getCurrRoomPos().x < lowLeft.x: "<<(iter->second->getCurrRoomPos().x < lowLeft.x )<<std::endl; =false
-								//std::cout<<"iter->second->getCurrRoomPos().z > lowLeft.z:  "<<(iter->second->getCurrRoomPos().z > lowLeft.z)<<std::endl; = true
-						
+								// not exactly sure why roomPos.z > upRIght.z
 
-								// not exactly sure why roomPos > z 
 								if(!(iter->second->getCurrRoomPos().x > upRight.x || iter->second->getCurrRoomPos().z > upRight.z ||iter->second->getCurrRoomPos().x < lowLeft.x ||iter->second->getCurrRoomPos().z < lowLeft.z)){ //you are in the box
 							
 									std::cout << "fingers in bound so STILL IN XZRot Mode" << std::endl;

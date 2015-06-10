@@ -21,6 +21,10 @@ void App::doUserInputAndPreDrawComputation(
 			exit(0);
 		}
 
+		if (events[i]->getName() == "kbd_SPACE_down") {
+			cFrameMgr->setRoomToVirtualSpaceFrame(glm::dmat4(1.0)); 
+		}
+
 	}
 	
 	currentHCI->update(events);
