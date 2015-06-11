@@ -70,6 +70,8 @@ void TestHCI::initGL() {
 
 }
 
+//void TestHCI::testForCrazyInput
+
 // this function produces a map, which we can later query to draw things.
 void TestHCI::update(const std::vector<MinVR::EventRef> &events){
 
@@ -80,6 +82,8 @@ void TestHCI::update(const std::vector<MinVR::EventRef> &events){
 
 	MinVR::TimeStamp timestamp;
 
+	// for loop should set flags and do updates on data structures
+	// after for loop we look at set flags and apply the correct transforms?
 	for(int i=0; i < events.size(); i++) {
 
 		timestamp = events[i]->getTimestamp();
@@ -160,7 +164,7 @@ void TestHCI::update(const std::vector<MinVR::EventRef> &events){
 				
 					glm::dmat4 rotMat = glm::dmat4(1.0);
 					glm::dmat4 scaleMat = glm::dmat4(1.0);
-					if(glm::abs(glm::length(it->second->getPrevRoomPos()) - glm::length(it->second->getCurrRoomPos())) > THRESH){
+					if(glm::abs(glm::length(it->second->getPrevRoomPos()) - glm::length(it->second->getCurrRoomPos())) > THRESH) {
 
 						std::cout<<"using the filtered pos in rotate and scale"<<std::endl;
 						// rotate
@@ -390,10 +394,14 @@ void TestHCI::update(const std::vector<MinVR::EventRef> &events){
 			
 	} // end of event for loop
 
+	double prevHandsDist = glm::length(prevHandPos1 - prevHandPos2);
+	double currHandsDist = glm::length(currHandPos1 - currHandPos2);
+	std::cout << "curr - prev hand dist: " << glm::abs(currHandsDist - prevHandsDist) << std::endl;
+	
 	// weighted balloon gesture for Y translation
-	if (registeredTouchData.size() == 4) {
-		//xzRotFlag = false;
-		std::cout << "4 Touches" << std::endl;
+	if (registeredTouchData.size() > 3 && glm::abs(currHandsDist - prevHandsDist) < 0.045 && glm::abs(currHandsDist - prevHandsDist) > 0.0005) {
+		
+		//std::cout << "4 Touches" << std::endl;
 		
 		// to enumerate number of touches for each hand
 		numTouchForHand1 = 0;
@@ -503,6 +511,9 @@ glm::dvec3 TestHCI::convertScreenToRoomCoordinates(glm::dvec2 screenCoords) {
 	return offAxisCamera->getTopLeft() + (screenCoords.x * xVec) + (screenCoords.y * yVec);
 }
 
+
+/// KINECT STUFF
+//////////////////////////////////////////////////////////////////////////////////////////////////////////
 void TestHCI::updateHandPos(const std::vector<MinVR::EventRef>& events) {
 	//later to be pass into closestTouchPair function
 	glm::dvec3 pos1;
