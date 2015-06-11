@@ -49,10 +49,15 @@ private:
 	std::map<int, GLuint> _vboId;
 	TextureMgrRef texMan; 
 	MinVR::TimeStamp startTime;
+	double prevScaleBy;
 	MinVR::EventRef hand1;
 	MinVR::EventRef hand2;
-	glm::dvec3 prevHandPos;
-	glm::dvec3 currHandPos;
+	glm::dvec3 currHandPos1;
+	glm::dvec3 prevHandPos1;
+	glm::dvec3 currHandPos2;
+	glm::dvec3 prevHandPos2;
+	int numTouchForHand1;
+	int numTouchForHand2;
 	bool xzRotFlag;
 	bool initRoomPos;
 	glm::dvec3 initRoomTouchCentre;

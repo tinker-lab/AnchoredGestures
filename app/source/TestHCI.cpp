@@ -18,7 +18,8 @@ void TestHCI::initializeContextSpecificVars(int threadId,MinVR::WindowRef window
 
 	initVBO(threadId);
 	std::cout<<"TuioHCIinit is been called"<<std::endl;
-	prevHandPos = glm::dvec3(0.0, -1.0, 0.0);
+	prevHandPos1 = glm::dvec3(0.0, -1.0, 0.0);
+	prevHandPos2 = glm::dvec3(0.0, -1.0, 0.0);
 	xzRotFlag = false;
 
 	GLenum err;
@@ -93,7 +94,6 @@ void TestHCI::update(const std::vector<MinVR::EventRef> &events){
 			hand2 = events[i];
 		}
 
-		
 
 		if (boost::algorithm::starts_with(name, "TUIO_Cursor_up")) {
 			// delete the cursor down associated with this up event
@@ -136,7 +136,9 @@ void TestHCI::update(const std::vector<MinVR::EventRef> &events){
 					glm::dmat4 transMat(glm::translate(glm::dmat4(1.0f), -1.0*it->second->roomPositionDifference()));
 					// negate the translation so this is actually virtual to room space
 					glm::dmat4 newTransform = cFrameMgr->getRoomToVirtualSpaceFrame()*transMat;
+
 					cFrameMgr->setRoomToVirtualSpaceFrame(newTransform);
+					//std::cout<<"ERRRRRRRRMERRRRRGERRRRRD TRANNNNNNNNSLATTTTTING DAOGGGGGGG"<<std::endl;
 					
 				} else if (registeredTouchData.size() == 2 && !xzRotFlag) {
 					
@@ -165,13 +167,13 @@ void TestHCI::update(const std::vector<MinVR::EventRef> &events){
 
 						//// 0 vector guard
 						glm::dvec3 prevDiffBetweenTwoPoints;
-						if (glm::length(roomCoord - centOfRot) >= 0.0002) {
+						if (glm::length(roomCoord - centOfRot) > 0.0) {
 							prevDiffBetweenTwoPoints = glm::normalize(it->second->getPrevRoomPos() - centOfRot);
 						} 
 							
 						//// 0 vector guard
 						glm::dvec3 currDiffBetweenTwoPoints;
-						if (glm::length(roomCoord - centOfRot) >= 0.0002) {
+						if (glm::length(roomCoord - centOfRot) > 0.0) {
 							currDiffBetweenTwoPoints = glm::normalize(roomCoord - centOfRot);
 						} 
 							
@@ -194,6 +196,11 @@ void TestHCI::update(const std::vector<MinVR::EventRef> &events){
 
 						//std::cout << prevDistanceDiff/currDistanceDiff << std::endl;
 
+						// might move this into a more general function
+						// to test for crazy input
+						/*if (glm::dvec3(prevDistanceDiff/currDistanceDiff)) {
+						
+						}*/
 						glm::dvec3 scaleBy = glm::dvec3(prevDistanceDiff/currDistanceDiff);
 						scaleMat = glm::scale(
 							glm::dmat4(1.0),
@@ -226,30 +233,41 @@ void TestHCI::update(const std::vector<MinVR::EventRef> &events){
 			
 		}
 
-		
 
-		//only enter one time to init prevHandPos
+		if(name == "Hand_Tracker2"){
+			if (prevHandPos2.y == -1.0) {
+				glm::dvec3 currHandPos2 (events[i]->getCoordinateFrameData()[3]);
+				prevHandPos2 = currHandPos2;
+			} else {
+				prevHandPos2 = currHandPos2;
+				currHandPos2 = glm::dvec3(events[i]->getCoordinateFrameData()[3]);
+			} 
+		}
+
+
+		
 
 		if (name == "Hand_Tracker1") {
 
 			//std::cout << "Inside hand tracking event " << std::endl;
 
-			if (prevHandPos.y == -1.0){
-				glm::dvec3 currHandPos (events[i]->getCoordinateFrameData()[3]);
-				prevHandPos = currHandPos;
+			//only enter one time to init prevHandPos1
+			if (prevHandPos1.y == -1.0) {
+				glm::dvec3 currHandPos1 (events[i]->getCoordinateFrameData()[3]);
+				prevHandPos1 = currHandPos1;
 				initRoomPos = true;
 			} else {
-				prevHandPos = currHandPos;
-				currHandPos = glm::dvec3(events[i]->getCoordinateFrameData()[3]);
+				prevHandPos1 = currHandPos1;
+				currHandPos1 = glm::dvec3(events[i]->getCoordinateFrameData()[3]);
 
 				//std::cout << "Min dist: " << minDistance << std::endl;
-				//std::cout<< "CurHandPos " << glm::to_string(currHandPos) << std::endl;
-				//std::cout<< "PrevHandPos " << glm::to_string(prevHandPos) << std::endl;
+				//std::cout<< "CurHandPos " << glm::to_string(currHandPos1) << std::endl;
+				//std::cout<< "prevHandPos1 " << glm::to_string(prevHandPos1) << std::endl;
 			} 
 			
 
-
-			if (minDistance < 0.1 && currHandPos != prevHandPos) {
+			
+			if (minDistance < 0.025 && currHandPos1 != prevHandPos1) {
 				
 				xzRotFlag = true;
 				std::cout << "Inside XZRot Mode" << std::endl;
@@ -257,7 +275,7 @@ void TestHCI::update(const std::vector<MinVR::EventRef> &events){
 			}
 
 				
-			if (xzRotFlag) {
+			if (xzRotFlag) { // might have to be xzRotFlag and not any other flag 
 
 			
 				if(initRoomPos){
@@ -272,12 +290,12 @@ void TestHCI::update(const std::vector<MinVR::EventRef> &events){
 
 				//calculate the current handToTouch vector
 				glm::dvec3 roomTouchCentre = 0.5*(pos1 + pos2);
-				glm::dvec3 currHandToTouch = roomTouchCentre - currHandPos;
-				prevHandToTouch = roomTouchCentre - prevHandPos;
+				glm::dvec3 currHandToTouch = roomTouchCentre - currHandPos1;
+				prevHandToTouch = roomTouchCentre - prevHandPos1;
 
 				//set up the 2 vertices for a squre boundry for the gesture
-				glm::dvec3 upRight = glm::dvec3(initRoomTouchCentre.x+0.2, 0.0, initRoomTouchCentre.z+0.2);
-				glm::dvec3 lowLeft = glm::dvec3(initRoomTouchCentre.x-0.2, 0.0, initRoomTouchCentre.z-0.2);
+				glm::dvec3 upRight = glm::dvec3(initRoomTouchCentre.x+0.07, 0.0, initRoomTouchCentre.z+0.07);
+				glm::dvec3 lowLeft = glm::dvec3(initRoomTouchCentre.x-0.07, 0.0, initRoomTouchCentre.z-0.07);
 
 
 				// this if-else block for setting xzRotFlag,
@@ -306,7 +324,7 @@ void TestHCI::update(const std::vector<MinVR::EventRef> &events){
 						}
 
 						// only tries to change the xzRotFlag at the end of the data in the map
-						if(iter == std::prev(registeredTouchData.end(),1) && setxzRotFlag){
+						if(iter == std::prev(registeredTouchData.end(),1) && setxzRotFlag) {
 							xzRotFlag = false;
 							initRoomPos = true;
 							std::cout << "all fingers went out of bound so Out of XZRot Mode" << std::endl;
@@ -363,20 +381,55 @@ void TestHCI::update(const std::vector<MinVR::EventRef> &events){
 
 				// GL_STREAM_DRAW
 
-
-				
-
-
-
+			} // end xzRot Gesture
 
 			
-			}
-		}
+		} //HandTracker1 if block ends here
 
 		 // end of event determination
 			
-	}
+	} // end of event for loop
 
+	// weighted balloon gesture for Y translation
+	if (registeredTouchData.size() == 4) {
+		//xzRotFlag = false;
+		std::cout << "4 Touches" << std::endl;
+		
+		// to enumerate number of touches for each hand
+		numTouchForHand1 = 0;
+		numTouchForHand2 = 0;
+
+		std::map<int, TouchDataRef>::iterator iter;
+		for (iter = registeredTouchData.begin(); iter != registeredTouchData.end(); iter++) {
+			
+			glm::dvec3 currRoomPos (iter->second->getCurrRoomPos());
+			bool belongsToHand1 = (glm::length(currHandPos1 - currRoomPos) <  glm::length(currHandPos2 - currRoomPos));
+			if (belongsToHand1) {
+				numTouchForHand1++;
+			} else { // belongs to hand 2
+				numTouchForHand2++;
+			} 
+		} // end touch enumeration
+
+		/*std::cout << "Hand 1: " << numTouchForHand1 << std::endl;
+		std::cout << "Hand 2: " << numTouchForHand2 << std::endl;*/
+
+		// check if we have two points for each hand
+		if (numTouchForHand1 == 2 && numTouchForHand2 == 2) {
+			std::cout << "In Y Trans Mode" << std::endl;
+			//calculate translate distance
+			double prevHandsDist = glm::length(prevHandPos1 - prevHandPos2);
+			double currHandsDist = glm::length(currHandPos1 - currHandPos2);
+
+
+			double transBy = currHandsDist - prevHandsDist;
+			glm::dvec3 yTransBy (0.0, transBy, 0.0);
+			glm::dmat4 yTransMat (glm::translate(glm::dmat4(1.0), -yTransBy));
+
+			cFrameMgr->setRoomToVirtualSpaceFrame(cFrameMgr->getRoomToVirtualSpaceFrame() * yTransMat);
+		}
+
+	}
 	//updateHandPos(events);
 }
 
@@ -500,17 +553,17 @@ void TestHCI::updateHandPos(const std::vector<MinVR::EventRef>& events) {
 		
 				if (name == "HandRight"+closest) {
 					std::cout<<name<<std::endl;
-					if (prevHandPos.y == -1.0){
-						glm::dvec3 currHandPos (events[i]->getCoordinateFrameData()[3]);
-						prevHandPos = currHandPos;
+					if (prevHandPos1.y == -1.0){
+						glm::dvec3 currHandPos1 (events[i]->getCoordinateFrameData()[3]);
+						prevHandPos1 = currHandPos1;
 						initRoomPos = true;
 					} else {
-						prevHandPos = currHandPos;
-						currHandPos = glm::dvec3(events[i]->getCoordinateFrameData()[3]);
+						prevHandPos1 = currHandPos1;
+						currHandPos1 = glm::dvec3(events[i]->getCoordinateFrameData()[3]);
 
 					} 
 
-					if (minDistance < 0.1 /*some arb value*/ && currHandPos != prevHandPos) {
+					if (minDistance < 0.1 /*some arb value*/ && currHandPos1 != prevHandPos1) {
 				
 						xzRotFlag = true;
 						std::cout << "Inside XZRot Mode" << std::endl;
@@ -533,12 +586,12 @@ void TestHCI::updateHandPos(const std::vector<MinVR::EventRef>& events) {
 
 						//calculate the current handToTouch vector
 						glm::dvec3 roomTouchCentre = 0.5*(pos1 + pos2);
-						glm::dvec3 currHandToTouch = roomTouchCentre - currHandPos;
-						prevHandToTouch = roomTouchCentre - prevHandPos;
+						glm::dvec3 currHandToTouch = roomTouchCentre - currHandPos1;
+						prevHandToTouch = roomTouchCentre - prevHandPos1;
 
 						//set up the 2 vertices for a squre boundry for the gesture
-						glm::dvec3 upRight = glm::dvec3(initRoomTouchCentre.x+0.2, 0.0, initRoomTouchCentre.z+0.2);
-						glm::dvec3 lowLeft = glm::dvec3(initRoomTouchCentre.x-0.2, 0.0, initRoomTouchCentre.z-0.2);
+						glm::dvec3 upRight = glm::dvec3(initRoomTouchCentre.x+0.05, 0.0, initRoomTouchCentre.z+0.05);
+						glm::dvec3 lowLeft = glm::dvec3(initRoomTouchCentre.x-0.05, 0.0, initRoomTouchCentre.z-0.05);
 
 
 
