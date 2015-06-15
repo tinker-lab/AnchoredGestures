@@ -40,8 +40,8 @@ public:
 	void updateHandPos(const std::vector<MinVR::EventRef>& events);
 
 	// matrix transforms
-	void Translate(glm::dmat4 transMat);
-
+	void translate(glm::dmat4 transMat);
+	void yRotationAndScale(TouchDataRef centOfRotData, TouchDataRef otherTouchData);
 	
 
 private:

@@ -189,81 +189,79 @@ void TestHCI::update(const std::vector<MinVR::EventRef> &events){
 	//std::cout << "xzRotFlag " << xzRotFlag << std::endl;
 
 	if (registeredTouchData.size() == 2 && !xzRotFlag && numTouchForHand1 == 1 && numTouchForHand2 == 1) {
-		// translate to origin using coord of the other touch point
-		// we can just wrap this into a function
-		// yRotScale(centOfRot, otherTouchPoint, ) {}
-		// then we can call this function twice, switching parameters
 		std::cout << "Inside y rot scale " << std::endl;
-		glm::dvec3 centOfRot;
-		
 		// have to do calculations, switching between both touch points 
 
-		std::map<int, TouchDataRef>::iterator iter = registeredTouchData.begin(); // current touch point?
-		centOfRot = std::next(iter, 1)->second->getCurrRoomPos(); // find other touch point
+		std::map<int, TouchDataRef>::iterator iter = registeredTouchData.begin(); // current touch point
+		TouchDataRef otherTouch = iter->second;
+		TouchDataRef centOfRot = std::next(iter, 1)->second; // find other touch point
+
+		 /*swap between which one is center of rotation between the two during rotation-scale*/
+		yRotationAndScale(centOfRot, otherTouch);
+		yRotationAndScale(otherTouch, centOfRot);
+
+	//	glm::dvec3 roomCoord = iter->second->getCurrRoomPos();
+
+	//	 translate to origin
+	//	glm::dmat4 transMat(glm::translate(glm::dmat4(1.0), -1.0*centOfRot));
+	//	glm::dmat4 rotMat = glm::dmat4(1.0);
+	//	glm::dmat4 scaleMat = glm::dmat4(1.0);
+	//	 movement of touch point is above threshold
+	//	if(glm::abs(glm::length(iter->second->getPrevRoomPos()) - glm::length(std::next(iter, 1)->second->getCurrRoomPos())) > THRESH) {
+	//		yRotScale = true;
+	//		std::cout<<"using the filtered pos in rotate and scale"<<std::endl;
+	//		 rotate
+
+	//		// 0 vector guard
+	//		glm::dvec3 prevDiffBetweenTwoPoints;
+	//		if (glm::length(roomCoord - centOfRot) > 0.0) {
+	//			prevDiffBetweenTwoPoints = glm::normalize(iter->second->getPrevRoomPos() - centOfRot); // "it" is the current thing through the  for loop below
+	//		} 
+
+	//		// 0 vector guard
+	//		glm::dvec3 currDiffBetweenTwoPoints;
+	//		if (glm::length(roomCoord - centOfRot) > 0.0) {
+	//			currDiffBetweenTwoPoints = glm::normalize(roomCoord - centOfRot);
+	//		} 
 
 
-		glm::dvec3 roomCoord = iter->second->getCurrRoomPos();
 
-		// translate to origin
-		glm::dmat4 transMat(glm::translate(glm::dmat4(1.0), -1.0*centOfRot));
-		glm::dmat4 rotMat = glm::dmat4(1.0);
-		glm::dmat4 scaleMat = glm::dmat4(1.0);
-		// movement of touch point is above threshold
-		if(glm::abs(glm::length(iter->second->getPrevRoomPos()) - glm::length(std::next(iter, 1)->second->getCurrRoomPos())) > THRESH) {
-			yRotScale = true;
-			std::cout<<"using the filtered pos in rotate and scale"<<std::endl;
-			// rotate
+	//		 both distances are normalized
+	//		glm::dvec3 crossProd = glm::cross(prevDiffBetweenTwoPoints,currDiffBetweenTwoPoints);
+	//		double theta = glm::acos(glm::dot(prevDiffBetweenTwoPoints,currDiffBetweenTwoPoints));
+	//		if(crossProd.y < 0){
+	//			theta = -theta;
+	//		}
 
-			//// 0 vector guard
-			glm::dvec3 prevDiffBetweenTwoPoints;
-			if (glm::length(roomCoord - centOfRot) > 0.0) {
-				prevDiffBetweenTwoPoints = glm::normalize(iter->second->getPrevRoomPos() - centOfRot); // "it" is the current thing through the  for loop below
-			} 
+	//		std::cout << "Rotation Angle Theta: " << theta << std::endl;
+	//		 glm::rotate takes degrees! Madness.
+	//		rotMat = glm::rotate(glm::dmat4(1.0) , glm::degrees(-theta), glm::dvec3(0.0, 1.0, 0.0));
 
-			//// 0 vector guard
-			glm::dvec3 currDiffBetweenTwoPoints;
-			if (glm::length(roomCoord - centOfRot) > 0.0) {
-				currDiffBetweenTwoPoints = glm::normalize(roomCoord - centOfRot);
-			} 
+	//		 scale
+	//		double prevDistanceDiff = glm::length(iter->second->getPrevRoomPos() - centOfRot);
+	//		double currDistanceDiff = glm::length(roomCoord - centOfRot);
 
+	//		std::cout << prevDistanceDiff/currDistanceDiff << std::endl;
 
+	//		 might move this into a more general function
+	//		 to test for crazy input
+	//		/*if (glm::dvec3(prevDistanceDiff/currDistanceDiff)) {
 
-			// both distances are normalized
-			glm::dvec3 crossProd = glm::cross(prevDiffBetweenTwoPoints,currDiffBetweenTwoPoints);
-			double theta = glm::acos(glm::dot(prevDiffBetweenTwoPoints,currDiffBetweenTwoPoints));
-			if(crossProd.y < 0){
-				theta = -theta;
-			}
+	//		}*/
+	//		glm::dvec3 scaleBy = glm::dvec3(prevDistanceDiff/currDistanceDiff);
+	//		scaleMat = glm::scale(
+	//			glm::dmat4(1.0),
+	//			scaleBy); 
 
-			//std::cout << "Rotation Angle Theta: " << theta << std::endl;
-			// glm::rotate takes degrees! Madness.
-			rotMat = glm::rotate(glm::dmat4(1.0) , glm::degrees(-theta), glm::dvec3(0.0, 1.0, 0.0));
-
-			// scale
-			double prevDistanceDiff = glm::length(iter->second->getPrevRoomPos() - centOfRot);
-			double currDistanceDiff = glm::length(roomCoord - centOfRot);
-
-			//std::cout << prevDistanceDiff/currDistanceDiff << std::endl;
-
-			// might move this into a more general function
-			// to test for crazy input
-			/*if (glm::dvec3(prevDistanceDiff/currDistanceDiff)) {
-
-			}*/
-			glm::dvec3 scaleBy = glm::dvec3(prevDistanceDiff/currDistanceDiff);
-			scaleMat = glm::scale(
-				glm::dmat4(1.0),
-				scaleBy); 
-
-		}
+		//}
 
 
-		// translate back
-		glm::dmat4 transBack(glm::translate(glm::dmat4(1.0), centOfRot));
+	//	 translate back
+	//	glm::dmat4 transBack(glm::translate(glm::dmat4(1.0), centOfRot));
 
-		// combine transforms
-		glm::dmat4 yRotScaleMat = cFrameMgr->getRoomToVirtualSpaceFrame() * transBack * scaleMat *rotMat * transMat;
-		cFrameMgr->setRoomToVirtualSpaceFrame(yRotScaleMat);
+	//	 combine transforms
+	//	glm::dmat4 yRotScaleMat = cFrameMgr->getRoomToVirtualSpaceFrame() * transBack * scaleMat *rotMat * transMat;
+	//	cFrameMgr->setRoomToVirtualSpaceFrame(yRotScaleMat);
 	} // END OF yRotScale
 
 	//// previous for loop
@@ -587,9 +585,9 @@ void TestHCI::update(const std::vector<MinVR::EventRef> &events){
 
 	///// Apply the correct matrix transforms based on updated state (booleans, registeredTouchData, instance variables)
 	if (xzTrans) {
-		Translate(xzTransMat);
+		translate(xzTransMat);
 	} else if (yTrans) {
-		Translate(yTransMat);
+		translate(yTransMat);
 	}
 
 	// this is bret's commented out line
@@ -667,9 +665,74 @@ glm::dvec3 TestHCI::convertScreenToRoomCoordinates(glm::dvec2 screenCoords) {
 }
 
 
-void TestHCI::Translate(glm::dmat4 transMat){
+void TestHCI::translate(glm::dmat4 transMat){
 	glm::dmat4 newTransform = cFrameMgr->getRoomToVirtualSpaceFrame()*transMat;
 	cFrameMgr->setRoomToVirtualSpaceFrame(newTransform);
+}
+
+void TestHCI::yRotationAndScale(TouchDataRef centOfRotData, TouchDataRef roomCoordData) {
+	// have to do calculations, switching between both touch points 
+
+	// translate to origin
+	glm::dmat4 transMat(glm::translate(glm::dmat4(1.0), -1.0*centOfRotData->getCurrRoomPos()));
+	glm::dmat4 rotMat = glm::dmat4(1.0);
+	glm::dmat4 scaleMat = glm::dmat4(1.0);
+	// movement of touch point is above threshold
+	if(glm::abs(glm::length(roomCoordData->getPrevRoomPos()) - glm::length(roomCoordData->getCurrRoomPos())) > THRESH) {
+		std::cout<<"using the filtered pos in rotate and scale"<<std::endl;
+		// rotate
+
+		//// 0 vector guard
+		glm::dvec3 prevDiffBetweenTwoPoints;
+		if (glm::length(roomCoordData->getPrevRoomPos() - centOfRotData->getCurrRoomPos()) > 0.0) {
+			prevDiffBetweenTwoPoints = glm::normalize(roomCoordData->getPrevRoomPos() - centOfRotData->getCurrRoomPos()); // "it" is the current thing through the  for loop below
+		} 
+
+		//// 0 vector guard
+		glm::dvec3 currDiffBetweenTwoPoints;
+		if (glm::length(roomCoordData->getCurrRoomPos() - centOfRotData->getCurrRoomPos()) > 0.0) {
+			currDiffBetweenTwoPoints = glm::normalize(roomCoordData->getCurrRoomPos() - centOfRotData->getCurrRoomPos());
+		} 
+
+
+
+		// both distances are normalized
+		glm::dvec3 crossProd = glm::cross(prevDiffBetweenTwoPoints,currDiffBetweenTwoPoints);
+		double theta = glm::acos(glm::dot(prevDiffBetweenTwoPoints,currDiffBetweenTwoPoints));
+		if(crossProd.y < 0){
+			theta = -theta;
+		}
+
+		//std::cout << "Rotation Angle Theta: " << theta << std::endl;
+		// glm::rotate takes degrees! Madness.
+		rotMat = glm::rotate(glm::dmat4(1.0) , glm::degrees(-theta), glm::dvec3(0.0, 1.0, 0.0));
+
+		// scale
+		double prevDistanceDiff = glm::length(roomCoordData->getPrevRoomPos() - centOfRotData->getCurrRoomPos());
+		double currDistanceDiff = glm::length(roomCoordData->getCurrRoomPos() - centOfRotData->getCurrRoomPos());
+
+		//std::cout << prevDistanceDiff/currDistanceDiff << std::endl;
+
+		// might move this into a more general function
+		// to test for crazy input
+		/*if (glm::dvec3(prevDistanceDiff/currDistanceDiff)) {
+
+		}*/
+		glm::dvec3 scaleBy = glm::dvec3(prevDistanceDiff/currDistanceDiff);
+		scaleMat = glm::scale(
+			glm::dmat4(1.0),
+			scaleBy); 
+
+	}
+
+
+	// translate back
+	glm::dmat4 transBack(glm::translate(glm::dmat4(1.0), centOfRotData->getCurrRoomPos()));
+
+	// combine transforms
+	glm::dmat4 yRotScaleMat = cFrameMgr->getRoomToVirtualSpaceFrame() * transBack * scaleMat *rotMat * transMat;
+	cFrameMgr->setRoomToVirtualSpaceFrame(yRotScaleMat);
+
 }
 
 //void TestHCI::convertScreenToRoomCoordinates{}
