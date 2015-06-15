@@ -86,15 +86,18 @@ void TestHCI::update(const std::vector<MinVR::EventRef> &events){
 	glm::dmat4 xzTransMat = dmat4(0.0);
 	bool yTrans = false;
 	glm::dmat4 yTransMat = dmat4(0.0);
+	bool yRotScale = false;
 
+	numTouchForHand1 = 0;
+	numTouchForHand2 = 0;
 
-	// for loop should set flags and do updates on data structures
-	// after for loop we look at set flags and apply the correct transforms?
-	for(int i=0; i < events.size(); i++) {
+	// only update the map and other variables first
+	for(int p = 0; p < events.size(); p++) {
 
-		timestamp = events[i]->getTimestamp();
-		std::string name = events[i]->getName();
-		int id = events[i]->getId();
+		timestamp = events[p]->getTimestamp();
+		std::string name = events[p]->getName();
+		int id = events[p]->getId();
+
 
 		if (boost::algorithm::starts_with(name, "TUIO_Cursor_up")) {
 			// delete the cursor down associated with this up event
@@ -107,10 +110,11 @@ void TestHCI::update(const std::vector<MinVR::EventRef> &events){
 
 		} else if (boost::algorithm::starts_with(name, "TUIO_Cursor_down")) {
 			// always add a new one on DOWN
-			glm::dvec3 roomCoord = convertScreenToRoomCoordinates(events[i]->get2DData());
-			TouchDataRef datum(new TouchData(events[i], roomCoord));
+			glm::dvec3 roomCoord = convertScreenToRoomCoordinates(events[p]->get2DData());
+			TouchDataRef datum(new TouchData(events[p], roomCoord));
 			registeredTouchData.insert(std::pair<int, TouchDataRef>(id, datum));
 			//std::cout << "DOWN " << events[i]->getId() <<std::endl;
+
 
 		} else if (boost::algorithm::starts_with(name, "TUIO_CursorMove")) {
 			// update the map with the move event
@@ -119,139 +123,312 @@ void TestHCI::update(const std::vector<MinVR::EventRef> &events){
 			//std::cout << "Move " << events[i]->getId() <<std::endl;
 
 			if (it != registeredTouchData.end()) { // if id is found
-				glm::dvec2 screenCoord (events[i]->get4DData());
-				glm::dvec3 roomCoord = convertScreenToRoomCoordinates(glm::dvec2(events[i]->get4DData()));
+				glm::dvec2 screenCoord (events[p]->get4DData());
+				glm::dvec3 roomCoord = convertScreenToRoomCoordinates(glm::dvec2(events[p]->get4DData()));
 
 				// update map
-				it->second->setCurrentEvent(events[i]);
+				it->second->setCurrentEvent(events[p]);
 				it->second->setCurrRoomPos(roomCoord);
-
-				// translate 
-				if (registeredTouchData.size() == 1 && !xzRotFlag) {  //only one finger on screen
-					xzTrans = true;
-					// negate the translation so this is actually virtual to room space
-					xzTransMat = glm::translate(glm::dmat4(1.0f), -1.0*it->second->roomPositionDifference());
-					
-					
-				} else if (registeredTouchData.size() == 2 && !xzRotFlag) {
-					
-					// translate to origin using coord of the other touch point
-					glm::dvec3 centOfRot;
-					std::map<int, TouchDataRef>::iterator iter;
-
-					for (iter = registeredTouchData.begin(); iter != registeredTouchData.end(); iter++) { // finding other touch point.
-						if (id != iter->second->getCurrentEvent()->getId()) { // found other touch point
-							centOfRot = iter->second->getCurrRoomPos();
-							break;
-						}
-					}
-
-					// translate to origin
-					glm::dmat4 transMat(glm::translate(glm::dmat4(1.0), -1.0*centOfRot));
-
-
-				
-					glm::dmat4 rotMat = glm::dmat4(1.0);
-					glm::dmat4 scaleMat = glm::dmat4(1.0);
-					if(glm::abs(glm::length(it->second->getPrevRoomPos()) - glm::length(it->second->getCurrRoomPos())) > THRESH) {
-
-						std::cout<<"using the filtered pos in rotate and scale"<<std::endl;
-						// rotate
-
-						//// 0 vector guard
-						glm::dvec3 prevDiffBetweenTwoPoints;
-						if (glm::length(roomCoord - centOfRot) > 0.0) {
-							prevDiffBetweenTwoPoints = glm::normalize(it->second->getPrevRoomPos() - centOfRot);
-						} 
-							
-						//// 0 vector guard
-						glm::dvec3 currDiffBetweenTwoPoints;
-						if (glm::length(roomCoord - centOfRot) > 0.0) {
-							currDiffBetweenTwoPoints = glm::normalize(roomCoord - centOfRot);
-						} 
-							
-						
-						
-						// both distances are normalized
-						glm::dvec3 crossProd = glm::cross(prevDiffBetweenTwoPoints,currDiffBetweenTwoPoints);
-						double theta = glm::acos(glm::dot(prevDiffBetweenTwoPoints,currDiffBetweenTwoPoints));
-						if(crossProd.y < 0){
-							theta = -theta;
-						}
-
-						//std::cout << "Rotation Angle Theta: " << theta << std::endl;
-						// glm::rotate takes degrees! Madness.
-						rotMat = glm::rotate(glm::dmat4(1.0) , glm::degrees(-theta), glm::dvec3(0.0, 1.0, 0.0));
-
-						// scale
-						double prevDistanceDiff = glm::length(it->second->getPrevRoomPos() - centOfRot);
-						double currDistanceDiff = glm::length(roomCoord - centOfRot);
-
-						//std::cout << prevDistanceDiff/currDistanceDiff << std::endl;
-
-						// might move this into a more general function
-						// to test for crazy input
-						/*if (glm::dvec3(prevDistanceDiff/currDistanceDiff)) {
-						
-						}*/
-						glm::dvec3 scaleBy = glm::dvec3(prevDistanceDiff/currDistanceDiff);
-						scaleMat = glm::scale(
-							glm::dmat4(1.0),
-							scaleBy); 
-
-					}
-
-					
-					// translate back
-					glm::dmat4 transBack(glm::translate(glm::dmat4(1.0), centOfRot));
-
-					// combine transforms
-					glm::dmat4 newTransform = cFrameMgr->getRoomToVirtualSpaceFrame() * transBack * scaleMat *rotMat * transMat;
-					cFrameMgr->setRoomToVirtualSpaceFrame(newTransform);
-					
-				} 
 			}
-		} // end of TUIO if/else-if block
 
-		// find closest pair of TouchPoints
-		if (registeredTouchData.size() > 1) {
-			closestTouchPair(registeredTouchData , pos1, pos2, minDistance);
-		}
+		} // end of TUIO events
 
 		// Update hand positions
 		if (name == "Hand_Tracker1") {
 			//std::cout << "Inside hand tracking event " << std::endl;
 			//only enter one time to init prevHandPos1
 			if (prevHandPos1.y == -1.0) {
-				glm::dvec3 currHandPos1 (events[i]->getCoordinateFrameData()[3]);
+				glm::dvec3 currHandPos1 (events[p]->getCoordinateFrameData()[3]);
 				prevHandPos1 = currHandPos1;
 				initRoomPos = true;
 			} else {
 				prevHandPos1 = currHandPos1;
-				currHandPos1 = glm::dvec3(events[i]->getCoordinateFrameData()[3]);
+				currHandPos1 = glm::dvec3(events[p]->getCoordinateFrameData()[3]);
 			} 
-		} //HandTracker1 if block ends here
+		} 
 
-		if(name == "Hand_Tracker2"){
+		if(name == "Hand_Tracker2") {
 			if (prevHandPos2.y == -1.0) {
-				glm::dvec3 currHandPos2 (events[i]->getCoordinateFrameData()[3]);
+				glm::dvec3 currHandPos2 (events[p]->getCoordinateFrameData()[3]);
 				prevHandPos2 = currHandPos2;
 			} else {
 				prevHandPos2 = currHandPos2;
-				currHandPos2 = glm::dvec3(events[i]->getCoordinateFrameData()[3]);
+				currHandPos2 = glm::dvec3(events[p]->getCoordinateFrameData()[3]);
 			} 
 		}
+	} // end of data-updating for loop
 
+	//// At this point, the touch data should be updated, and hand positions
+	std::map<int, TouchDataRef>::iterator iter;
+	for (iter = registeredTouchData.begin(); iter != registeredTouchData.end(); iter++) {
+
+		glm::dvec3 currRoomPos (iter->second->getCurrRoomPos());
+		bool belongsToHand1 = (glm::length(currHandPos1 - currRoomPos) <  glm::length(currHandPos2 - currRoomPos));
 		
-	} // end of data update for loop
+		if (belongsToHand1) {
+			numTouchForHand1++;
+		} else { // belongs to hand 2
+			numTouchForHand2++;
+		}
+	} // end touch enumeration
+	
 
-	///// Apply the correct matrix transforms based on updated state (booleans, registeredTouchData, instance variables)
-
-	if (xzTrans) {
-		Translate(xzTransMat);
-	} else if (yTrans) {
-		Translate(yTransMat);
+	// from TUIO move
+	// translate
+	if (registeredTouchData.size() == 1 && !xzRotFlag) {  //only one finger on screen
+		xzTrans = true;
+		// negate the translation so this is actually virtual to room space
+		xzTransMat = glm::translate(glm::dmat4(1.0f), -1.0*registeredTouchData.begin()->second->roomPositionDifference());
 	}
+
+	// from TUIO move
+	// yRotScale
+	//std::cout << "registeredTouch size: " << registeredTouchData.size() << std::endl;
+	//std::cout << "touch for 2: " << numTouchForHand2 << std::endl;
+	//std::cout << "touch for 1: " << numTouchForHand1 << std::endl;
+	//std::cout << "xzRotFlag " << xzRotFlag << std::endl;
+
+	if (registeredTouchData.size() == 2 && !xzRotFlag && numTouchForHand1 == 1 && numTouchForHand2 == 1) {
+		// translate to origin using coord of the other touch point
+		// we can just wrap this into a function
+		// yRotScale(centOfRot, otherTouchPoint, ) {}
+		// then we can call this function twice, switching parameters
+		std::cout << "Inside y rot scale " << std::endl;
+		glm::dvec3 centOfRot;
+		
+		// have to do calculations, switching between both touch points 
+
+		std::map<int, TouchDataRef>::iterator iter = registeredTouchData.begin(); // current touch point?
+		centOfRot = std::next(iter, 1)->second->getCurrRoomPos(); // find other touch point
+
+
+		glm::dvec3 roomCoord = iter->second->getCurrRoomPos();
+
+		// translate to origin
+		glm::dmat4 transMat(glm::translate(glm::dmat4(1.0), -1.0*centOfRot));
+		glm::dmat4 rotMat = glm::dmat4(1.0);
+		glm::dmat4 scaleMat = glm::dmat4(1.0);
+		// movement of touch point is above threshold
+		if(glm::abs(glm::length(iter->second->getPrevRoomPos()) - glm::length(std::next(iter, 1)->second->getCurrRoomPos())) > THRESH) {
+			yRotScale = true;
+			std::cout<<"using the filtered pos in rotate and scale"<<std::endl;
+			// rotate
+
+			//// 0 vector guard
+			glm::dvec3 prevDiffBetweenTwoPoints;
+			if (glm::length(roomCoord - centOfRot) > 0.0) {
+				prevDiffBetweenTwoPoints = glm::normalize(iter->second->getPrevRoomPos() - centOfRot); // "it" is the current thing through the  for loop below
+			} 
+
+			//// 0 vector guard
+			glm::dvec3 currDiffBetweenTwoPoints;
+			if (glm::length(roomCoord - centOfRot) > 0.0) {
+				currDiffBetweenTwoPoints = glm::normalize(roomCoord - centOfRot);
+			} 
+
+
+
+			// both distances are normalized
+			glm::dvec3 crossProd = glm::cross(prevDiffBetweenTwoPoints,currDiffBetweenTwoPoints);
+			double theta = glm::acos(glm::dot(prevDiffBetweenTwoPoints,currDiffBetweenTwoPoints));
+			if(crossProd.y < 0){
+				theta = -theta;
+			}
+
+			//std::cout << "Rotation Angle Theta: " << theta << std::endl;
+			// glm::rotate takes degrees! Madness.
+			rotMat = glm::rotate(glm::dmat4(1.0) , glm::degrees(-theta), glm::dvec3(0.0, 1.0, 0.0));
+
+			// scale
+			double prevDistanceDiff = glm::length(iter->second->getPrevRoomPos() - centOfRot);
+			double currDistanceDiff = glm::length(roomCoord - centOfRot);
+
+			//std::cout << prevDistanceDiff/currDistanceDiff << std::endl;
+
+			// might move this into a more general function
+			// to test for crazy input
+			/*if (glm::dvec3(prevDistanceDiff/currDistanceDiff)) {
+
+			}*/
+			glm::dvec3 scaleBy = glm::dvec3(prevDistanceDiff/currDistanceDiff);
+			scaleMat = glm::scale(
+				glm::dmat4(1.0),
+				scaleBy); 
+
+		}
+
+
+		// translate back
+		glm::dmat4 transBack(glm::translate(glm::dmat4(1.0), centOfRot));
+
+		// combine transforms
+		glm::dmat4 yRotScaleMat = cFrameMgr->getRoomToVirtualSpaceFrame() * transBack * scaleMat *rotMat * transMat;
+		cFrameMgr->setRoomToVirtualSpaceFrame(yRotScaleMat);
+	} // END OF yRotScale
+
+	//// previous for loop
+
+
+	//// for loop should set flags and do updates on data structures
+	//// after for loop we look at set flags and apply the correct transforms?
+	//for(int i=0; i < events.size(); i++) {
+
+	//	timestamp = events[i]->getTimestamp();
+	//	std::string name = events[i]->getName();
+	//	int id = events[i]->getId();
+
+	//	if (boost::algorithm::starts_with(name, "TUIO_Cursor_up")) {
+	//		// delete the cursor down associated with this up event
+	//		std::map<int, TouchDataRef>::iterator it = registeredTouchData.find(id); 
+
+	//		if (it != registeredTouchData.end()) { // if id is found
+	//			registeredTouchData.erase(it);	   //erase value associate with that it
+	//			//std::cout << "UP" <<std::endl;
+	//		}
+
+	//	} else if (boost::algorithm::starts_with(name, "TUIO_Cursor_down")) {
+	//		// always add a new one on DOWN
+	//		glm::dvec3 roomCoord = convertScreenToRoomCoordinates(events[i]->get2DData());
+	//		TouchDataRef datum(new TouchData(events[i], roomCoord));
+	//		registeredTouchData.insert(std::pair<int, TouchDataRef>(id, datum));
+	//		//std::cout << "DOWN " << events[i]->getId() <<std::endl;
+
+	//	} else if (boost::algorithm::starts_with(name, "TUIO_CursorMove")) {
+	//		// update the map with the move event
+	//		// if the corresponding id was down, make it a move event
+	//		std::map<int, TouchDataRef>::iterator it = registeredTouchData.find(id); 
+	//		//std::cout << "Move " << events[i]->getId() <<std::endl;
+
+	//		if (it != registeredTouchData.end()) { // if id is found
+	//			glm::dvec2 screenCoord (events[i]->get4DData());
+	//			glm::dvec3 roomCoord = convertScreenToRoomCoordinates(glm::dvec2(events[i]->get4DData()));
+
+	//			// update map
+	//			it->second->setCurrentEvent(events[i]);
+	//			it->second->setCurrRoomPos(roomCoord);
+
+	//			// translate 
+	//			if (registeredTouchData.size() == 1 && !xzRotFlag) {  //only one finger on screen
+	//				xzTrans = true;
+	//				// negate the translation so this is actually virtual to room space
+	//				xzTransMat = glm::translate(glm::dmat4(1.0f), -1.0*it->second->roomPositionDifference());
+	//				
+	//			// scale and rotate about y-axis
+	//			std::cout << "num for hand 1: " << numTouchForHand1 << std::endl;
+	//			std::cout << "num for hand 2: " << numTouchForHand2 << std::endl;
+	//			} else if (registeredTouchData.size() == 2 && !xzRotFlag && numTouchForHand1 == 1 && numTouchForHand2 == 1) { //
+	//				
+	//				// translate to origin using coord of the other touch point
+	//				glm::dvec3 centOfRot;
+	//				std::map<int, TouchDataRef>::iterator iter;
+
+	//				for (iter = registeredTouchData.begin(); iter != registeredTouchData.end(); iter++) { // finding other touch point.
+	//					if (id != iter->second->getCurrentEvent()->getId()) { // found other touch point
+	//						centOfRot = iter->second->getCurrRoomPos();
+	//						break;
+	//					}
+	//				}
+
+	//				// translate to origin
+	//				glm::dmat4 transMat(glm::translate(glm::dmat4(1.0), -1.0*centOfRot));
+	//				glm::dmat4 rotMat = glm::dmat4(1.0);
+	//				glm::dmat4 scaleMat = glm::dmat4(1.0);
+	//				if(glm::abs(glm::length(it->second->getPrevRoomPos()) - glm::length(it->second->getCurrRoomPos())) > THRESH) {
+	//					yRotScale = true;
+	//					//std::cout<<"using the filtered pos in rotate and scale"<<std::endl;
+	//					// rotate
+
+	//					//// 0 vector guard
+	//					glm::dvec3 prevDiffBetweenTwoPoints;
+	//					if (glm::length(roomCoord - centOfRot) > 0.0) {
+	//						prevDiffBetweenTwoPoints = glm::normalize(it->second->getPrevRoomPos() - centOfRot);
+	//					} 
+	//						
+	//					//// 0 vector guard
+	//					glm::dvec3 currDiffBetweenTwoPoints;
+	//					if (glm::length(roomCoord - centOfRot) > 0.0) {
+	//						currDiffBetweenTwoPoints = glm::normalize(roomCoord - centOfRot);
+	//					} 
+	//						
+	//					
+	//					
+	//					// both distances are normalized
+	//					glm::dvec3 crossProd = glm::cross(prevDiffBetweenTwoPoints,currDiffBetweenTwoPoints);
+	//					double theta = glm::acos(glm::dot(prevDiffBetweenTwoPoints,currDiffBetweenTwoPoints));
+	//					if(crossProd.y < 0){
+	//						theta = -theta;
+	//					}
+
+	//					//std::cout << "Rotation Angle Theta: " << theta << std::endl;
+	//					// glm::rotate takes degrees! Madness.
+	//					rotMat = glm::rotate(glm::dmat4(1.0) , glm::degrees(-theta), glm::dvec3(0.0, 1.0, 0.0));
+
+	//					// scale
+	//					double prevDistanceDiff = glm::length(it->second->getPrevRoomPos() - centOfRot);
+	//					double currDistanceDiff = glm::length(roomCoord - centOfRot);
+
+	//					//std::cout << prevDistanceDiff/currDistanceDiff << std::endl;
+
+	//					// might move this into a more general function
+	//					// to test for crazy input
+	//					/*if (glm::dvec3(prevDistanceDiff/currDistanceDiff)) {
+	//					
+	//					}*/
+	//					glm::dvec3 scaleBy = glm::dvec3(prevDistanceDiff/currDistanceDiff);
+	//					scaleMat = glm::scale(
+	//						glm::dmat4(1.0),
+	//						scaleBy); 
+
+	//				}
+
+	//				
+	//				// translate back
+	//				glm::dmat4 transBack(glm::translate(glm::dmat4(1.0), centOfRot));
+
+	//				// combine transforms
+	//				glm::dmat4 yRotScaleMat = cFrameMgr->getRoomToVirtualSpaceFrame() * transBack * scaleMat *rotMat * transMat;
+	//				cFrameMgr->setRoomToVirtualSpaceFrame(yRotScaleMat);
+	//				
+	//			} 
+	//		}
+	//	} // end of TUIO if/else-if block
+
+	//	//// find closest pair of TouchPoints
+	//	//if (registeredTouchData.size() > 1) {
+	//	//	closestTouchPair(registeredTouchData , pos1, pos2, minDistance);
+	//	//}
+
+	//	//// Update hand positions
+	//	//if (name == "Hand_Tracker1") {
+	//	//	//std::cout << "Inside hand tracking event " << std::endl;
+	//	//	//only enter one time to init prevHandPos1
+	//	//	if (prevHandPos1.y == -1.0) {
+	//	//		glm::dvec3 currHandPos1 (events[i]->getCoordinateFrameData()[3]);
+	//	//		prevHandPos1 = currHandPos1;
+	//	//		initRoomPos = true;
+	//	//	} else {
+	//	//		prevHandPos1 = currHandPos1;
+	//	//		currHandPos1 = glm::dvec3(events[i]->getCoordinateFrameData()[3]);
+	//	//	} 
+	//	//} //HandTracker1 if block ends here
+
+	//	//if(name == "Hand_Tracker2"){
+	//	//	if (prevHandPos2.y == -1.0) {
+	//	//		glm::dvec3 currHandPos2 (events[i]->getCoordinateFrameData()[3]);
+	//	//		prevHandPos2 = currHandPos2;
+	//	//	} else {
+	//	//		prevHandPos2 = currHandPos2;
+	//	//		currHandPos2 = glm::dvec3(events[i]->getCoordinateFrameData()[3]);
+	//	//	} 
+	//	//}
+	//} // end of data update for loop
+
+	/////////OUTSIDE ALL FOR LOOPS
+	// find closest pair of TouchPoints
+	if (registeredTouchData.size() > 1) {
+		closestTouchPair(registeredTouchData , pos1, pos2, minDistance);
+	}
+	
 
 	if (minDistance < 0.025 && currHandPos1 != prevHandPos1) {
 
@@ -318,10 +495,6 @@ void TestHCI::update(const std::vector<MinVR::EventRef> &events){
 
 		} // end if/else block
 
-
-
-
-
 		double alpha = glm::acos(glm::dot(currHandToTouch,prevHandToTouch)); // angle between both vectors
 
 		// get cross prod
@@ -360,12 +533,7 @@ void TestHCI::update(const std::vector<MinVR::EventRef> &events){
 		//	glVertex3f(roomTouchCentre.x, roomTouchCentre.y, roomTouchCentre.z);
 		//	glVertex3f(roomTouchCentre.x + projectedCrossProd.x, roomTouchCentre.y + projectedCrossProd.y, roomTouchCentre.z + projectedCrossProd.z);
 		//glEnd();
-
-
-
-
 		// GL_STREAM_DRAW
-
 	} // end xzRot Gesture
 
 	// I think this is what this should look like...
@@ -375,7 +543,7 @@ void TestHCI::update(const std::vector<MinVR::EventRef> &events){
 	// }
 	double prevHandsDist = glm::length(prevHandPos1 - prevHandPos2);
 	double currHandsDist = glm::length(currHandPos1 - currHandPos2);
-	std::cout << "curr - prev hand dist: " << glm::abs(currHandsDist - prevHandsDist) << std::endl;
+	//std::cout << "curr - prev hand dist: " << glm::abs(currHandsDist - prevHandsDist) << std::endl;
 	
 	// weighted balloon gesture for Y translation
 	if (registeredTouchData.size() > 3 && glm::abs(currHandsDist - prevHandsDist) < 0.045 && glm::abs(currHandsDist - prevHandsDist) > 0.0005) {
@@ -416,6 +584,14 @@ void TestHCI::update(const std::vector<MinVR::EventRef> &events){
 		}
 
 	}
+
+	///// Apply the correct matrix transforms based on updated state (booleans, registeredTouchData, instance variables)
+	if (xzTrans) {
+		Translate(xzTransMat);
+	} else if (yTrans) {
+		Translate(yTransMat);
+	}
+
 	// this is bret's commented out line
 	//updateHandPos(events);
 }
