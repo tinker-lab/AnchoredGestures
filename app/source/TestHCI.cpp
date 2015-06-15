@@ -81,6 +81,13 @@ void TestHCI::update(const std::vector<MinVR::EventRef> &events){
 	double minDistance = DBL_MAX; 
 	MinVR::TimeStamp timestamp;
 
+	//boolean flags
+	bool xzTrans = false;
+	glm::dmat4 xzTransMat = dmat4(0.0);
+	bool yTrans = false;
+	glm::dmat4 yTransMat = dmat4(0.0);
+
+
 	// for loop should set flags and do updates on data structures
 	// after for loop we look at set flags and apply the correct transforms?
 	for(int i=0; i < events.size(); i++) {
@@ -119,18 +126,14 @@ void TestHCI::update(const std::vector<MinVR::EventRef> &events){
 				it->second->setCurrentEvent(events[i]);
 				it->second->setCurrRoomPos(roomCoord);
 
-
-				if (registeredTouchData.size() == 10 && !xzRotFlag) {  //only one finger on screen
-					glm::dmat4 transMat(glm::translate(glm::dmat4(1.0f), -1.0*it->second->roomPositionDifference()));
+				// translate 
+				if (registeredTouchData.size() == 1 && !xzRotFlag) {  //only one finger on screen
+					xzTrans = true;
 					// negate the translation so this is actually virtual to room space
-					glm::dmat4 newTransform = cFrameMgr->getRoomToVirtualSpaceFrame()*transMat;
-
-					cFrameMgr->setRoomToVirtualSpaceFrame(newTransform);
-					//std::cout<<"ERRRRRRRRMERRRRRGERRRRRD TRANNNNNNNNSLATTTTTING DAOGGGGGGG"<<std::endl;
-
-					// SET BOOL
+					xzTransMat = glm::translate(glm::dmat4(1.0f), -1.0*it->second->roomPositionDifference());
 					
-				} else if (registeredTouchData.size() == 20 && !xzRotFlag) {
+					
+				} else if (registeredTouchData.size() == 2 && !xzRotFlag) {
 					
 					// translate to origin using coord of the other touch point
 					glm::dvec3 centOfRot;
@@ -243,6 +246,12 @@ void TestHCI::update(const std::vector<MinVR::EventRef> &events){
 	} // end of data update for loop
 
 	///// Apply the correct matrix transforms based on updated state (booleans, registeredTouchData, instance variables)
+
+	if (xzTrans) {
+		Translate(xzTransMat);
+	} else if (yTrans) {
+		Translate(yTransMat);
+	}
 
 	if (minDistance < 0.025 && currHandPos1 != prevHandPos1) {
 
@@ -481,10 +490,12 @@ glm::dvec3 TestHCI::convertScreenToRoomCoordinates(glm::dvec2 screenCoords) {
 	return offAxisCamera->getTopLeft() + (screenCoords.x * xVec) + (screenCoords.y * yVec);
 }
 
-//void TestHCI::XZTranslate(){}
-//
-//void TestHCI::YTr{}
-//
+
+void TestHCI::Translate(glm::dmat4 transMat){
+	glm::dmat4 newTransform = cFrameMgr->getRoomToVirtualSpaceFrame()*transMat;
+	cFrameMgr->setRoomToVirtualSpaceFrame(newTransform);
+}
+
 //void TestHCI::convertScreenToRoomCoordinates{}
 //
 //void TestHCI::convertScreenToRoomCoordinates{}
