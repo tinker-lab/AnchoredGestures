@@ -440,21 +440,30 @@ void TestHCI::update(const std::vector<MinVR::EventRef> &events){
 
 
 		if(initRoomPos){
-
-			initRoomTouchCentre = 0.5*(pos1 + pos2);
+			// pos1 and pos2 are where you put your fingers down. We're finding the centroid
+			initRoomTouchCentre = 0.5*(pos1 + pos2); 
 			initRoomPos = false;
 
 		}
 
 		glm::dvec3 centOfRot (0.0);
 		glm::dvec3 prevHandToTouch;
-
 		//calculate the current handToTouch vector
 		glm::dvec3 roomTouchCentre = 0.5*(pos1 + pos2);
-		glm::dvec3 currHandToTouch = roomTouchCentre - currHandPos1;
-		prevHandToTouch = roomTouchCentre - prevHandPos1;
+		glm::dvec3 currHandToTouch;
 
-		//set up the 2 vertices for a squre boundry for the gesture
+		//Should not be equal in XZRotMode but just in case.
+		// for choosing the hand that rotates
+		if (numTouchForHand1 >= numTouchForHand2) { 
+			currHandToTouch = roomTouchCentre - currHandPos1;
+			prevHandToTouch = roomTouchCentre - prevHandPos1;
+		} else {
+			currHandToTouch = roomTouchCentre - currHandPos2;
+			prevHandToTouch = roomTouchCentre - prevHandPos2;
+		}
+		
+
+		//set up the 2 vertices for a square boundry for the gesture
 		glm::dvec3 upRight = glm::dvec3(initRoomTouchCentre.x+0.07, 0.0, initRoomTouchCentre.z+0.07);
 		glm::dvec3 lowLeft = glm::dvec3(initRoomTouchCentre.x-0.07, 0.0, initRoomTouchCentre.z-0.07);
 
@@ -498,7 +507,7 @@ void TestHCI::update(const std::vector<MinVR::EventRef> &events){
 		std::cout<<"prevHandToTouch: "<<glm::to_string(prevHandToTouch)<<std::endl;
 		std::cout<<"dot product of them: "<< glm::to_string(glm::dot(currHandToTouch,prevHandToTouch)) << std::endl;
 
-		double alpha = glm::acos(glm::dot(currHandToTouch, prevHandToTouch) / (glm::length(currHandToTouch) * glm::length(prevHandToTouch))); // angle between both vectors, causes cube to disappear
+		double alpha = glm::acos(glm::dot(glm::normalize(currHandToTouch), glm::normalize(prevHandToTouch))); // angle between both vectors, causes cube to disappear
 
 		std::cout<<"alpha: " << alpha << std::endl;
 
@@ -513,7 +522,7 @@ void TestHCI::update(const std::vector<MinVR::EventRef> &events){
 		double lengthOfProjection = glm::dot(cross, normProjCross); 
 
 		// projected cross prod 
-		glm::dvec3 projectedCrossProd = lengthOfProjection * normProjCross; 
+		//glm::dvec3 projectedCrossProd = lengthOfProjection * normProjCross; 
 
 		// modified angle that we rotate with
 		// 73.5 to make it more sensitive
@@ -521,10 +530,7 @@ void TestHCI::update(const std::vector<MinVR::EventRef> &events){
 
 		alpha = alpha * lengthOfProjection;
 
-		// make a matrix transform, one for x rotation, one for z
-		// we're rotating around projectedCrossProd
-
-		//std::cout<<"alpha in degree: "<<glm::degrees(alpha)<<std::endl;
+		std::cout<<"alpha in degree: "<<glm::degrees(alpha)<<std::endl;
 		//std::cout<<"normProjCross: "<<glm::to_string(normProjCross)<<std::endl;
 
 		glm::dmat4 XZRotMat = glm::rotate(glm::dmat4(1.0), glm::degrees(alpha), normProjCross);
@@ -563,22 +569,6 @@ void TestHCI::update(const std::vector<MinVR::EventRef> &events){
 	if (registeredTouchData.size() > 3 && glm::abs(currHandsDist - prevHandsDist) < 0.045 && glm::abs(currHandsDist - prevHandsDist) > 0.0005) {
 		
 		//std::cout << "4 Touches" << std::endl;
-		
-		// to enumerate number of touches for each hand
-		numTouchForHand1 = 0;
-		numTouchForHand2 = 0;
-
-		std::map<int, TouchDataRef>::iterator iter;
-		for (iter = registeredTouchData.begin(); iter != registeredTouchData.end(); iter++) {
-			
-			glm::dvec3 currRoomPos (iter->second->getCurrRoomPos());
-			bool belongsToHand1 = (glm::length(currHandPos1 - currRoomPos) <  glm::length(currHandPos2 - currRoomPos));
-			if (belongsToHand1) {
-				numTouchForHand1++;
-			} else { // belongs to hand 2
-				numTouchForHand2++;
-			} 
-		} // end touch enumeration
 
 		/*std::cout << "Hand 1: " << numTouchForHand1 << std::endl;
 		std::cout << "Hand 2: " << numTouchForHand2 << std::endl;*/
