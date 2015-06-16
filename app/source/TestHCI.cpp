@@ -175,6 +175,7 @@ void TestHCI::update(const std::vector<MinVR::EventRef> &events){
 
 	// from TUIO move
 	// translate
+	//std::cout<<"xzRotFlag"<< xzRotFlag <<std::endl;
 	if (registeredTouchData.size() == 1 && !xzRotFlag) {  //only one finger on screen
 		xzTrans = true;
 		// negate the translation so this is actually virtual to room space
@@ -189,7 +190,7 @@ void TestHCI::update(const std::vector<MinVR::EventRef> &events){
 	//std::cout << "xzRotFlag " << xzRotFlag << std::endl;
 
 	if (registeredTouchData.size() == 2 && !xzRotFlag && numTouchForHand1 == 1 && numTouchForHand2 == 1) {
-		std::cout << "Inside y rot scale " << std::endl;
+		//std::cout << "Inside y rot scale " << std::endl;
 		// have to do calculations, switching between both touch points 
 
 		std::map<int, TouchDataRef>::iterator iter = registeredTouchData.begin(); // current touch point
@@ -493,7 +494,13 @@ void TestHCI::update(const std::vector<MinVR::EventRef> &events){
 
 		} // end if/else block
 
-		double alpha = glm::acos(glm::dot(currHandToTouch,prevHandToTouch)); // angle between both vectors
+		std::cout<<"currHandToTouch: "<<glm::to_string(currHandToTouch)<<std::endl;
+		std::cout<<"prevHandToTouch: "<<glm::to_string(prevHandToTouch)<<std::endl;
+		std::cout<<"dot product of them: "<< glm::to_string(glm::dot(currHandToTouch,prevHandToTouch)) << std::endl;
+
+		double alpha = glm::acos(glm::dot(currHandToTouch, prevHandToTouch) / (glm::length(currHandToTouch) * glm::length(prevHandToTouch))); // angle between both vectors, causes cube to disappear
+
+		std::cout<<"alpha: " << alpha << std::endl;
 
 		// get cross prod
 		glm::dvec3 cross = glm::cross(glm::normalize(currHandToTouch), glm::normalize(prevHandToTouch)); 
@@ -510,10 +517,15 @@ void TestHCI::update(const std::vector<MinVR::EventRef> &events){
 
 		// modified angle that we rotate with
 		// 73.5 to make it more sensitive
+		//std::cout<<"lengthOfProjection: "<<lengthOfProjection<<std::endl;
+
 		alpha = alpha * lengthOfProjection;
 
 		// make a matrix transform, one for x rotation, one for z
 		// we're rotating around projectedCrossProd
+
+		//std::cout<<"alpha in degree: "<<glm::degrees(alpha)<<std::endl;
+		//std::cout<<"normProjCross: "<<glm::to_string(normProjCross)<<std::endl;
 
 		glm::dmat4 XZRotMat = glm::rotate(glm::dmat4(1.0), glm::degrees(alpha), normProjCross);
 
@@ -524,7 +536,11 @@ void TestHCI::update(const std::vector<MinVR::EventRef> &events){
 		// translate back
 		glm::dmat4 transBack(glm::translate(glm::dmat4(1.0), centOfRot));	
 
-		// put it into the matrix stack			
+		// put it into the matrix stack	
+		//std::cout<<"transBack: "<< glm::to_string(transBack) <<std::endl;
+		std::cout<<"XZRotMat: "<<glm::to_string(XZRotMat) <<std::endl;
+		//std::cout<<"transMat: "<<glm::to_string(transMat)<<std::endl;
+
 		cFrameMgr->setRoomToVirtualSpaceFrame(cFrameMgr->getRoomToVirtualSpaceFrame() * transBack * XZRotMat * transMat);
 
 		//glBegin(GL_LINES);
@@ -569,7 +585,7 @@ void TestHCI::update(const std::vector<MinVR::EventRef> &events){
 
 		// check if we have two points for each hand
 		if (numTouchForHand1 == 2 && numTouchForHand2 == 2) {
-			std::cout << "In Y Trans Mode" << std::endl;
+			//std::cout << "In Y Trans Mode" << std::endl;
 			//calculate translate distance
 			double prevHandsDist = glm::length(prevHandPos1 - prevHandPos2);
 			double currHandsDist = glm::length(currHandPos1 - currHandPos2);
@@ -679,7 +695,7 @@ void TestHCI::yRotationAndScale(TouchDataRef centOfRotData, TouchDataRef roomCoo
 	glm::dmat4 scaleMat = glm::dmat4(1.0);
 	// movement of touch point is above threshold
 	if(glm::abs(glm::length(roomCoordData->getPrevRoomPos()) - glm::length(roomCoordData->getCurrRoomPos())) > THRESH) {
-		std::cout<<"using the filtered pos in rotate and scale"<<std::endl;
+		//std::cout<<"using the filtered pos in rotate and scale"<<std::endl;
 		// rotate
 
 		//// 0 vector guard
