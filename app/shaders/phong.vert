@@ -2,9 +2,13 @@
 
 in layout (location = 0) vec3 vertex_position;
 in layout (location = 1) vec3 vertex_normal;
+//in layout (location = 2) vec2 vertex_texcoord;
 uniform mat4 projection_mat, view_mat, model_mat;
 uniform vec3 eye_world;
 out vec3 position_world, normal_world;
+//uniform sampler2D koalaTextureSampler;
+//out vec2 texture_coordinates;
+
 
 void main () {
 	position_world = vec3 (model_mat * vec4 (vertex_position, 1.0));

@@ -88,7 +88,17 @@ void App::initVBO(int threadId)
 							1.0f,-1.0f, 1.0f,  -1.0f,-1.0f, 1.0f,  -1.0f,-1.0f,-1.0f,      // v3-v2-v7
 
 							1.0f,-1.0f,-1.0f,  -1.0f,-1.0f,-1.0f,  -1.0f, 1.0f,-1.0f,      // v4-v7-v6 (back)
-						   -1.0f, 1.0f,-1.0f,   1.0f, 1.0f,-1.0f,   1.0f,-1.0f,-1.0f };    // v6-v5-v4
+						   -1.0f, 1.0f,-1.0f,   1.0f, 1.0f,-1.0f,   1.0f,-1.0f,-1.0f,
+	
+	 /*axis start here */
+							0.5f,0.0f,0.0f,  0.0f,0.0f,0.0f, 0.0f,-0.1f,0.0f, 
+							0.5f,-0.1f,0.0f, 0.5f,0.0f,0.0f, 0.0f,-0.1f,0.0f, 
+							1.0f,0.0f,0.0f,  0.5f,0.0f,0.0f, 0.5f,-0.1f,0.0f,
+							1.0f,-0.1f,0.0f, 1.0f,0.0f,0.0f, 0.5f,-0.1f,0.0f,
+							1.5f,0.0f,0.0f,  1.0f,0.0f,0.0f, 1.0f,-0.1f,0.0f,
+							1.5f,-0.1f,0.0f, 1.5f,0.0f,0.0f, 1.0f,-0.1f,0.0f,
+
+							1.7f,-0.05f,0.0f, 1.5f,0.2f,0.0f,  1.5f,-0.3f,0.0f};    // v6-v5-v4
 
 	// normal array
 	GLfloat normals[]   = { 0, 0, 1,   0, 0, 1,   0, 0, 1,      // v0-v1-v2 (front)
@@ -107,8 +117,17 @@ void App::initVBO(int threadId)
 							0,-1, 0,   0,-1, 0,   0,-1, 0,      // v3-v2-v7
 
 							0, 0,-1,   0, 0,-1,   0, 0,-1,      // v4-v7-v6 (back)
-							0, 0,-1,   0, 0,-1,   0, 0,-1 };    // v6-v5-v4
+							0, 0,-1,   0, 0,-1,   0, 0,-1,		// v6-v5-v4
 
+
+							0,0,1, 0,0,1, 0,0,1,
+							0,0,1, 0,0,1, 0,0,1,
+							0,0,1, 0,0,1, 0,0,1,
+							0,0,1, 0,0,1, 0,0,1,
+							0,0,1, 0,0,1, 0,0,1,
+							0,0,1, 0,0,1, 0,0,1,
+							0,0,1, 0,0,1, 0,0,1
+	};    
 	// color array
 	GLfloat colors[]    = { 1, 1, 1,   1, 1, 0,   1, 0, 0,      // v0-v1-v2 (front)
 							1, 0, 0,   1, 0, 1,   1, 1, 1,      // v2-v3-v0
@@ -126,13 +145,25 @@ void App::initVBO(int threadId)
 							1, 0, 1,   1, 0, 0,   0, 0, 0,      // v3-v2-v7
 
 							0, 0, 1,   0, 0, 0,   0, 1, 0,      // v4-v7-v6 (back)
-							0, 1, 0,   0, 1, 1,   0, 0, 1 };    // v6-v5-v4
+							0, 1, 0,   0, 1, 1,   0, 0, 1,
+
+
+							0, 1, 0,   1, 1, 0,   1, 1, 1,      // v6-v1-v0
+
+							1, 1, 0,   0, 1, 0,   0, 0, 0,      // v1-v6-v7 (left)
+							0, 0, 0,   1, 0, 0,   1, 1, 0,      // v7-v2-v1
+
+							0, 0, 0,   0, 0, 1,   1, 0, 1,      // v7-v4-v3 (bottom)
+							1, 0, 1,   1, 0, 0,   0, 0, 0,      // v3-v2-v7
+
+							0, 0, 1,   0, 0, 0,   0, 1, 0,      // v4-v7-v6 (back)
+							0, 1, 0,   0, 1, 1,   0, 0, 1};    // v6-v5-v4
 
 	//making cubeData
 	std::vector<int> cubeIndices;
 	std::vector<GPUMesh::Vertex> cubeData;
 	GPUMesh::Vertex vert;
-	for(int i=0; i < 108; i = i +3){
+	for(int i=0; i < 171; i = i +3){
 		vert.position = glm::dvec3(vertices[i],vertices[i+1],vertices[i+2]);
 		vert.normal = glm::normalize(glm::dvec3(normals[i],normals[i+1],normals[i+2]));
 		vert.texCoord0 = glm::dvec2(colors[i],colors[i+1]);
@@ -234,6 +265,8 @@ void App::drawGraphics(int threadId, MinVR::AbstractCameraRef camera,
 		std::cout << "GLERROR: "<<err<<std::endl;
 	}
 
+	currentHCI->draw(threadId,camera,window);
+
 	const int numIndices = (int)(cubeMesh->getFilledIndexByteSize()/sizeof(int));
 
 	//glBindBufferARB(GL_ARRAY_BUFFER_ARB, _vboId[threadId]);
@@ -288,11 +321,33 @@ void App::drawGraphics(int threadId, MinVR::AbstractCameraRef camera,
 	glEnd();
 	*/
 	glBindVertexArray(cubeMesh->getVAOID());
-	glDrawArrays(GL_TRIANGLES, 0, numIndices);
+	//std::cout<<"number of indices: "<<numIndices<<std::endl;
+	glDrawArrays(GL_TRIANGLES, 0, 36);
+
+	// x-axis
+	glDrawArrays(GL_TRIANGLES, 36, numIndices-36);
+
+	// y-axis
+	glm::dmat4 yAxisTransMat = glm::rotate(glm::dmat4(1.0), -74.0, glm::dvec3(0.0, 2.0, 1.0));
+	camera->setObjectToWorldMatrix(yAxisTransMat);
+	shader->setUniform("model_mat", offAxisCam->getLastAppliedModelMatrix());
+	glDrawArrays(GL_TRIANGLES, 36, numIndices - 36);
+
+	// z-axis
+	glm::dmat4 zAxisTransMat = glm::rotate(glm::dmat4(1.0), 45.0, glm::dvec3(1.0, 1.0, 0.0));
+	camera->setObjectToWorldMatrix(offAxisCam->getObjectToWorldMatrix()*zAxisTransMat);
+	shader->setUniform("model_mat", offAxisCam->getLastAppliedModelMatrix());
+	eye_world = glm::dvec3(glm::column(glm::inverse(offAxisCam->getLastAppliedViewMatrix()), 3));
+	shader->setUniform("eye_world", eye_world);
+
+	glDrawArrays(GL_TRIANGLES, 36, numIndices-36);
+	
+	
+
 
 	//std::cout<<glm::to_string(cFrameMgr->getVirtualToRoomSpaceFrame())<<std::endl;
 
-	currentHCI->draw(threadId,camera,window);
+	
 
 
 }

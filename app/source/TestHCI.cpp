@@ -29,8 +29,12 @@ void TestHCI::initializeContextSpecificVars(int threadId,MinVR::WindowRef window
 }
 
 void TestHCI::initVBO(int threadId) {
-	GLfloat vertices[]  = { 0.25f, 0.0f, 0.25f,  -0.25f, 0.0f, -0.25f,  -0.25f, 0.0f, 0.25f};
+	GLfloat vertices[]  = { 0.25f, 0.0f, 0.25f,  -0.25f, 0.0f, -0.25f,  -0.25f, 0.0f, 0.25f,
+
+
+		};
 	GLfloat normals[]   = { 0, 1, 0,   0, 1, 0,   0, 1, 0};
+	
 	GLfloat texture[] = {1,1,0, 0,0,0, 0,1,0 };//thrid coordinate is never use. only have it so the for loop could work
 	
 	std::vector<int> cubeIndices;
@@ -586,7 +590,6 @@ void TestHCI::update(const std::vector<MinVR::EventRef> &events){
 
 			cFrameMgr->setRoomToVirtualSpaceFrame(cFrameMgr->getRoomToVirtualSpaceFrame() * yTransMat);
 		}
-
 	}
 
 	///// Apply the correct matrix transforms based on updated state (booleans, registeredTouchData, instance variables)
@@ -640,7 +643,7 @@ void TestHCI::draw(int threadId, MinVR::AbstractCameraRef camera, MinVR::WindowR
 	//shader->setUniform("normal_matrix", glm::dmat3(offAxisCam->getLastAppliedModelMatrix()));
 	//glm::dvec3 eye_world = glm::dvec3(glm::column(glm::inverse(offAxisCam->getLastAppliedViewMatrix()), 3));
 	//shader->setUniform("eye_world", eye_world);
-	texMan->getTexture(threadId, "Koala2")->bind(0);
+	texMan->getTexture(threadId, "Koala")->bind(0);
 	shader->setUniform("koalaTextureSampler",0);
 
 
@@ -659,7 +662,7 @@ void TestHCI::draw(int threadId, MinVR::AbstractCameraRef camera, MinVR::WindowR
 		camera->setObjectToWorldMatrix(glm::translate(glm::dmat4(1.0f), roomCoord));
 		shader->setUniform("model_mat", offAxisCam->getLastAppliedModelMatrix());
 		// draw triangle
-		//glDrawArrays(GL_TRIANGLES, 0, 3);
+		glDrawArrays(GL_TRIANGLES, 0, 3);
 		
 	}
 }
