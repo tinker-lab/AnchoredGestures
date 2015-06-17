@@ -3,7 +3,7 @@
 TouchData::TouchData(MinVR::EventRef event, glm::dvec3 currRoomPos) {
 	prevEvent = event;
 	currEvent = event;
-
+	handBelongTo = -1;
 	double freq = 60.0;
 	double mincutoff = 50.0;
 	double beta = 3.0;
@@ -67,4 +67,12 @@ glm::dvec3 TouchData::getPrevRoomPos() {
 //  gives you the distance in screen coordinates
 glm::dvec3 TouchData::roomPositionDifference() {
 	return currRoomPos - prevRoomPos;
+}
+
+void TouchData::setBelongTo(int hand){
+	handBelongTo = hand;
+}
+
+int TouchData::getBelongTo(){
+	return handBelongTo;
 }

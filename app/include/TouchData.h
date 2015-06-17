@@ -24,8 +24,9 @@ public:
 	glm::dvec3 getCurrRoomPos();
 	void setPrevRoomPos(glm::dvec3 pos);
 	glm::dvec3 getPrevRoomPos();
-
+	void setBelongTo(int hand);
 	glm::dvec3 roomPositionDifference();
+	int getBelongTo();
 
 private:
 	MinVR::EventRef prevEvent;
@@ -36,6 +37,7 @@ private:
 	glm::dvec3 prevRoomPos;
 	std::shared_ptr<OneEuroFilter> xFilter;
 	std::shared_ptr<OneEuroFilter> zFilter;
+	int handBelongTo; // 1 is right hand 2 is left hand
 };
 
 #endif /* TOUCHDATA_H_ */

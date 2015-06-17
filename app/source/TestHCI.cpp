@@ -81,7 +81,7 @@ void TestHCI::update(const std::vector<MinVR::EventRef> &events){
 
 	//later to be pass into closestTouchPair function
 	glm::dvec3 pos1;
-	glm::dvec3 pos2;	
+	glm::dvec3 pos2;
 	double minDistance = DBL_MAX; 
 	MinVR::TimeStamp timestamp;
 
@@ -171,8 +171,15 @@ void TestHCI::update(const std::vector<MinVR::EventRef> &events){
 		
 		if (belongsToHand1) {
 			numTouchForHand1++;
-		} else { // belongs to hand 2
+			if(iter->second->getBelongTo() == -1){
+			iter->second->setBelongTo(1);
+			}
+		} 
+		else { // belongs to hand 2
 			numTouchForHand2++;
+			if(iter->second->getBelongTo() == -1){
+			iter->second->setBelongTo(2);
+			}
 		}
 	} // end touch enumeration
 	
@@ -507,82 +514,125 @@ void TestHCI::update(const std::vector<MinVR::EventRef> &events){
 
 		} // end if/else block
 
-		std::cout<<"currHandToTouch: "<<glm::to_string(currHandToTouch)<<std::endl;
-		std::cout<<"prevHandToTouch: "<<glm::to_string(prevHandToTouch)<<std::endl;
-		std::cout<<"dot product of them: "<< glm::to_string(glm::dot(currHandToTouch,prevHandToTouch)) << std::endl;
+		
+		//std::cout<<"currHandToTouch: "<<glm::to_string(currHandToTouch)<<std::endl;
+		//std::cout<<"prevHandToTouch: "<<glm::to_string(prevHandToTouch)<<std::endl;
+		std::cout<<"dot product of them: "<< glm::to_string(glm::dot(glm::normalize(currHandToTouch), glm::normalize(prevHandToTouch))) << std::endl;
+		// only if NO drastic change, do the calculations
+		if (!(glm::dot(glm::normalize(currHandToTouch), glm::normalize(prevHandToTouch)) < 0.8)) {
+			
+			std::cout<<"what we clamping: "<<glm::clamp(glm::dot(currHandToTouch, prevHandToTouch),-1.0,1.0)<<std::endl;
 
-		double alpha = glm::acos(glm::dot(glm::normalize(currHandToTouch), glm::normalize(prevHandToTouch))); // angle between both vectors, causes cube to disappear
+			double alpha = glm::degrees(glm::acos(glm::clamp(glm::dot(glm::normalize(currHandToTouch), glm::normalize(prevHandToTouch)),-1.0,1.0)));
+			std::cout<<"alpha: " << alpha << std::endl;
 
-		std::cout<<"alpha: " << alpha << std::endl;
+			// get cross prod
+			glm::dvec3 cross = glm::cross(glm::normalize(currHandToTouch), glm::normalize(prevHandToTouch)); 
+			glm::dvec3 normProjCross = glm::dvec3(cross.x, 0.0, cross.z); // projection
 
-		// get cross prod
-		glm::dvec3 cross = glm::cross(glm::normalize(currHandToTouch), glm::normalize(prevHandToTouch)); 
-		glm::dvec3 normProjCross = glm::normalize(glm::dvec3(cross.x, 0.0, cross.z));
+			// project cross prod onto the screen, get a length
+			//double lengthOfProjection = glm::dot(cross, normCross); 
 
+			// projected cross prod 
+			//glm::dvec3 projectedCrossProd = lengthOfProjection * normProjCross; 
 
-		//std::cout << "Cross: " << glm::to_string(cross) << std::endl;
+			//std::cout<<"lengthOfProjection: "<<lengthOfProjection<<std::endl;
+			std::cout<<"alpha in degree before times lengthofprojection: "<<glm::degrees(alpha)<<std::endl;
 
-		// project cross prod onto the screen, get a length
-		double lengthOfProjection = glm::dot(cross, normProjCross); 
+			//alpha = alpha * lengthOfProjection;
 
-		// projected cross prod 
-		//glm::dvec3 projectedCrossProd = lengthOfProjection * normProjCross; 
+			//std::cout<<"alpha in degree after: "<<glm::degrees(alpha)<<std::endl;
+			//std::cout<<"normProjCross: "<<glm::to_string(normProjCross)<<std::endl;
 
-		// modified angle that we rotate with
-		// 73.5 to make it more sensitive
-		//std::cout<<"lengthOfProjection: "<<lengthOfProjection<<std::endl;
+			glm::dmat4 XZRotMat = glm::rotate(glm::dmat4(1.0), alpha, normProjCross);
 
-		alpha = alpha * lengthOfProjection;
+			// have translations when we have a touch point not in the bounding box
 
-		std::cout<<"alpha in degree: "<<glm::degrees(alpha)<<std::endl;
-		//std::cout<<"normProjCross: "<<glm::to_string(normProjCross)<<std::endl;
+			// translate to origin
+			glm::dmat4 transMat(glm::translate(glm::dmat4(1.0), -1.0*centOfRot));
+			// translate back
+			glm::dmat4 transBack(glm::translate(glm::dmat4(1.0), centOfRot));	
 
-		glm::dmat4 XZRotMat = glm::rotate(glm::dmat4(1.0), glm::degrees(alpha), normProjCross);
+			// put it into the matrix stack	
+			//std::cout<<"XZRotMat: "<<glm::to_string(XZRotMat) <<std::endl;
+			
+			cFrameMgr->setRoomToVirtualSpaceFrame(cFrameMgr->getRoomToVirtualSpaceFrame() * transBack * XZRotMat * transMat);
+		}
 
-		// have translations when we have a touch point not in the bounding box
-
-		// translate to origin
-		glm::dmat4 transMat(glm::translate(glm::dmat4(1.0), -1.0*centOfRot));
-		// translate back
-		glm::dmat4 transBack(glm::translate(glm::dmat4(1.0), centOfRot));	
-
-		// put it into the matrix stack	
-		//std::cout<<"transBack: "<< glm::to_string(transBack) <<std::endl;
-		std::cout<<"XZRotMat: "<<glm::to_string(XZRotMat) <<std::endl;
-		//std::cout<<"transMat: "<<glm::to_string(transMat)<<std::endl;
-
-		cFrameMgr->setRoomToVirtualSpaceFrame(cFrameMgr->getRoomToVirtualSpaceFrame() * transBack * XZRotMat * transMat);
-
-		//glBegin(GL_LINES);
-		//	glVertex3f(roomTouchCentre.x, roomTouchCentre.y, roomTouchCentre.z);
-		//	glVertex3f(roomTouchCentre.x + projectedCrossProd.x, roomTouchCentre.y + projectedCrossProd.y, roomTouchCentre.z + projectedCrossProd.z);
-		//glEnd();
-		// GL_STREAM_DRAW
 	} // end xzRot Gesture
 
-	// I think this is what this should look like...
-	// Y translation gesture
-	// if (YTranslate) {
-	//		YTranslate()
-	// }
+	// Y Translation Gesture
 	double prevHandsDist = glm::length(prevHandPos1 - prevHandPos2);
 	double currHandsDist = glm::length(currHandPos1 - currHandPos2);
 	//std::cout << "curr - prev hand dist: " << glm::abs(currHandsDist - prevHandsDist) << std::endl;
 	
 	// weighted balloon gesture for Y translation
 	if (registeredTouchData.size() > 3 && glm::abs(currHandsDist - prevHandsDist) < 0.045 && glm::abs(currHandsDist - prevHandsDist) > 0.0005) {
-		
-		//std::cout << "4 Touches" << std::endl;
-
-		/*std::cout << "Hand 1: " << numTouchForHand1 << std::endl;
-		std::cout << "Hand 2: " << numTouchForHand2 << std::endl;*/
 
 		// check if we have two points for each hand
 		if (numTouchForHand1 == 2 && numTouchForHand2 == 2) {
 			//std::cout << "In Y Trans Mode" << std::endl;
 			//calculate translate distance
+			glm::dvec3 rightTouch1 = glm::dvec3(0.0,-1.0,0.0);
+			glm::dvec3 rightTouch2;
+			glm::dvec3 leftTouch1 = glm::dvec3(0.0,-1.0,0.0);
+			glm::dvec3 leftTouch2;
+			
+			
+			std::map<int, TouchDataRef>::iterator iter;
+			for (iter = registeredTouchData.begin(); iter != registeredTouchData.end(); iter++){
+				if(iter->second->getBelongTo() == 1){
+					if(rightTouch1 == glm::dvec3(0.0,-1.0,0.0)){
+						rightTouch2 = iter->second->getCurrRoomPos();
+					}
+					rightTouch1 = iter->second->getCurrRoomPos();
+				}
+				else{
+					if(leftTouch1 ==  glm::dvec3(0.0,-1.0,0.0)){
+						leftTouch2 = iter->second->getCurrRoomPos();
+					}
+					leftTouch1 = iter->second->getCurrRoomPos();
+				}
+			}
+
+			/*std::cout<<"RightTouch1: "<<glm::to_string(RightTouch1)<<std::endl;
+			std::cout<<"RightTouch2: "<<glm::to_string(RightTouch2)<<std::endl;
+			std::cout<<"LeftTouch1: "<<glm::to_string(LeftTouch1)<<std::endl;
+			std::cout<<"LeftTouch2: "<<glm::to_string(LeftTouch2)<<std::endl;
+*/
 			double prevHandsDist = glm::length(prevHandPos1 - prevHandPos2);
 			double currHandsDist = glm::length(currHandPos1 - currHandPos2);
+			glm::dvec3 rightTouchCentre = 0.5 * (rightTouch1 + rightTouch2);
+			glm::dvec3 leftTouchCentre = 0.5 * (leftTouch1 + leftTouch2 );
+			//both hand go outward neg on right pos on left
+			if(currHandsDist < prevHandsDist){
+				glm::dvec3 rightBefore = prevHandPos1 - rightTouchCentre;
+				glm::dvec3 rightAfter = currHandPos1 - rightTouchCentre;
+				glm::dvec3 rightZVector = glm::cross(glm::normalize(rightBefore),glm::normalize(rightAfter));
+				glm::dvec3 leftBefore = prevHandPos2 - leftTouchCentre;
+				glm::dvec3 leftAfter= currHandPos2 - leftTouchCentre;
+				glm::dvec3 leftZVector= glm::cross(glm::normalize(leftBefore),glm::normalize(leftAfter));
+				//if(){ //check for right hand and then left hand
+				//
+				//
+				//}
+
+				std::cout<<"inwardrightZVector: "<<glm::to_string(rightZVector)<<std::endl;
+				std::cout<<"inwardleftZVector: "<<glm::to_string(leftZVector)<<std::endl;
+			} 
+			if(currHandsDist > prevHandsDist){
+				glm::dvec3 rightBefore = prevHandPos1 - rightTouchCentre;
+				glm::dvec3 rightAfter = currHandPos1 - rightTouchCentre;
+				glm::dvec3 rightZVector = glm::cross(glm::normalize(rightBefore),glm::normalize(rightAfter));
+				glm::dvec3 leftBefore = prevHandPos2 - leftTouchCentre;
+				glm::dvec3 leftAfter= currHandPos2 - leftTouchCentre;
+				glm::dvec3 leftZVector= glm::cross(glm::normalize(leftBefore),glm::normalize(leftAfter));
+			
+				std::cout<<"outwardrightZVector: "<<glm::to_string(rightZVector)<<std::endl;
+				std::cout<<"outwardleftZVector: "<<glm::to_string(leftZVector)<<std::endl;
+			}
+
+
 
 			double transBy = currHandsDist - prevHandsDist;
 			glm::dvec3 yTransBy (0.0, transBy, 0.0);
