@@ -41,6 +41,9 @@ private:
 	void initVBO(int threadId);
 	void initLights();
 	std::shared_ptr<GPUMesh> cubeMesh;
+	std::shared_ptr<GPUMesh> tetraMesh;
+	std::shared_ptr<GPUMesh> axisMesh;
+	std::shared_ptr<GPUMesh> sphereMesh;
 	std::shared_ptr<GLSLProgram> shader;
 	std::map<int, GLuint> _vboId;
 	std::shared_ptr<AbstractHCI> currentHCI;

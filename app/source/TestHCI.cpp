@@ -21,6 +21,7 @@ void TestHCI::initializeContextSpecificVars(int threadId,MinVR::WindowRef window
 	prevHandPos1 = glm::dvec3(0.0, -1.0, 0.0);
 	prevHandPos2 = glm::dvec3(0.0, -1.0, 0.0);
 	xzRotFlag = false;
+	//freopen("output2.txt","w",stdout);
 
 	GLenum err;
 	if((err = glGetError()) != GL_NO_ERROR) {
@@ -523,28 +524,32 @@ void TestHCI::update(const std::vector<MinVR::EventRef> &events){
 			
 			std::cout<<"what we clamping: "<<glm::clamp(glm::dot(currHandToTouch, prevHandToTouch),-1.0,1.0)<<std::endl;
 
-			double alpha = glm::degrees(glm::acos(glm::clamp(glm::dot(glm::normalize(currHandToTouch), glm::normalize(prevHandToTouch)),-1.0,1.0)));
+			double alpha = glm::acos(glm::clamp(glm::dot(glm::normalize(currHandToTouch), glm::normalize(prevHandToTouch)),-1.0,1.0)); // from 0 to pi
 			std::cout<<"alpha: " << alpha << std::endl;
 
 			// get cross prod
+			
 			glm::dvec3 cross = glm::cross(glm::normalize(currHandToTouch), glm::normalize(prevHandToTouch)); 
-			glm::dvec3 normProjCross = glm::dvec3(cross.x, 0.0, cross.z); // projection
+			std::cout<<"cross: "<<glm::to_string(cross)<<std::endl;
+			glm::dvec3 projCross = glm::normalize(glm::dvec3(cross.x, 0.0, cross.z)); // projection
+			std::cout<<"projcross: "<<glm::to_string(projCross)<<std::endl;
 
 			// project cross prod onto the screen, get a length
-			//double lengthOfProjection = glm::dot(cross, normCross); 
-
+			
+			double lengthOfProjection = glm::dot(cross, projCross); 
+			std::cout<<"lengthOfProjection: "<<glm::to_string(lengthOfProjection)<<std::endl;
 			// projected cross prod 
 			//glm::dvec3 projectedCrossProd = lengthOfProjection * normProjCross; 
 
 			//std::cout<<"lengthOfProjection: "<<lengthOfProjection<<std::endl;
 			std::cout<<"alpha in degree before times lengthofprojection: "<<glm::degrees(alpha)<<std::endl;
 
-			//alpha = alpha * lengthOfProjection;
+			alpha = alpha * lengthOfProjection;
 
-			//std::cout<<"alpha in degree after: "<<glm::degrees(alpha)<<std::endl;
+			std::cout<<"alpha in degree after: "<<glm::degrees(alpha)<<std::endl;
 			//std::cout<<"normProjCross: "<<glm::to_string(normProjCross)<<std::endl;
 
-			glm::dmat4 XZRotMat = glm::rotate(glm::dmat4(1.0), alpha, normProjCross);
+			glm::dmat4 XZRotMat = glm::rotate(glm::dmat4(1.0), glm::degrees(alpha), glm::normalize(projCross));
 
 			// have translations when we have a touch point not in the bounding box
 
