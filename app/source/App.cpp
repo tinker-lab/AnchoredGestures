@@ -236,8 +236,8 @@ GLfloat tetraVertices[] = { 0.0f, 0.0f, 0.0f,
 	GPUMesh::Vertex sphereVert;
 
 	// fill up the empty space
-	const int STACKS = 40; // longitudes
-	const int SLICES = 60; // latitudes
+	const float STACKS = 40.0f; // longitudes
+	const float SLICES = 60.0f; // latitudes
 	const float latUnit = 180/STACKS;
 	const float lonUnit = 360/SLICES;
 	float curr_lat;
