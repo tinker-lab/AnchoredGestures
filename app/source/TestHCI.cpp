@@ -21,6 +21,7 @@ void TestHCI::initializeContextSpecificVars(int threadId,MinVR::WindowRef window
 	prevHandPos1 = glm::dvec3(0.0, -1.0, 0.0);
 	prevHandPos2 = glm::dvec3(0.0, -1.0, 0.0);
 	xzRotFlag = false;
+	centerRotMode = false;
 	//freopen("output2.txt","w",stdout);
 
 	GLenum err;
@@ -51,7 +52,7 @@ void TestHCI::initVBO(int threadId) {
 	}
 	_vboId[threadId] = GLuint(0);
 
-	cubeMesh.reset(new GPUMesh(GL_STATIC_DRAW, sizeof(GPUMesh::Vertex)*cubeData.size(), sizeof(int)*cubeIndices.size(), 0, cubeData, sizeof(GPUMesh::Vertex)*cubeData.size(), &cubeIndices[0]));
+	cubeMesh.reset(new GPUMesh(GL_STATIC_DRAW, sizeof(GPUMesh::Vertex)*cubeData.size(), sizeof(int)*cubeIndices.size(), 0, cubeData, sizeof(int)*cubeIndices.size(), &cubeIndices[0]));
 	
 
 
@@ -442,7 +443,7 @@ void TestHCI::update(const std::vector<MinVR::EventRef> &events){
 	
 
 	if (minDistance < 0.025 && currHandPos1 != prevHandPos1) {
-
+		
 		xzRotFlag = true;
 		std::cout << "Inside XZRot Mode" << std::endl;
 
@@ -453,16 +454,20 @@ void TestHCI::update(const std::vector<MinVR::EventRef> &events){
 
 		if(initRoomPos){
 			// pos1 and pos2 are where you put your fingers down. We're finding the centroid
+			// to calculate the box boundary for xzRotMode
 			initRoomTouchCentre = 0.5*(pos1 + pos2); 
 			initRoomPos = false;
 
 		}
 
 		glm::dvec3 centOfRot (0.0);
-		glm::dvec3 prevHandToTouch;
 		//calculate the current handToTouch vector
-		glm::dvec3 roomTouchCentre = 0.5*(pos1 + pos2);
-		glm::dvec3 currHandToTouch;
+		
+		if(registeredTouchData.size() > 1 && !centerRotMode){
+			roomTouchCentre = 0.5*(pos1 + pos2);
+		}
+
+		std::cout << "Touch Center: " << glm::to_string(roomTouchCentre) << std::endl; 
 
 		//Should not be equal in XZRotMode but just in case.
 		// for choosing the hand that rotates
@@ -502,6 +507,7 @@ void TestHCI::update(const std::vector<MinVR::EventRef> &events){
 
 				} else { // touch point not in box, assume as center of rotation
 					centOfRot = iter->second->getCurrRoomPos();
+					centerRotMode = true;
 					std::cout << "Cent of Rot set" << std::endl;
 				}
 
@@ -519,8 +525,7 @@ void TestHCI::update(const std::vector<MinVR::EventRef> &events){
 		//std::cout<<"currHandToTouch: "<<glm::to_string(currHandToTouch)<<std::endl;
 		//std::cout<<"prevHandToTouch: "<<glm::to_string(prevHandToTouch)<<std::endl;
 		std::cout<<"dot product of them: "<< glm::to_string(glm::dot(glm::normalize(currHandToTouch), glm::normalize(prevHandToTouch))) << std::endl;
-		// only if NO drastic change, do the calculations
-		if (!(glm::dot(glm::normalize(currHandToTouch), glm::normalize(prevHandToTouch)) < 0.8)) {
+		
 			
 			std::cout<<"what we clamping: "<<glm::clamp(glm::dot(currHandToTouch, prevHandToTouch),-1.0,1.0)<<std::endl;
 
@@ -562,7 +567,7 @@ void TestHCI::update(const std::vector<MinVR::EventRef> &events){
 			//std::cout<<"XZRotMat: "<<glm::to_string(XZRotMat) <<std::endl;
 			
 			cFrameMgr->setRoomToVirtualSpaceFrame(cFrameMgr->getRoomToVirtualSpaceFrame() * transBack * XZRotMat * transMat);
-		}
+		
 
 	} // end xzRot Gesture
 
@@ -702,24 +707,76 @@ void TestHCI::draw(int threadId, MinVR::AbstractCameraRef camera, MinVR::WindowR
 	shader->setUniform("koalaTextureSampler",0);
 
 
+	//--------------------
+	std::vector<GPUMesh::Vertex> cpuVerts;
+	std::vector<int> cpuIndices;
+	GPUMesh::Vertex vert;
+	vert.normal = glm::dvec3(0,0,1);
+	vert.position=glm::dvec3(0.04,0,0);
+	vert.texCoord0 = glm::dvec2(0,0);
+	cpuVerts.push_back(vert);
+	cpuIndices.push_back(cpuVerts.size()-1);
+
+	vert.position=glm::dvec3(0.0,0,0);
+	cpuVerts.push_back(vert);
+	cpuIndices.push_back(cpuVerts.size()-1);
+
+	vert.position=currHandToTouch+glm::dvec3(0.04, 0,0);
+	//std::cout<<"----------- "<<glm::to_string(handPosCur)<<std::endl;
+	cpuVerts.push_back(vert);
+	cpuIndices.push_back(cpuVerts.size()-1);
+
+	vert.position=currHandToTouch;
+	cpuVerts.push_back(vert);
+	cpuIndices.push_back(cpuVerts.size()-1);
+
+	GPUMeshRef vectorMesh(new GPUMesh(GL_DYNAMIC_DRAW, sizeof(GPUMesh::Vertex)*cpuVerts.size(), sizeof(int)*cpuIndices.size(), 0, cpuVerts, sizeof(int)*cpuIndices.size(), &cpuIndices[0]));
+	glBindVertexArray(vectorMesh->getVAOID());
+	camera->setObjectToWorldMatrix(glm::translate(glm::dmat4(1.0f), glm::dvec3(-0.5, 0.0, 0.0)));
+	shader->setUniform("model_mat", offAxisCam->getLastAppliedModelMatrix());
+	glDrawArrays(GL_TRIANGLE_STRIP, 0, cpuIndices.size());
+
+
+	cpuVerts.clear();
+	cpuIndices.clear();
+	vert.normal = glm::dvec3(0.0,1.0, 0.0);
+	vert.position = roomTouchCentre;
+	vert.texCoord0 = glm::dvec2(0.0, 0.0);
+
+	double pi_OverTwelve = M_PI/12.0;
+
+	for(int i=0; i < 25; i++){
+		vert.position = glm::dvec3(0.1*glm::cos(i*pi_OverTwelve), 0.0, 0.1*glm::sin(i*pi_OverTwelve)) + roomTouchCentre;
+		vert.texCoord0 = glm::dvec2(0.0, 0.0);
+		cpuVerts.push_back(vert);
+		cpuIndices.push_back(cpuVerts.size()-1);
+	}
+
+	vectorMesh.reset(new GPUMesh(GL_DYNAMIC_DRAW, sizeof(GPUMesh::Vertex)*cpuVerts.size(), sizeof(int)*cpuIndices.size(), 0, cpuVerts, sizeof(int)*cpuIndices.size(), &cpuIndices[0]));
+	glBindVertexArray(vectorMesh->getVAOID());
+	glDrawArrays(GL_TRIANGLE_FAN, 0, cpuIndices.size());
+
+
 	std::map<int, TouchDataRef>::iterator it;
 	glm::dvec3 roomCoord;
 
-	glBindVertexArray(cubeMesh->getVAOID());
 
-	for(it = registeredTouchData.begin(); it != registeredTouchData.end(); ++it) {
-		
-		TouchDataRef event = it->second;
-		
-		roomCoord = event->getCurrRoomPos();
-		
-		// new matrix for each triangle
-		camera->setObjectToWorldMatrix(glm::translate(glm::dmat4(1.0f), roomCoord));
-		shader->setUniform("model_mat", offAxisCam->getLastAppliedModelMatrix());
-		// draw triangle
-		glDrawArrays(GL_TRIANGLES, 0, 3);
-		
-	}
+
+	//glBindVertexArray(cubeMesh->getVAOID());
+	//
+	//for(it = registeredTouchData.begin(); it != registeredTouchData.end(); ++it) {
+	//	
+	//	TouchDataRef event = it->second;
+	//	
+	//	roomCoord = event->getCurrRoomPos();
+	//	
+	//	// new matrix for each triangle
+	//	camera->setObjectToWorldMatrix(glm::translate(glm::dmat4(1.0f), roomCoord));
+	//	shader->setUniform("model_mat", offAxisCam->getLastAppliedModelMatrix());
+	//	// draw triangle
+	//	glDrawArrays(GL_TRIANGLES, 0, 3);
+	//	
+	//}
 }
 
 glm::dvec3 TestHCI::convertScreenToRoomCoordinates(glm::dvec2 screenCoords) {

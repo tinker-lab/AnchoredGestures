@@ -64,6 +64,10 @@ private:
 	bool xzRotFlag;
 	bool initRoomPos;
 	glm::dvec3 initRoomTouchCentre;
+	glm::dvec3 roomTouchCentre;
+	bool centerRotMode;
+	glm::dvec3 currHandToTouch;
+	glm::dvec3 prevHandToTouch;
 
 };
 
