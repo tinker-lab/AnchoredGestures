@@ -174,10 +174,6 @@ void TestHCI::update(const std::vector<MinVR::EventRef> &events){
 		}
 	} // end of data-updating for loop
 
-	std::cout << "Number of touch events: " << registeredTouchData.size() << std::endl;
-	std::cout<<"currHandPos1: "<<glm::to_string(currHandPos1)<<std::endl;
-	std::cout<<"currHandPos2: "<<glm::to_string(currHandPos2)<<std::endl;
-
 	//// At this point, the touch data should be updated, and hand positions
 	std::map<int, TouchDataRef>::iterator iter;
 	for (iter = registeredTouchData.begin(); iter != registeredTouchData.end(); iter++) {
@@ -185,10 +181,6 @@ void TestHCI::update(const std::vector<MinVR::EventRef> &events){
 		glm::dvec3 currRoomPos (iter->second->getCurrRoomPos());
 		bool belongsToHand1 = (glm::length(currHandPos1 - currRoomPos) <  glm::length(currHandPos2 - currRoomPos));
 		
-		std::cout << "Curr Room Pos" << glm::to_string(currRoomPos) << std::endl;
-		std::cout << "length from hand 1: " << glm::length(currHandPos1 - currRoomPos) << std::endl; 
-		std::cout << "length from hand 2: " << glm::length(currHandPos2 - currRoomPos) << std::endl; 
-
 		if (belongsToHand1) {
 			numTouchForHand1++;
 			if(iter->second->getBelongTo() == -1){
@@ -215,10 +207,6 @@ void TestHCI::update(const std::vector<MinVR::EventRef> &events){
 
 	// from TUIO move
 	// yRotScale
-	//std::cout << "registeredTouch size: " << registeredTouchData.size() << std::endl;
-	//std::cout << "touch for 2: " << numTouchForHand2 << std::endl;
-	//std::cout << "touch for 1: " << numTouchForHand1 << std::endl;
-	//std::cout << "xzRotFlag " << xzRotFlag << std::endl;
 
 	if (registeredTouchData.size() == 2 && !xzRotFlag && numTouchForHand1 == 1 && numTouchForHand2 == 1) {
 		//std::cout << "Inside y rot scale " << std::endl;
@@ -235,14 +223,19 @@ void TestHCI::update(const std::vector<MinVR::EventRef> &events){
 	
 	} // END OF yRotScale
 
-
+	//std::cout << "Touch size: " << registeredTouchData.size() << std::endl;
 	// find closest pair of TouchPoints
 	if (registeredTouchData.size() > 1) {
 		closestTouchPair(registeredTouchData , pos1, pos2, minDistance);
+
+		//std::cout << "Min distance: " << minDistance << std::endl;
+		
 	}
+
+	
 	
 
-	if (minDistance < 0.025 && currHandPos1 != prevHandPos1) {
+	if (minDistance < 0.06 && currHandPos1 != prevHandPos1) {
 		
 		xzRotFlag = true;
 		std::cout << "Inside XZRot Mode" << std::endl;
@@ -272,18 +265,14 @@ void TestHCI::update(const std::vector<MinVR::EventRef> &events){
 		//Should not be equal in XZRotMode but just in case.
 		// for choosing the hand that rotates
 		/*std::cout<<"currHandPos1: "<<glm::to_string(currHandPos1)<<std::endl;*/
-		std::cout<<"prevHandPos1: "<<glm::to_string(prevHandPos1)<<std::endl;
-		std::cout<<"currHandPos2: "<<glm::to_string(currHandPos2)<<std::endl;
-		std::cout<<"prevHandPos2: "<<glm::to_string(prevHandPos2)<<std::endl;
-		std::cout<<"touches on hand 1: "<< numTouchForHand1 << std::endl;
-		std::cout<<"touches on hand 2: "<< numTouchForHand2 << std::endl;
+
 
 		if (numTouchForHand1 >= numTouchForHand2) { 
-			std::cout<<"updating hand currHandToTouch using right hand"<<std::endl;
+			std::cout << "Using right hand: " << std::endl; 
 			currHandToTouch = roomTouchCentre - currHandPos1;
 			prevHandToTouch = roomTouchCentre - prevHandPos1;
 		} else {
-			std::cout<<"updating hand currHandToTouch using left hand"<<std::endl;
+			std::cout << "Using Left hand: " << std::endl; 
 			currHandToTouch = roomTouchCentre - currHandPos2;
 			prevHandToTouch = roomTouchCentre - prevHandPos2;
 		}
@@ -370,7 +359,7 @@ void TestHCI::update(const std::vector<MinVR::EventRef> &events){
 			//std::cout<<"alpha in degree after: "<<glm::degrees(alpha)<<std::endl;
 			//std::cout<<"normProjCross: "<<glm::to_string(normProjCross)<<std::endl;
 
-			glm::dmat4 XZRotMat = glm::rotate(glm::dmat4(1.0), glm::degrees(alpha), glm::normalize(projCross));
+			glm::dmat4 XZRotMat = glm::rotate(glm::dmat4(1.0), glm::degrees(alpha) * 2.0, glm::normalize(projCross));
 
 			// have translations when we have a touch point not in the bounding box
 
@@ -431,40 +420,35 @@ void TestHCI::update(const std::vector<MinVR::EventRef> &events){
 			glm::dvec3 rightTouchCentre = 0.5 * (rightTouch1 + rightTouch2);
 			glm::dvec3 leftTouchCentre = 0.5 * (leftTouch1 + leftTouch2 );
 			//both hand go outward neg on right pos on left
-			if(currHandsDist < prevHandsDist){
-				glm::dvec3 rightBefore = prevHandPos1 - rightTouchCentre;
-				glm::dvec3 rightAfter = currHandPos1 - rightTouchCentre;
-				glm::dvec3 rightZVector = glm::cross(glm::normalize(rightBefore),glm::normalize(rightAfter));
-				glm::dvec3 leftBefore = prevHandPos2 - leftTouchCentre;
-				glm::dvec3 leftAfter= currHandPos2 - leftTouchCentre;
-				glm::dvec3 leftZVector= glm::cross(glm::normalize(leftBefore),glm::normalize(leftAfter));
-				//if(){ //check for right hand and then left hand
-				//
-				//
-				//}
-
-				std::cout<<"inwardrightZVector: "<<glm::to_string(rightZVector)<<std::endl;
-				std::cout<<"inwardleftZVector: "<<glm::to_string(leftZVector)<<std::endl;
-			} 
-			if(currHandsDist > prevHandsDist){
-				glm::dvec3 rightBefore = prevHandPos1 - rightTouchCentre;
-				glm::dvec3 rightAfter = currHandPos1 - rightTouchCentre;
-				glm::dvec3 rightZVector = glm::cross(glm::normalize(rightBefore),glm::normalize(rightAfter));
-				glm::dvec3 leftBefore = prevHandPos2 - leftTouchCentre;
-				glm::dvec3 leftAfter= currHandPos2 - leftTouchCentre;
-				glm::dvec3 leftZVector= glm::cross(glm::normalize(leftBefore),glm::normalize(leftAfter));
+			double angle = 0.0;
+			glm::dvec3 rightBefore = prevHandPos1 - rightTouchCentre;
+			glm::dvec3 rightAfter = currHandPos1 - rightTouchCentre;
+			glm::dvec3 rightZVector = glm::cross(glm::normalize(rightBefore),glm::normalize(rightAfter));
+			glm::dvec3 leftBefore = prevHandPos2 - leftTouchCentre;
+			glm::dvec3 leftAfter= currHandPos2 - leftTouchCentre;
+			glm::dvec3 leftZVector= glm::cross(glm::normalize(leftBefore),glm::normalize(leftAfter));
 			
-				std::cout<<"outwardrightZVector: "<<glm::to_string(rightZVector)<<std::endl;
-				std::cout<<"outwardleftZVector: "<<glm::to_string(leftZVector)<<std::endl;
+			std::cout<<"outwardrightZVector: "<<glm::to_string(rightZVector)<<std::endl;
+			std::cout<<"outwardleftZVector: "<<glm::to_string(leftZVector)<<std::endl;
+
+			double rightAngle = glm::acos(glm::clamp(glm::dot(glm::normalize(rightBefore), glm::normalize(rightAfter)), -1.0, 1.0));
+			double leftAngle = glm::acos(glm::clamp(glm::dot(glm::normalize(leftBefore), glm::normalize(leftAfter)), -1.0, 1.0));
+			angle = (rightAngle+leftAngle)*0.5;
+
+			if (leftZVector.z < 0) {
+				angle = -angle;
 			}
+			std::cout<<"angle: "<<angle<<std::endl;
+			if (glm::abs(angle) > (M_PI/360.0)) { 
+				double scale = 1.0;
+				double transBy = scale * angle / (M_PI/2.0);
 
+				//double transBy = currHandsDist - prevHandsDist;
+				glm::dvec3 yTransBy (0.0, transBy, 0.0);
+				glm::dmat4 yTransMat (glm::translate(glm::dmat4(1.0), -yTransBy));
 
-
-			double transBy = currHandsDist - prevHandsDist;
-			glm::dvec3 yTransBy (0.0, transBy, 0.0);
-			glm::dmat4 yTransMat (glm::translate(glm::dmat4(1.0), -yTransBy));
-
-			cFrameMgr->setRoomToVirtualSpaceFrame(cFrameMgr->getRoomToVirtualSpaceFrame() * yTransMat);
+				cFrameMgr->setRoomToVirtualSpaceFrame(cFrameMgr->getRoomToVirtualSpaceFrame() * yTransMat);
+			}
 		}
 	}
 
@@ -655,6 +639,7 @@ void TestHCI::yRotationAndScale(TouchDataRef centOfRotData, TouchDataRef roomCoo
 		/*if (glm::dvec3(prevDistanceDiff/currDistanceDiff)) {
 
 		}*/
+
 		glm::dvec3 scaleBy = glm::dvec3(prevDistanceDiff/currDistanceDiff);
 		scaleMat = glm::scale(
 			glm::dmat4(1.0),

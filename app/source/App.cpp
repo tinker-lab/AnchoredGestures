@@ -264,10 +264,7 @@ void App::drawGraphics(int threadId, MinVR::AbstractCameraRef camera,
 	currentHCI->draw(threadId,camera,window);
 
 	const int numCubeIndices = (int)(cubeMesh->getFilledIndexByteSize()/sizeof(int));
-	/*const int numAxisIndices = (int)(axisMesh->getFilledIndexByteSize()/sizeof(int));
-	const int numSphereIndices = (int)(sphereMesh->getFilledIndexByteSize()/sizeof(int));
-	const int numTetraIndices = (int)(tetraMesh->getFilledIndexByteSize()/sizeof(int));*/
-
+	
 	//glBindBufferARB(GL_ARRAY_BUFFER_ARB, _vboId[threadId]);
 
     // enable vertex arrays
@@ -284,7 +281,7 @@ void App::drawGraphics(int threadId, MinVR::AbstractCameraRef camera,
 	//glm::dvec2 rotAngles(-20.0, 45.0);
 	//glm::dmat4 rotate1 = glm::rotate(translate, rotAngles.y, glm::dvec3(0.0,1.0,0.0));
 	//camera->setObjectToWorldMatrix(glm::rotate(rotate1, rotAngles.x, glm::dvec3(1.0,0,0)));
-	camera->setObjectToWorldMatrix(cFrameMgr->getVirtualToRoomSpaceFrame());
+	//camera->setObjectToWorldMatrix(cFrameMgr->getVirtualToRoomSpaceFrame());
 	//glDrawArrays(GL_TRIANGLES, 0, 36);
 
 	MinVR::CameraOffAxis* offAxisCam = dynamic_cast<MinVR::CameraOffAxis*>(camera.get());
@@ -302,20 +299,28 @@ void App::drawGraphics(int threadId, MinVR::AbstractCameraRef camera,
 	glm::dvec3 eye_world = glm::dvec3(glm::column(glm::inverse(offAxisCam->getLastAppliedViewMatrix()), 3));
 	shader->setUniform("eye_world", eye_world);
 
+	glm::dvec4 cornerTranslate(-1.85, 0.0, 1.0, 1.0); // modify fourth column
+	glm::dmat4 scaleAxisMat = glm::scale(
+			glm::dmat4(1.0),
+			glm::dvec3(0.1)); 
+
 	//draw x axis
+	glm::dmat4 xAxisAtCorner = cFrameMgr->getVirtualToRoomSpaceFrame() * scaleAxisMat;
+	xAxisAtCorner[3] = cornerTranslate; // modify fourth column
+	camera->setObjectToWorldMatrix(xAxisAtCorner);
 	axis->draw(threadId, camera, window, "red");
 	
 	//draw y axis
 	glm::dmat4 yAxisRotMat = glm::rotate(glm::dmat4(1.0), 90.0, glm::dvec3(0.0, 0.0, 1.0));
-	glm::dmat4 yAxisAtCorner = (cFrameMgr->getVirtualToRoomSpaceFrame()*yAxisRotMat);
-	// yAxisAtCorner[3] 
+	glm::dmat4 yAxisAtCorner = (cFrameMgr->getVirtualToRoomSpaceFrame()* scaleAxisMat *yAxisRotMat);
+	yAxisAtCorner[3] = cornerTranslate; // modify fourth column
 	camera->setObjectToWorldMatrix(yAxisAtCorner);
 	axis->draw(threadId, camera, window, "green");
 
 	//// z-axis
 	glm::dmat4 zAxisRotMat = glm::rotate(glm::dmat4(1.0), -90.0, glm::dvec3(0.0, 1.0, 0.0));
-	glm::dmat4 zAxisAtCorner = (cFrameMgr->getVirtualToRoomSpaceFrame()*zAxisRotMat);
-	//zAxisAtCorner[3] = glm::dvec4(0.3, 0.1, 0.0, 1.0); // modify fourth column
+	glm::dmat4 zAxisAtCorner = (cFrameMgr->getVirtualToRoomSpaceFrame() * scaleAxisMat * zAxisRotMat);
+	zAxisAtCorner[3] = cornerTranslate; // modify fourth column
 	camera->setObjectToWorldMatrix(zAxisAtCorner);
 	axis->draw(threadId, camera, window, "blue");
 
