@@ -28,6 +28,11 @@ public:
 	glm::dvec3 roomPositionDifference();
 	int getBelongTo();
 
+	enum Hand{
+		RIGHT_HAND=1,
+		LEFT_HAND
+	};
+
 private:
 	MinVR::EventRef prevEvent;
 	MinVR::EventRef currEvent;
