@@ -18,8 +18,10 @@ void TestHCI::initializeContextSpecificVars(int threadId,MinVR::WindowRef window
 
 	initVBO(threadId);
 	std::cout<<"TuioHCIinit is been called"<<std::endl;
-	prevHandPos1 = glm::dvec3(0.0, -1.0, 0.0);
-	prevHandPos2 = glm::dvec3(0.0, -1.0, 0.0);
+	prevHandPos1 = glm::dvec3(DBL_MAX, -1.0, DBL_MAX);
+	prevHandPos2 = glm::dvec3(DBL_MAX, -1.0, DBL_MAX);
+	currHandPos1 = glm::dvec3(DBL_MAX, -1.0, DBL_MAX);
+	currHandPos2 = glm::dvec3(DBL_MAX, -1.0, DBL_MAX);
 	xzRotFlag = false;
 	centerRotMode = false;
 	//freopen("output2.txt","w",stdout);
@@ -172,6 +174,10 @@ void TestHCI::update(const std::vector<MinVR::EventRef> &events){
 		}
 	} // end of data-updating for loop
 
+	std::cout << "Number of touch events: " << registeredTouchData.size() << std::endl;
+	std::cout<<"currHandPos1: "<<glm::to_string(currHandPos1)<<std::endl;
+	std::cout<<"currHandPos2: "<<glm::to_string(currHandPos2)<<std::endl;
+
 	//// At this point, the touch data should be updated, and hand positions
 	std::map<int, TouchDataRef>::iterator iter;
 	for (iter = registeredTouchData.begin(); iter != registeredTouchData.end(); iter++) {
@@ -179,16 +185,20 @@ void TestHCI::update(const std::vector<MinVR::EventRef> &events){
 		glm::dvec3 currRoomPos (iter->second->getCurrRoomPos());
 		bool belongsToHand1 = (glm::length(currHandPos1 - currRoomPos) <  glm::length(currHandPos2 - currRoomPos));
 		
+		std::cout << "Curr Room Pos" << glm::to_string(currRoomPos) << std::endl;
+		std::cout << "length from hand 1: " << glm::length(currHandPos1 - currRoomPos) << std::endl; 
+		std::cout << "length from hand 2: " << glm::length(currHandPos2 - currRoomPos) << std::endl; 
+
 		if (belongsToHand1) {
 			numTouchForHand1++;
 			if(iter->second->getBelongTo() == -1){
-			iter->second->setBelongTo(1);
+				iter->second->setBelongTo(1);
 			}
 		} 
 		else { // belongs to hand 2
 			numTouchForHand2++;
 			if(iter->second->getBelongTo() == -1){
-			iter->second->setBelongTo(2);
+				iter->second->setBelongTo(2);
 			}
 		}
 	} // end touch enumeration
@@ -261,11 +271,12 @@ void TestHCI::update(const std::vector<MinVR::EventRef> &events){
 
 		//Should not be equal in XZRotMode but just in case.
 		// for choosing the hand that rotates
-		std::cout<<"currHandPos1: "<<glm::to_string(currHandPos1)<<std::endl;
+		/*std::cout<<"currHandPos1: "<<glm::to_string(currHandPos1)<<std::endl;*/
 		std::cout<<"prevHandPos1: "<<glm::to_string(prevHandPos1)<<std::endl;
 		std::cout<<"currHandPos2: "<<glm::to_string(currHandPos2)<<std::endl;
 		std::cout<<"prevHandPos2: "<<glm::to_string(prevHandPos2)<<std::endl;
-
+		std::cout<<"touches on hand 1: "<< numTouchForHand1 << std::endl;
+		std::cout<<"touches on hand 2: "<< numTouchForHand2 << std::endl;
 
 		if (numTouchForHand1 >= numTouchForHand2) { 
 			std::cout<<"updating hand currHandToTouch using right hand"<<std::endl;

@@ -24,7 +24,7 @@
 #include "app/include/TouchData.h"
 #include <glm/gtc/matrix_inverse.hpp>
 #include <MVRCore/CameraOffAxis.H>
-
+#include "app/include/Axis.h"
 
 class App : public MinVR::AbstractMVRApp {
 public:
@@ -49,6 +49,7 @@ private:
 	std::shared_ptr<AbstractHCI> currentHCI;
 	std::shared_ptr<CFrameMgr> cFrameMgr;
 	TextureMgrRef texMan; 
+	AxisRef axis;
 };
 
 #endif /* APP_H_ */

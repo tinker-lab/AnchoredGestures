@@ -11,9 +11,11 @@ vec3 La = vec3 (0.2, 0.2, 0.2); // grey ambient colour
   
 // surface reflectance
 vec3 Ks = vec3 (1.0, 1.0, 1.0); // fully reflect specular light
-vec3 Kd = vec3 (1.0, 0.5, 0.0); // orange diffuse surface reflectance
 vec3 Ka = vec3 (1.0, 1.0, 1.0); // fully reflect ambient light
 float specular_exponent = 100.0; // specular 'power'
+
+uniform sampler2D textureSampler;
+in vec2 texture_coordinates;
 
 out vec4 fragment_colour; // final colour of surface
 
@@ -27,6 +29,9 @@ void main () {
 	vec3 direction_to_light_world = normalize (distance_to_light_world);
 	float dot_prod = dot (direction_to_light_world, normalize(normal_world));
 	dot_prod = max (dot_prod, 0.0);
+
+	vec3 Kd = texture(textureSampler, texture_coordinates ).rgb; 
+
 	vec3 Id = Ld * Kd * dot_prod; // final diffuse intensity
 	
 	// specular intensity
