@@ -18,8 +18,6 @@
 #include "app/include/TouchData.h"
 #include <glm/gtx/string_cast.hpp>
 #include <boost/algorithm/string/predicate.hpp>
-#include "app/include/GLSLProgram.h"
-#include "app/include/GPUMesh.h"
 #include <MVRCore/Time.h>
 #include <iterator>
 
