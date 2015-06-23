@@ -39,15 +39,18 @@ void App::initializeContextSpecificVars(int threadId,
 	cFrameMgr.reset(new CFrameMgr());
 	//currentHCI.reset(new TuioHCI(window->getCamera(0), cFrameMgr,texMan));
 	currentHCI.reset(new TestHCI(window->getCamera(0), cFrameMgr,texMan));
+	axis.reset(new Axis(window->getCamera(0), cFrameMgr, texMan));
+
 
 	initGL();
 	initVBO(threadId);
 	initLights();
 
+	axis->initializeContextSpecificVars(threadId, window);
+
 	//glClearColor(0.f, 0.5f, 0.f, 0.f);
 
 	
-
 	GLenum err;
 	if((err = glGetError()) != GL_NO_ERROR) {
 		std::cout << "openGL ERROR in initializeContextSpecificVars: "<<err<<std::endl;
@@ -56,23 +59,6 @@ void App::initializeContextSpecificVars(int threadId,
 	currentHCI->initializeContextSpecificVars(threadId, window);
 }
 
-glm::dvec3 getPosition(double latitude, double longitude) {
-  // TOAD: Given a latitude and longitude as input, return the corresponding 3D x,y,z position 
-  // on your Earth geometry
-  
-  // north pole is 0 deg latitude, 0 deg longitude
-  // south pole is 180 lat, 0 longitude
-  // longitude increase means counter clockwise, as viewed from north pole
-  
-  double latRad = glm::radians(latitude);
-  double lonRad = glm::radians(longitude); 
-  
-  float z = sin(latRad)*cos(lonRad);
-  float x = sin(latRad)*sin(lonRad);
-  float y = cos(latRad);
-  
-  return glm::dvec3(x, y, z);
-}
 
 void App::initVBO(int threadId)
 {
@@ -176,106 +162,7 @@ void App::initVBO(int threadId)
 	cubeMesh.reset(new GPUMesh(GL_STATIC_DRAW, sizeof(GPUMesh::Vertex)*cubeData.size(), sizeof(int)*cubeIndices.size(),0,cubeData,sizeof(int)*cubeIndices.size(), &cubeIndices[0]));
 
 
-	
-
-	//making tetrahedral axis head
-	float const pi_OverTwelve = M_PI/12.0;
-
-GLfloat tetraVertices[] = { 0.0f, 0.0f, 0.0f,  
-								-0.4, 0.17*glm::cos(3*pi_OverTwelve), 0.17*glm::sin(3*pi_OverTwelve),  
-								-0.4, -0.17*glm::cos(3*pi_OverTwelve), 0.17*glm::sin(3*pi_OverTwelve)
-	}; 
-
-	// normal array
-	glm::dvec3 tetraNormals[]   = { 							
-		glm::cross(glm::dvec3(0.0f,0.0f,0.0f)-glm::dvec3(-0.4,0.1*glm::cos(24*pi_OverTwelve)+0.07,0.1*glm::sin(24*pi_OverTwelve)+0.1),     glm::dvec3(0.0f,0.0f,0.0f)-glm::dvec3(-0.4,-0.1*glm::cos(24*pi_OverTwelve)-0.07,0.1*glm::sin(24*pi_OverTwelve)+0.1))
-	};
-
-	
-	
-	std::vector<int> tetraIndices;
-	std::vector<GPUMesh::Vertex> tetraData;
-	GPUMesh::Vertex tetraVert;
-	for(int i=0; i<9; i = i+3){
-		tetraVert.position = glm::dvec3(tetraVertices[i],tetraVertices[i+1],tetraVertices[i+2]);
-		tetraVert.normal = tetraNormals[0];
-		tetraVert.texCoord0 = glm::dvec2(colors[i],colors[i+1]);
-		tetraData.push_back(tetraVert);
-		tetraIndices.push_back(tetraData.size()-1);
-		
-	}
-
-	tetraMesh.reset(new GPUMesh(GL_STATIC_DRAW, sizeof(GPUMesh::Vertex)*tetraData.size(), sizeof(int)*tetraIndices.size(),0,tetraData,sizeof(int)*tetraIndices.size(), &tetraIndices[0]));
-
-	
-	//making axis body
-	std::vector<int> axisIndices;
-	std::vector<GPUMesh::Vertex> axisData;
-	GPUMesh::Vertex axisVert;
-	for(int i=0; i < 25; i++){
-		axisVert.position = glm::dvec3(0.0f,0.1*glm::cos(i*pi_OverTwelve),0.1*glm::sin(i*pi_OverTwelve));
-		axisVert.normal =glm::normalize(glm::dvec3(0.0f,glm::cos(i*pi_OverTwelve),glm::sin(i*pi_OverTwelve)));
-		axisVert.texCoord0 = glm::dvec2(colors[i],colors[i+1]);
-		axisData.push_back(axisVert);
-		axisIndices.push_back(axisData.size()-1);
-
-		axisVert.position = glm::dvec3(0.8f,0.1*glm::cos(i*pi_OverTwelve),0.1*glm::sin(i*pi_OverTwelve));
-		axisVert.normal =glm::normalize(glm::dvec3(0.0f,glm::cos(i*pi_OverTwelve),glm::sin(i*pi_OverTwelve)));
-		axisVert.texCoord0 = glm::dvec2(colors[i],colors[i+1]);
-		axisData.push_back(axisVert);
-		axisIndices.push_back(axisData.size()-1);
-	}
-
-
-	//initialize axisMesh Object
-	axisMesh.reset(new GPUMesh(GL_STATIC_DRAW, sizeof(GPUMesh::Vertex)*axisData.size(), sizeof(int)*axisIndices.size(), 0, axisData,sizeof(int)*axisIndices.size(), &axisIndices[0]));
-
-
-	std::vector<int> sphereIndices;
-	std::vector<GPUMesh::Vertex> sphereData;
-	GPUMesh::Vertex sphereVert;
-
-	// fill up the empty space
-	const int STACKS = 40; // longitudes
-	const int SLICES = 60; // latitudes
-	const float latUnit = 180/STACKS;
-	const float lonUnit = 360/SLICES;
-	float curr_lat;
-	float curr_lon;
-	glm::dvec3 newVertex;
-	glm::dvec3 nextVertex;
-	glm::dvec3 newNormal; // can't create normals until we have 3 points...each vertex must have its own normal
-
-	for (int i = 0; i < STACKS + 1; i++) { // stacks is outer loop
-		curr_lat = i*latUnit;
-
-		for (int k = 0; k < SLICES + 1; k++) {            
-			curr_lon = k*lonUnit;
-
-			//first vertex
-			sphereVert.position = 0.1 * getPosition(curr_lat, curr_lon);
-			sphereVert.normal = sphereVert.position;
-			sphereVert.texCoord0 = glm::dvec2(colors[i],colors[i+1]);
-
-			sphereData.push_back(sphereVert);
-			sphereIndices.push_back(sphereData.size()-1);
-
-			// second vertex
-			sphereVert.position = 0.1 * getPosition(curr_lat + latUnit, curr_lon);
-			sphereVert.normal = getPosition(curr_lat, curr_lon);
-			sphereVert.texCoord0 = sphereVert.texCoord0;
-
-			sphereData.push_back(sphereVert);
-			sphereIndices.push_back(sphereData.size()-1);
-
-
-			// Texture Coordinates
-			/*cpuTexCoords.append(Vector2((1.0/SLICES)*k, (1.0/STACKS)*i));
-			cpuTexCoords.append(Vector2((1.0/SLICES)*k, (1.0/STACKS)*(i+1)));*/
-		}
-	}
-
-	sphereMesh.reset(new GPUMesh(GL_STATIC_DRAW, sizeof(GPUMesh::Vertex)*sphereData.size(), sizeof(int)*sphereIndices.size(), 0, sphereData,sizeof(int)*sphereIndices.size(), &sphereIndices[0]));
+	axis->initVBO(0);
 
 
     // create vertex buffer objects, you need to delete them when program exits
@@ -377,9 +264,9 @@ void App::drawGraphics(int threadId, MinVR::AbstractCameraRef camera,
 	currentHCI->draw(threadId,camera,window);
 
 	const int numCubeIndices = (int)(cubeMesh->getFilledIndexByteSize()/sizeof(int));
-	const int numAxisIndices = (int)(axisMesh->getFilledIndexByteSize()/sizeof(int));
+	/*const int numAxisIndices = (int)(axisMesh->getFilledIndexByteSize()/sizeof(int));
 	const int numSphereIndices = (int)(sphereMesh->getFilledIndexByteSize()/sizeof(int));
-	const int numTetraIndices = (int)(tetraMesh->getFilledIndexByteSize()/sizeof(int));
+	const int numTetraIndices = (int)(tetraMesh->getFilledIndexByteSize()/sizeof(int));*/
 
 	//glBindBufferARB(GL_ARRAY_BUFFER_ARB, _vboId[threadId]);
 
@@ -415,6 +302,23 @@ void App::drawGraphics(int threadId, MinVR::AbstractCameraRef camera,
 	glm::dvec3 eye_world = glm::dvec3(glm::column(glm::inverse(offAxisCam->getLastAppliedViewMatrix()), 3));
 	shader->setUniform("eye_world", eye_world);
 
+	//draw x axis
+	axis->draw(threadId, camera, window, "red");
+	
+	//draw y axis
+	glm::dmat4 yAxisRotMat = glm::rotate(glm::dmat4(1.0), 90.0, glm::dvec3(0.0, 0.0, 1.0));
+	glm::dmat4 yAxisAtCorner = (cFrameMgr->getVirtualToRoomSpaceFrame()*yAxisRotMat);
+	// yAxisAtCorner[3] 
+	camera->setObjectToWorldMatrix(yAxisAtCorner);
+	axis->draw(threadId, camera, window, "green");
+
+	//// z-axis
+	glm::dmat4 zAxisRotMat = glm::rotate(glm::dmat4(1.0), -90.0, glm::dvec3(0.0, 1.0, 0.0));
+	glm::dmat4 zAxisAtCorner = (cFrameMgr->getVirtualToRoomSpaceFrame()*zAxisRotMat);
+	//zAxisAtCorner[3] = glm::dvec4(0.3, 0.1, 0.0, 1.0); // modify fourth column
+	camera->setObjectToWorldMatrix(zAxisAtCorner);
+	axis->draw(threadId, camera, window, "blue");
+
  //   glDisableClientState(GL_VERTEX_ARRAY);  // disable vertex arrays
  //   glDisableClientState(GL_COLOR_ARRAY);
  //   glDisableClientState(GL_NORMAL_ARRAY);
@@ -436,70 +340,7 @@ void App::drawGraphics(int threadId, MinVR::AbstractCameraRef camera,
 	//glDrawArrays(GL_TRIANGLES, 0, numCubeIndices);
 
 
-	// Begin drawing axes
-	glBindVertexArray(axisMesh->getVAOID());
-	// x-axis
-	glDrawArrays(GL_TRIANGLE_STRIP, 0, numAxisIndices);
-
-	//// y-axis
-	//glm::dmat4 yAxisRotMat = glm::rotate(glm::dmat4(1.0), 90.0, glm::dvec3(0.0, 0.0, 1.0));
-	//glm::dmat4 yAxisAtCorner = (cFrameMgr->getVirtualToRoomSpaceFrame()*yAxisRotMat);
-	//// yAxisAtCorner[3] 
-	//camera->setObjectToWorldMatrix(yAxisAtCorner);
-	//shader->setUniform("model_mat", offAxisCam->getLastAppliedModelMatrix());
-
-	//glDrawArrays(GL_TRIANGLE_STRIP, 0, numAxisIndices);
-
-	//// z-axis
-	//glm::dmat4 zAxisRotMat = glm::rotate(glm::dmat4(1.0), 90.0, glm::dvec3(0.0, 1.0, 0.0));
-	//glm::dmat4 zAxisAtCorner = (cFrameMgr->getVirtualToRoomSpaceFrame()*zAxisRotMat);
-	////zAxisAtCorner[3] = glm::dvec4(0.3, 0.1, 0.0, 1.0); // modify fourth column
-	//camera->setObjectToWorldMatrix(zAxisAtCorner);
-	//shader->setUniform("model_mat", offAxisCam->getLastAppliedModelMatrix());
-
-	//glDrawArrays(GL_TRIANGLE_STRIP, 0, numAxisIndices);
-
-	//Draw sphere
-	glBindVertexArray(sphereMesh->getVAOID());
-	glDrawArrays(GL_TRIANGLE_STRIP, 0, numSphereIndices);
-
-	// draw Arrow head
-	glBindVertexArray(tetraMesh->getVAOID());
-	// 4 faces
-	for (int t = 0; t < 4; t++) {
-		glm::dmat4 tetraRotMat1 = glm::rotate(glm::dmat4(1.0), t*90.0, glm::dvec3(1.0, 0.0, 0.0));
-		glm::dmat4 tetraTran = (cFrameMgr->getVirtualToRoomSpaceFrame()*tetraRotMat1);
-		tetraTran[3] = glm::dvec4(0.17, 0.1, 0.0, 1.0); // modify fourth column
-		camera->setObjectToWorldMatrix( tetraTran );
-		shader->setUniform("model_mat", offAxisCam->getLastAppliedModelMatrix());
-		glDrawArrays(GL_TRIANGLES, 0, numTetraIndices);
-	} 
-	//Draw tetra face 1
 	
-
-	//// Draw tetra face 2
-	//glm::dmat4 tetraRotMat1 = glm::rotate(glm::dmat4(1.0), 90.0, glm::dvec3(1.0, 0.0, 0.0));
-	//
-
-	//glDrawArrays(GL_TRIANGLES, 0, numTetraIndices);
-
-	//// tetra face 3
-	//tetraRotMat1 = glm::rotate(glm::dmat4(1.0), 180.0, glm::dvec3(1.0, 0.0, 0.0));
-	//tetraTran = (cFrameMgr->getVirtualToRoomSpaceFrame()*tetraRotMat1);
-	////tetraTran[3] = glm::dvec4(0.0, 0.1, 0.0, 1.0); // modify fourth column
-	//camera->setObjectToWorldMatrix( tetraTran );
-	//shader->setUniform("model_mat", offAxisCam->getLastAppliedModelMatrix());
-
-	//glDrawArrays(GL_TRIANGLES, 0, numTetraIndices);
-
-	//tetraRotMat1 = glm::rotate(glm::dmat4(1.0), 270.0, glm::dvec3(1.0, 0.0, 0.0));
-	//tetraTran = (cFrameMgr->getVirtualToRoomSpaceFrame()*tetraRotMat1);
-	////tetraTran[3] = glm::dvec4(0.0, 0.1, 0.0, 1.0); // modify fourth column
-	//camera->setObjectToWorldMatrix( tetraTran );
-	//shader->setUniform("model_mat", offAxisCam->getLastAppliedModelMatrix());
-
-	//glDrawArrays(GL_TRIANGLES, 0, numTetraIndices);
-
 
 }
 
