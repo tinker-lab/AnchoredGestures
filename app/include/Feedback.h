@@ -24,12 +24,11 @@ class Feedback {
 public:
 	Feedback(MinVR::AbstractCameraRef camera, CFrameMgrRef cFrameMgr, TextureMgrRef texMan);
 	virtual ~Feedback();
-	void draw(int threadId, MinVR::AbstractCameraRef camera, MinVR::WindowRef window, std::string textureName);
+	void draw(int threadId, MinVR::AbstractCameraRef camera, MinVR::WindowRef window);
 	void initializeContextSpecificVars(int threadId,MinVR::WindowRef window);
 	void initVBO(int threadId, MinVR::WindowRef window);
 	void initGL() ;
 	void draw();
-
 	glm::dvec3 convertScreenToRoomCoordinates(glm::dvec2 screenCoords);
 
 private:
@@ -39,6 +38,7 @@ private:
 	std::shared_ptr<GPUMesh> quadMesh;
 	TextureMgrRef texMan; 
 	std::shared_ptr<CFrameMgr> cFrameMgr;
+	std::string displayText;
 	
 };
 

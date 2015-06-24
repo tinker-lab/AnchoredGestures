@@ -6,7 +6,8 @@
 #include "CFrameMgr.H"
 #include <vector>
 #include "MVRCore/Event.H"
-#include "MVRCore/AbstractCamera.h" 
+#include "MVRCore/AbstractCamera.h"
+#include "app/include/Feedback.h"
 
 
 typedef std::shared_ptr<class AbstractHCI> AbstractHCIRef;
@@ -14,7 +15,7 @@ typedef std::shared_ptr<class AbstractHCI> AbstractHCIRef;
 class AbstractHCI
 {
 public:
-	AbstractHCI(CFrameMgrRef cFrameMgr);
+	AbstractHCI(CFrameMgrRef cFrameMgr, FeedbackRef feedback);
 	virtual ~AbstractHCI();
 	virtual void update(const std::vector<MinVR::EventRef> &events) = 0;
 	virtual void draw(int threadId, MinVR::AbstractCameraRef camera, MinVR::WindowRef window) = 0;
@@ -24,6 +25,7 @@ public:
 
 protected:
 	CFrameMgrRef cFrameMgr;
+	FeedbackRef feedback;
 	
 };
 

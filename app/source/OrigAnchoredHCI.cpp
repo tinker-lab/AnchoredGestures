@@ -13,7 +13,7 @@
 #define AXIS_CHANGE_THRESHOLD 0.34906585 //20 deg
 #define ANGLE_AXIS_CHANGE_THRESHOLD 0.0034906585
 
-OrigAnchoredHCI::OrigAnchoredHCI(MinVR::AbstractCameraRef camera, CFrameMgrRef cFrameMgr, TextureMgrRef texMan) : AbstractHCI(cFrameMgr)
+OrigAnchoredHCI::OrigAnchoredHCI(MinVR::AbstractCameraRef camera, CFrameMgrRef cFrameMgr, TextureMgrRef texMan, FeedbackRef feedback) : AbstractHCI(cFrameMgr, feedback)
 {
 	offAxisCamera = std::dynamic_pointer_cast<MinVR::CameraOffAxis>(camera);
 	this->texMan = texMan;

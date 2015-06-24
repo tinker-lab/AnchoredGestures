@@ -39,17 +39,18 @@ void App::initializeContextSpecificVars(int threadId,
 	offAxisCamera = std::dynamic_pointer_cast<MinVR::CameraOffAxis>(window->getCamera(0));
 
 	cFrameMgr.reset(new CFrameMgr());
-	//currentHCI.reset(new TuioHCI(window->getCamera(0), cFrameMgr,texMan));
-	currentHCI.reset(new TestHCI(window->getCamera(0), cFrameMgr,texMan));
-	axis.reset(new Axis(window->getCamera(0), cFrameMgr, texMan));
+	feedback.reset(new Feedback(window->getCamera(0), cFrameMgr, texMan));
 
+	currentHCI.reset(new TestHCI(window->getCamera(0), cFrameMgr, texMan, feedback));
+	axis.reset(new Axis(window->getCamera(0), cFrameMgr, texMan));
+	
 
 	initGL();
 	initVBO(threadId, window);
 	initLights();
 
 	axis->initializeContextSpecificVars(threadId, window);
-
+	feedback->initializeContextSpecificVars(threadId, window);
 	//glClearColor(0.f, 0.5f, 0.f, 0.f);
 
 	
@@ -164,61 +165,7 @@ void App::initVBO(int threadId, MinVR::WindowRef window)
 	cubeMesh.reset(new GPUMesh(GL_STATIC_DRAW, sizeof(GPUMesh::Vertex)*cubeData.size(), sizeof(int)*cubeIndices.size(),0,cubeData,sizeof(int)*cubeIndices.size(), &cubeIndices[0]));
 
 	axis->initVBO(0);
-
-
-
-
-	/*std::vector<int> quadIndices;
-	std::vector<GPUMesh::Vertex> quadData;
-	GPUMesh::Vertex quadVert;
-
-	float windowHeight = window->getHeight();
-	float windowWidth = window->getWidth();
-	float texHeight = texMan->getTexture(threadId, "rotating")->getHeight();
-	float texWidth = texMan->getTexture(threadId, "rotating")->getWidth();
-	float quadHeightScreen =  texHeight/windowHeight;
-	float quadWidthScreen = texWidth/windowWidth;
-	
-	glm::dvec3 quad = glm::abs(convertScreenToRoomCoordinates(glm::dvec2(quadWidthScreen+0.5, quadHeightScreen+0.5)));
-	
-	std::cout<<"quad: "<<glm::to_string(quad)<<std::endl;
-	std::cout<<"wind H: "<<windowHeight<<std::endl;
-	std::cout<<"wind W: "<<windowWidth<<std::endl;
-	std::cout<<"tex H: "<<texHeight<<std::endl;
-	std::cout<<"tex W: "<<texWidth<<std::endl;
-
-	std::cout << "quad Height Screen: " <<quadHeightScreen << std::endl;
-	std::cout << "quad W Screen: " << quadWidthScreen << std::endl;
-
-	glm::dvec3 topleft = convertScreenToRoomCoordinates(glm::dvec2(0.1,0.9));
-	std::cout<<"topleft: "<<glm::to_string(topleft)<<std::endl;
-
-	vert.position = glm::dvec3(topleft.x, 0.0, topleft.z);
-	vert.normal = glm::dvec3(0.0, 1.0, 0.0);
-	vert.texCoord0 = glm::dvec2(0.0, 1.0);
-	quadData.push_back(vert);
-	quadIndices.push_back(cubeData.size()-1);
-
-	vert.position = glm::dvec3(topleft.x, 0.0, topleft.z+quad.z);
-	vert.texCoord0 = glm::dvec2(0.0, 0.0);
-	quadData.push_back(vert);
-	quadIndices.push_back(cubeData.size()-1);
-
-	vert.position = glm::dvec3(topleft.x+quad.x, 0.0, topleft.z);
-	vert.texCoord0 = glm::dvec2(1.0, 1.0);
-	quadData.push_back(vert);
-	quadIndices.push_back(cubeData.size()-1);
-
-
-	vert.position = glm::dvec3(topleft.x+quad.x, 0.0, topleft.z+quad.z);
-	vert.texCoord0 = glm::dvec2(1.0, 0.0);
-	quadData.push_back(vert);
-	quadIndices.push_back(cubeData.size()-1);
-
-
-	quadMesh.reset(new GPUMesh(GL_STATIC_DRAW, sizeof(GPUMesh::Vertex)*quadData.size(), sizeof(int)*quadIndices.size(),0,quadData,sizeof(int)*quadIndices.size(), &quadIndices[0]));*/
-
-
+	feedback->initVBO(threadId, window);
 
     // create vertex buffer objects, you need to delete them when program exits
     // Try to put both vertex coords array, vertex normal array and vertex color in the same buffer object.
@@ -321,7 +268,6 @@ void App::drawGraphics(int threadId, MinVR::AbstractCameraRef camera,
 	currentHCI->draw(threadId,camera,window);
 
 	const int numCubeIndices = (int)(cubeMesh->getFilledIndexByteSize()/sizeof(int));
-//	const int numQuadIndices = (int)(quadMesh->getFilledIndexByteSize()/sizeof(int));
 	
 	//glBindBufferARB(GL_ARRAY_BUFFER_ARB, _vboId[threadId]);
 
@@ -357,11 +303,10 @@ void App::drawGraphics(int threadId, MinVR::AbstractCameraRef camera,
 	glm::dvec3 eye_world = glm::dvec3(glm::column(glm::inverse(offAxisCam->getLastAppliedViewMatrix()), 3));
 	shader->setUniform("eye_world", eye_world);
 
-	glm::dvec4 cornerTranslate(-1.85, 0.0, 1.0, 1.0); // modify fourth column
+	glm::dvec4 cornerTranslate(-1.7, 0.0, 0.95, 1.0); // modify fourth column
 	glm::dmat4 scaleAxisMat = glm::scale(
 			glm::dmat4(1.0),
 			glm::dvec3(0.1)); 
-	glm::dvec4 quadTranslate(0.0, 0.0, 0.0, 1.0);
 
 
 	//draw x axis
@@ -385,26 +330,10 @@ void App::drawGraphics(int threadId, MinVR::AbstractCameraRef camera,
 	axis->draw(threadId, camera, window, "blue");
 
 	// draw text (actually just a texture)
-	glEnable(GL_BLEND);
-	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+	//glEnable(GL_BLEND);
+	//glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
-
-	//texMan->getTexture(threadId, "rotating")->bind(1);
-	//shader->setUniform("textureSampler", 1);
-
-
-
-	//// draw text here, remember to mess with the shader with the alpha value
-	//glm::dmat4 quadAtCorner = cFrameMgr->getVirtualToRoomSpaceFrame();
-	//quadAtCorner[3] = quadTranslate;
-	//camera->setObjectToWorldMatrix(quadAtCorner);
-	//shader->setUniform("model_mat", offAxisCam->getLastAppliedModelMatrix());
-	//glBindVertexArray(quadMesh->getVAOID());
-	//glDrawArrays(GL_TRIANGLE_STRIP, 0, numQuadIndices);
-
-	//// turn off blending
-	//glBlendFunc(GL_ONE, GL_ZERO);
-	//glDisable(GL_BLEND);
+	feedback->draw(threadId, camera, window);
 
  ////   glDisableClientState(GL_VERTEX_ARRAY);  // disable vertex arrays
  //   glDisableClientState(GL_COLOR_ARRAY);

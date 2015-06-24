@@ -4,6 +4,7 @@ Feedback::Feedback(MinVR::AbstractCameraRef camera,CFrameMgrRef cFrameMgr,Textur
 	this->cFrameMgr = cFrameMgr;
 	this->texMan = texMan;
 	offAxisCamera = std::dynamic_pointer_cast<MinVR::CameraOffAxis>(camera);
+	displayText = "";
 }
 
 Feedback::~Feedback() {
@@ -79,14 +80,13 @@ void Feedback::initGL() {
 	glShadeModel(GL_SMOOTH);                    // shading mathod: GL_SMOOTH or GL_FLAT
 	glPixelStorei(GL_UNPACK_ALIGNMENT, 4);      // 4-byte pixel alignment
 
-
 	// Wait, do we even need to load shaders?
 	//load in shaders
-	//std::map<std::string, std::string> args, dummyArgs;
-	//shader.reset(new GLSLProgram());
-	//shader->compileShader(MinVR::DataFileUtils::findDataFile("phong.vert").c_str(), GLSLShader::VERTEX, dummyArgs);
-	//shader->compileShader(MinVR::DataFileUtils::findDataFile("phong.frag").c_str(), GLSLShader::FRAGMENT, args);
-	//shader->link();
+	std::map<std::string, std::string> args, dummyArgs;
+	shader.reset(new GLSLProgram());
+	shader->compileShader(MinVR::DataFileUtils::findDataFile("tex.vert").c_str(), GLSLShader::VERTEX, dummyArgs);
+	shader->compileShader(MinVR::DataFileUtils::findDataFile("tex.frag").c_str(), GLSLShader::FRAGMENT, args);
+	shader->link();
 
 }
 
@@ -96,29 +96,43 @@ glm::dvec3 Feedback::convertScreenToRoomCoordinates(glm::dvec2 screenCoords) {
 	return offAxisCamera->getTopLeft() + (screenCoords.x * xVec) + (screenCoords.y * yVec);
 }
 
-void Feedback::draw(int threadId, MinVR::AbstractCameraRef camera, MinVR::WindowRef window, std::string textureName) {
+void Feedback::draw(int threadId, MinVR::AbstractCameraRef camera, MinVR::WindowRef window) {
 
-	texMan->getTexture(threadId, "rotating")->bind(1);
-	shader->setUniform("textureSampler", 1);
-	glm::dvec4 quadTranslate(0.0, 0.0, 0.0, 1.0);
-	const int numQuadIndices = (int)(quadMesh->getFilledIndexByteSize()/sizeof(int));
+	// if we are in some mode, displayText should be fine
+	// displayText is modified through HCIs
+	if (displayText != "") {
+		shader->use();
+		shader->setUniform("projection_mat", offAxisCamera->getLastAppliedProjectionMatrix());
+		shader->setUniform("view_mat", offAxisCamera->getLastAppliedViewMatrix());
 
-	// draw text here, remember to mess with the shader with the alpha value
-	glm::dmat4 quadAtCorner = cFrameMgr->getVirtualToRoomSpaceFrame();
-	quadAtCorner[3] = quadTranslate;
-	camera->setObjectToWorldMatrix(quadAtCorner);
-	shader->setUniform("model_mat", offAxisCamera->getLastAppliedModelMatrix());
-	glBindVertexArray(quadMesh->getVAOID());
-	glDrawArrays(GL_TRIANGLE_STRIP, 0, numQuadIndices);
+		texMan->getTexture(threadId, displayText)->bind(1);
+		shader->setUniform("textureSampler", 1);
 
-	// turn off blending
-	glBlendFunc(GL_ONE, GL_ZERO);
-	glDisable(GL_BLEND);
+		glm::dvec4 quadTranslate(0.0, 0.0, 0.0, 1.0);
+		const int numQuadIndices = (int)(quadMesh->getFilledIndexByteSize()/sizeof(int));
 
-	//   glDisableClientState(GL_VERTEX_ARRAY);  // disable vertex arrays
-	glDisableClientState(GL_COLOR_ARRAY);
-	glDisableClientState(GL_NORMAL_ARRAY);
+		//turn on blending
+		glEnable(GL_BLEND);
+		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
-	glBindBufferARB(GL_ARRAY_BUFFER_ARB, 0);
+		// draw text here, remember to mess with the shader with the alpha value
+		glm::dmat4 quadAtCorner = glm::dmat4(1.0);
+		quadAtCorner[3] = quadTranslate;
+		camera->setObjectToWorldMatrix(quadAtCorner);
+		shader->setUniform("model_mat", offAxisCamera->getLastAppliedModelMatrix());
+		glBindVertexArray(quadMesh->getVAOID());
+		glDrawArrays(GL_TRIANGLE_STRIP, 0, numQuadIndices);
+
+		// turn off blending
+		glBlendFunc(GL_ONE, GL_ZERO);
+		glDisable(GL_BLEND);
+
+		//   glDisableClientState(GL_VERTEX_ARRAY);  // disable vertex arrays
+		/*glDisableClientState(GL_COLOR_ARRAY);
+		glDisableClientState(GL_NORMAL_ARRAY);
+
+		glBindBufferARB(GL_ARRAY_BUFFER_ARB, 0);*/
+	}
+
 }
 

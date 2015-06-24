@@ -30,9 +30,9 @@ void main () {
 	float dot_prod = dot (direction_to_light_world, normalize(normal_world));
 	dot_prod = max (dot_prod, 0.0);
 
-	vec3 Kd = texture(textureSampler, texture_coordinates ).rgb; 
+	vec4 Kd = texture(textureSampler, texture_coordinates ); 
 
-	vec3 Id = Ld * Kd * dot_prod; // final diffuse intensity
+	vec3 Id = Ld * Kd.rgb * dot_prod; // final diffuse intensity
 	
 	// specular intensity
 	vec3 surface_to_viewer_world = normalize (eye_world - position_world);
@@ -43,6 +43,6 @@ void main () {
 	vec3 Is = Ls * Ks * specular_factor; // final specular intensity
 		
 	// final colour
-	fragment_colour = vec4 (Is + Id + Ia, 1.0);
+	fragment_colour = vec4 (Is + Id + Ia, Kd.a);
 	
 }

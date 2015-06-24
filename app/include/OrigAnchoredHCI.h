@@ -19,10 +19,11 @@
 #include <boost/algorithm/string/predicate.hpp>"
 #include <MVRCore/Time.h>
 #include <iterator>
+#include "app/include/Feedback.h"
 
 class OrigAnchoredHCI : public AbstractHCI {
 public:
-	OrigAnchoredHCI(MinVR::AbstractCameraRef camera, CFrameMgrRef cFrameMgr, TextureMgrRef textMan);
+	OrigAnchoredHCI(MinVR::AbstractCameraRef camera, CFrameMgrRef cFrameMgr, TextureMgrRef textMan, FeedbackRef feedback);
 	virtual ~OrigAnchoredHCI();
 	void update(const std::vector<MinVR::EventRef> &events);
     void draw(int threadId, MinVR::AbstractCameraRef camera, MinVR::WindowRef window);

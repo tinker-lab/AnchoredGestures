@@ -54,6 +54,7 @@ private:
 	TextureMgrRef texMan; 
 	AxisRef axis;
 	std::shared_ptr<MinVR::CameraOffAxis> offAxisCamera;
+	FeedbackRef feedback;
 };
 
 #endif /* APP_H_ */

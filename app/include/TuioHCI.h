@@ -26,7 +26,7 @@
 class TuioHCI : public AbstractHCI {
 
 public:
-	TuioHCI(MinVR::AbstractCameraRef camera, CFrameMgrRef cFrameMgr, TextureMgrRef texMan);
+	TuioHCI(MinVR::AbstractCameraRef camera, CFrameMgrRef cFrameMgr, TextureMgrRef texMan, FeedbackRef feedback);
 	virtual ~TuioHCI();
 	void update(const std::vector<MinVR::EventRef> &events);
     void draw(int threadId, MinVR::AbstractCameraRef camera, MinVR::WindowRef window);

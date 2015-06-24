@@ -3,7 +3,7 @@
 const double THRESH = 0.00134;
 
 
-TuioHCI::TuioHCI(MinVR::AbstractCameraRef camera, CFrameMgrRef cFrameMgr, TextureMgrRef texMan) : AbstractHCI(cFrameMgr){
+TuioHCI::TuioHCI(MinVR::AbstractCameraRef camera, CFrameMgrRef cFrameMgr, TextureMgrRef texMan, FeedbackRef feedback) : AbstractHCI(cFrameMgr, feedback) {
 	offAxisCamera = std::dynamic_pointer_cast<MinVR::CameraOffAxis>(camera);
 	this->texMan = texMan;
 	startTime = getCurrentTime();

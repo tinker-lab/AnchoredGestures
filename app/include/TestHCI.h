@@ -25,7 +25,7 @@
 class TestHCI : public AbstractHCI {
 
 public:
-	TestHCI(MinVR::AbstractCameraRef camera, CFrameMgrRef cFrameMgr, TextureMgrRef textMan);
+	TestHCI(MinVR::AbstractCameraRef camera, CFrameMgrRef cFrameMgr, TextureMgrRef textMan, FeedbackRef feedback);
 	virtual ~TestHCI();
 	void update(const std::vector<MinVR::EventRef> &events);
     void draw(int threadId, MinVR::AbstractCameraRef camera, MinVR::WindowRef window);
