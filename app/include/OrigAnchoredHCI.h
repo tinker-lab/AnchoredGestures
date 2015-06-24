@@ -1,7 +1,7 @@
 
 #ifndef ORIGANCHOREDHCI_H
 #define ORIGANCHOREDHCI_H
-/*
+
 #include "AbstractHCI.h"
 #include "MVRCore/AbstractCamera.H"
 #include <MVRCore/CameraOffAxis.H>
@@ -28,13 +28,23 @@ public:
     void draw(int threadId, MinVR::AbstractCameraRef camera, MinVR::WindowRef window);
 
 private:
+
+	struct movement{
+		string touchName;
+		double distance;
+		boost::posix_time::ptime timeStamp;
+	};
+
 	bool offerTouchDown(MinVR::EventRef event);
 	bool offerTouchUp(int id);
-	bool offerTouchMove(MinVR::EventRef event);
+	void offerTouchMove(MinVR::EventRef event);
 	void updateTrackers(const glm::dmat4 &rightTrackerFrame, const glm::dmat4 &leftTrackerFrame);
-	void resetTouchs();
+	void alignXform(glm::dvec3 src1, glm::dvec3 src2, glm::dvec3 dst1);
 	glm::dvec3 convertScreenToRoomCoordinates(glm::dvec2 screenCoords);
 	void determineTouchToHandCoorespondence(TouchDataRef touch);
+	bool testForCrazyManipulation(const glm::dmat4& xFrame);
+	double getTotalMovement(std::vector<movement> moves);
+
 
 	TextureMgrRef texMan;
 	std::shared_ptr<MinVR::CameraOffAxis> offAxisCamera;
@@ -56,6 +66,9 @@ private:
 	glm::dmat4 _previousLeftTrackerFrame;
 	glm::dmat4 _currentRightTrackerFrame;
 	glm::dmat4 _currentLeftTrackerFrame;
+	std::vector<movement> _touch1Moves;
+	std::vector<movement> _touch2Moves;
+	glm::dmat4 _currRotationFrame;
 };
-*/
+
 #endif

@@ -35,7 +35,7 @@ set (SOURCEFILES
 		app/source/TextureMgr.cpp
 		app/source/TouchData.cpp
 		app/source/TestHCI.cpp
-		app/source/Axis.cpp)
+		app/source/Axis.cpp
 		app/source/OrigAnchoredHCI.cpp)
 set (HEADERFILES 
 		app/include/App.h
@@ -50,7 +50,7 @@ set (HEADERFILES
 		app/include/TouchData.h
 		app/include/OneEuroFilter.h
 		app/include/TestHCI.h
-		app/include/Axis.h)
+		app/include/Axis.h
 		app/include/OrigAnchoredHCI.h)
 
 source_group("Header Files" FILES ${HEADERFILES})
