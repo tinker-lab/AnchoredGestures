@@ -38,6 +38,7 @@ set (SOURCEFILES
 		app/source/Axis.cpp
 		app/source/OrigAnchoredHCI.cpp
 		app/source/Feedback.cpp)
+
 set (HEADERFILES 
 		app/include/App.h
 		app/include/AnchoredHCI.h
@@ -54,6 +55,7 @@ set (HEADERFILES
 		app/include/Axis.h
 		app/include/OrigAnchoredHCI.h
 		app/include/Feedback.h)
+
 
 source_group("Header Files" FILES ${HEADERFILES})
 
