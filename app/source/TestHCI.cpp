@@ -102,6 +102,7 @@ void TestHCI::update(const std::vector<MinVR::EventRef> &events){
 	// only update the map and other variables first
 	for(int p = 0; p < events.size(); p++) {
 
+		
 		timestamp = events[p]->getTimestamp();
 		std::string name = events[p]->getName();
 		int id = events[p]->getId();
@@ -121,7 +122,7 @@ void TestHCI::update(const std::vector<MinVR::EventRef> &events){
 			glm::dvec3 roomCoord = convertScreenToRoomCoordinates(events[p]->get2DData());
 			TouchDataRef datum(new TouchData(events[p], roomCoord));
 			registeredTouchData.insert(std::pair<int, TouchDataRef>(id, datum));
-			//std::cout << "DOWN " << events[i]->getId() <<std::endl;
+			//std::cout << "DOWN " << glm::to_string(events[p]->get2DData()) <<std::endl;
 
 
 		} else if (boost::algorithm::starts_with(name, "TUIO_CursorMove")) {

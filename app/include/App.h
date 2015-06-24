@@ -25,6 +25,7 @@
 #include <glm/gtc/matrix_inverse.hpp>
 #include <MVRCore/CameraOffAxis.H>
 #include "app/include/Axis.h"
+#include "app/include/Feedback.h"
 
 class App : public MinVR::AbstractMVRApp {
 public:
@@ -35,21 +36,24 @@ public:
 	void initializeContextSpecificVars(int threadId, MinVR::WindowRef window);
 	void postInitialization();
 	void drawGraphics(int threadId, MinVR::AbstractCameraRef camera, MinVR::WindowRef window);
+	glm::dvec3 convertScreenToRoomCoordinates(glm::dvec2 screenCoords);
 
 private:
 	void initGL();
-	void initVBO(int threadId);
+	void initVBO(int threadId, MinVR::WindowRef window);
 	void initLights();
 	std::shared_ptr<GPUMesh> cubeMesh;
 	std::shared_ptr<GPUMesh> tetraMesh;
 	std::shared_ptr<GPUMesh> axisMesh;
 	std::shared_ptr<GPUMesh> sphereMesh;
+	std::shared_ptr<GPUMesh> quadMesh;
 	std::shared_ptr<GLSLProgram> shader;
 	std::map<int, GLuint> _vboId;
 	std::shared_ptr<AbstractHCI> currentHCI;
 	std::shared_ptr<CFrameMgr> cFrameMgr;
 	TextureMgrRef texMan; 
 	AxisRef axis;
+	std::shared_ptr<MinVR::CameraOffAxis> offAxisCamera;
 };
 
 #endif /* APP_H_ */
