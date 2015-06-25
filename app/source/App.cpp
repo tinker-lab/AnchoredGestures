@@ -164,6 +164,40 @@ void App::initVBO(int threadId, MinVR::WindowRef window)
 
 	cubeMesh.reset(new GPUMesh(GL_STATIC_DRAW, sizeof(GPUMesh::Vertex)*cubeData.size(), sizeof(int)*cubeIndices.size(),0,cubeData,sizeof(int)*cubeIndices.size(), &cubeIndices[0]));
 
+	// for the background
+	std::vector<int> bgQuadIndices;
+	std::vector<GPUMesh::Vertex> bgQuadData;
+	GPUMesh::Vertex bgQuadVert;
+
+	float windowHeight = window->getHeight();
+	float windowWidth = window->getWidth();
+
+	glm::dvec3 bgQuad = glm::abs(convertScreenToRoomCoordinates(glm::dvec2(1.0, 1.0))); // fill up screen size
+
+	bgQuadVert.position = glm::dvec3(-bgQuad.x, 0.0, -bgQuad.z);
+	bgQuadVert.normal = glm::dvec3(0.0, 1.0, 0.0);
+	bgQuadVert.texCoord0 = glm::dvec2(0.0, 1.0);
+	bgQuadData.push_back(bgQuadVert);
+	bgQuadIndices.push_back(bgQuadData.size()-1);
+
+	bgQuadVert.position = glm::dvec3(-bgQuad.x, 0.0, bgQuad.z);
+	bgQuadVert.texCoord0 = glm::dvec2(0.0, 0.0);
+	bgQuadData.push_back(bgQuadVert);
+	bgQuadIndices.push_back(bgQuadData.size()-1);
+
+	bgQuadVert.position = glm::dvec3(bgQuad.x, 0.0, -bgQuad.z);
+	bgQuadVert.texCoord0 = glm::dvec2(1.0, 1.0);
+	bgQuadData.push_back(bgQuadVert);
+	bgQuadIndices.push_back(bgQuadData.size()-1);
+
+
+	bgQuadVert.position = glm::dvec3(bgQuad.x, 0.0, bgQuad.z);
+	bgQuadVert.texCoord0 = glm::dvec2(1.0, 0.0);
+	bgQuadData.push_back(bgQuadVert);
+	bgQuadIndices.push_back(bgQuadData.size()-1);
+
+	bgMesh.reset(new GPUMesh(GL_STATIC_DRAW, sizeof(GPUMesh::Vertex)*bgQuadData.size(), sizeof(int)*bgQuadIndices.size(),0,bgQuadData,sizeof(int)*bgQuadIndices.size(), &bgQuadIndices[0]));
+
 	//axis->initVBO(0);
 	//feedback->initVBO(threadId, window);
 
@@ -217,6 +251,11 @@ void App::initGL()
 	shader->compileShader(MinVR::DataFileUtils::findDataFile("phong.frag").c_str(), GLSLShader::FRAGMENT, args);
 	shader->link();
 
+	bgShader.reset(new GLSLProgram());
+	bgShader->compileShader(MinVR::DataFileUtils::findDataFile("tex.vert").c_str(), GLSLShader::VERTEX, dummyArgs);
+	bgShader->compileShader(MinVR::DataFileUtils::findDataFile("tex.frag").c_str(), GLSLShader::FRAGMENT, args);
+	bgShader->link();
+
 	//initGL for the HCIs
 	currentHCI->initGL();
 
@@ -265,10 +304,10 @@ void App::drawGraphics(int threadId, MinVR::AbstractCameraRef camera,
 		std::cout << "GLERROR: "<<err<<std::endl;
 	}
 
-	currentHCI->draw(threadId,camera,window);
+	
 
 	const int numCubeIndices = (int)(cubeMesh->getFilledIndexByteSize()/sizeof(int));
-	
+	const int numBgQuadIndices = (int)(bgMesh->getFilledIndexByteSize()/sizeof(int));
 	//glBindBufferARB(GL_ARRAY_BUFFER_ARB, _vboId[threadId]);
 
     // enable vertex arrays
@@ -285,29 +324,58 @@ void App::drawGraphics(int threadId, MinVR::AbstractCameraRef camera,
 	//glm::dvec2 rotAngles(-20.0, 45.0);
 	//glm::dmat4 rotate1 = glm::rotate(translate, rotAngles.y, glm::dvec3(0.0,1.0,0.0));
 	//camera->setObjectToWorldMatrix(glm::rotate(rotate1, rotAngles.x, glm::dvec3(1.0,0,0)));
-	//camera->setObjectToWorldMatrix(cFrameMgr->getVirtualToRoomSpaceFrame());
+	/*camera->setObjectToWorldMatrix(cFrameMgr->getVirtualToRoomSpaceFrame());*/
 	//glDrawArrays(GL_TRIANGLES, 0, 36);
 
 	MinVR::CameraOffAxis* offAxisCam = dynamic_cast<MinVR::CameraOffAxis*>(camera.get());
 
+	/////////////////////////////
+	// Draw Background Picture //
+	/////////////////////////////
+	bgShader->use();
+	bgShader->setUniform("projection_mat", offAxisCam->getLastAppliedProjectionMatrix());
+	bgShader->setUniform("view_mat", offAxisCam->getLastAppliedViewMatrix());
+	bgShader->setUniform("model_mat", offAxisCam->getLastAppliedModelMatrix());
+	texMan->getTexture(threadId, "back1")->bind(4);
+	bgShader->setUniform("textureSampler", 4);
+	camera->setObjectToWorldMatrix(glm::dmat4(1.0));
+	bgShader->setUniform("model_mat", offAxisCamera->getLastAppliedModelMatrix());
+	glBindVertexArray(bgMesh->getVAOID());
+	glDrawArrays(GL_TRIANGLE_STRIP, 0, numBgQuadIndices);
+
+	
+	/////////////////////////////
+	// Draw Current HCI Stuff  //
+	/////////////////////////////
 	shader->use();
-
-	// need to put in variable for texture in shaders
-	//shader->setUniform("lambertian_texture", 0); //lambertian_texture is the name of a sampler in glsl
-	texMan->getTexture(threadId, "Koala1")->bind(0);
-
 	shader->setUniform("projection_mat", offAxisCam->getLastAppliedProjectionMatrix());
 	shader->setUniform("view_mat", offAxisCam->getLastAppliedViewMatrix());
 	shader->setUniform("model_mat", offAxisCam->getLastAppliedModelMatrix());
+
+
 	//shader->setUniform("normal_matrix", glm::dmat3(offAxisCam->getLastAppliedModelMatrix()));
 	glm::dvec3 eye_world = glm::dvec3(glm::column(glm::inverse(offAxisCam->getLastAppliedViewMatrix()), 3));
 	shader->setUniform("eye_world", eye_world);
+	currentHCI->draw(threadId,camera,window);
 
+	/////////////////////////////
+	// Draw Cube               //
+	/////////////////////////////
+	camera->setObjectToWorldMatrix(cFrameMgr->getVirtualToRoomSpaceFrame());
+	shader->setUniform("model_mat", offAxisCamera->getLastAppliedModelMatrix());
+	texMan->getTexture(threadId, "Koala1")->bind(0);
+	glBindVertexArray(cubeMesh->getVAOID());
+	glDrawArrays(GL_TRIANGLES, 0, numCubeIndices);
+
+	
+
+	/////////////////////////////
+	// Draw Axes               //
+	/////////////////////////////
 	glm::dvec4 cornerTranslate(-1.7, 0.0, 0.95, 1.0); // modify fourth column
 	glm::dmat4 scaleAxisMat = glm::scale(
 			glm::dmat4(1.0),
 			glm::dvec3(0.1)); 
-
 
 	//draw x axis
 	glm::dmat4 xAxisAtCorner = cFrameMgr->getVirtualToRoomSpaceFrame() * scaleAxisMat;
@@ -333,7 +401,13 @@ void App::drawGraphics(int threadId, MinVR::AbstractCameraRef camera,
 	//glEnable(GL_BLEND);
 	//glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
+
+	/////////////////////////////
+	// Draw Visual Feedback    //
+	/////////////////////////////
 	feedback->draw(threadId, camera, window);
+
+	
 
  ////   glDisableClientState(GL_VERTEX_ARRAY);  // disable vertex arrays
  //   glDisableClientState(GL_COLOR_ARRAY);

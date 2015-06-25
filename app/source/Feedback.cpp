@@ -91,14 +91,14 @@ void Feedback::initVBO(int threadId, MinVR::WindowRef window) {
 
 	glm::dvec3 quad = glm::abs(convertScreenToRoomCoordinates(glm::dvec2(quadWidthScreen+0.5, quadHeightScreen+0.5)));
 
-	std::cout<<"quad: "<<glm::to_string(quad)<<std::endl;
-	std::cout<<"wind H: "<<windowHeight<<std::endl;
-	std::cout<<"wind W: "<<windowWidth<<std::endl;
-	std::cout<<"tex H: "<<texHeight<<std::endl;
-	std::cout<<"tex W: "<<texWidth<<std::endl;
+	//std::cout<<"quad: "<<glm::to_string(quad)<<std::endl;
+	//std::cout<<"wind H: "<<windowHeight<<std::endl;
+	//std::cout<<"wind W: "<<windowWidth<<std::endl;
+	//std::cout<<"tex H: "<<texHeight<<std::endl;
+	//std::cout<<"tex W: "<<texWidth<<std::endl;
 
-	std::cout << "quad Height Screen: " <<quadHeightScreen << std::endl;
-	std::cout << "quad W Screen: " << quadWidthScreen << std::endl;
+	//std::cout << "quad Height Screen: " <<quadHeightScreen << std::endl;
+	//std::cout << "quad W Screen: " << quadWidthScreen << std::endl;
 
 	glm::dvec3 topleft = convertScreenToRoomCoordinates(glm::dvec2(0.1,0.9));
 	//std::cout<<"topleft: "<<glm::to_string(topleft)<<std::endl;
@@ -127,6 +127,8 @@ void Feedback::initVBO(int threadId, MinVR::WindowRef window) {
 
 
 	quadMesh.reset(new GPUMesh(GL_STATIC_DRAW, sizeof(GPUMesh::Vertex)*quadData.size(), sizeof(int)*quadIndices.size(),0,quadData,sizeof(int)*quadIndices.size(), &quadIndices[0]));
+
+	
 
 	//////////////////////////////
 	//// VBO for Touch Feedback //
@@ -264,9 +266,6 @@ void Feedback::draw(int threadId, MinVR::AbstractCameraRef camera, MinVR::Window
 		glDrawArrays(GL_TRIANGLE_STRIP, 0, numTouchIndices);
 	}
 	
-	
-
-
 	// turn off blending
 	glBlendFunc(GL_ONE, GL_ZERO);
 	glDisable(GL_BLEND);

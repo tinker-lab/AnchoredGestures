@@ -24,6 +24,7 @@ void TestHCI::initializeContextSpecificVars(int threadId,MinVR::WindowRef window
 	currHandPos2 = glm::dvec3(DBL_MAX, -1.0, DBL_MAX);
 	xzRotFlag = false;
 	centerRotMode = false;
+	liftedFingers = true;
 	//freopen("output2.txt","w",stdout);
 
 	GLenum err;
@@ -39,7 +40,7 @@ void TestHCI::initVBO(int threadId) {
 		};
 	GLfloat normals[]   = { 0, 1, 0,   0, 1, 0,   0, 1, 0};
 	
-	GLfloat texture[] = {1,1,0, 0,0,0, 0,1,0 };//thrid coordinate is never use. only have it so the for loop could work
+	GLfloat texture[] = {1,1,0, 0,0,0, 0,1,0 };//third coordinate is never used. only have it so the for loop could work
 	
 	std::vector<int> cubeIndices;
 	std::vector<GPUMesh::Vertex> cubeData;
@@ -248,7 +249,7 @@ void TestHCI::update(const std::vector<MinVR::EventRef> &events){
 
 	}
 
-	if (xzRotFlag) { // might have to be xzRotFlag and not any other flag 
+	if (xzRotFlag && liftedFingers) { // might have to be xzRotFlag and not any other flag 
 
 		feedback->displayText = "rotating";
 
@@ -295,6 +296,7 @@ void TestHCI::update(const std::vector<MinVR::EventRef> &events){
 		if(registeredTouchData.size() == 0) { //if no touch on screen then automatically exit the xzrot mode
 			xzRotFlag = false;
 			initRoomPos = true;
+			liftedFingers = true;
 			feedback->displayText = "";
 			feedback->centOfRot.x = DBL_MAX;
 			std::cout<<"no touchyyy so I quit"<<std::endl;
@@ -328,6 +330,9 @@ void TestHCI::update(const std::vector<MinVR::EventRef> &events){
 					feedback->displayText = ""; 
 					feedback->centOfRot.x = DBL_MAX;
 					std::cout << "all fingers went out of bound so Out of XZRot Mode" << std::endl;
+
+					// found bug where person just drags their fingers across the table, and it reinitiates xzRotMode
+					liftedFingers = false;
 				}
 			} // end for loop over registeredTouchData
 
@@ -476,6 +481,7 @@ void TestHCI::update(const std::vector<MinVR::EventRef> &events){
 
 	if(registeredTouchData.size() == 0) {
 		feedback->displayText = "";
+		liftedFingers = true;
 	}
 
 	// this is bret's commented out line

@@ -47,7 +47,9 @@ private:
 	std::shared_ptr<GPUMesh> axisMesh;
 	std::shared_ptr<GPUMesh> sphereMesh;
 	std::shared_ptr<GPUMesh> quadMesh;
+	GPUMeshRef bgMesh;
 	std::shared_ptr<GLSLProgram> shader;
+	std::shared_ptr<GLSLProgram> bgShader;
 	std::map<int, GLuint> _vboId;
 	std::shared_ptr<AbstractHCI> currentHCI;
 	std::shared_ptr<CFrameMgr> cFrameMgr;

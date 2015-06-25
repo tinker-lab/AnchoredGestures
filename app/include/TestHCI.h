@@ -61,6 +61,7 @@ private:
 	int numTouchForHand2;
 	bool xzRotFlag;
 	bool initRoomPos;
+	bool liftedFingers;
 	glm::dvec3 initRoomTouchCentre;
 	glm::dvec3 roomTouchCentre;
 	bool centerRotMode;

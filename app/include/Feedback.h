@@ -41,6 +41,7 @@ private:
 	std::shared_ptr<GLSLProgram> shader;
 	std::shared_ptr<GPUMesh> quadMesh;
 	GPUMeshRef touchMesh;
+	GPUMeshRef bgMesh;
 	TextureMgrRef texMan; 
 	std::shared_ptr<CFrameMgr> cFrameMgr;
 	
