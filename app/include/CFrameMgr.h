@@ -12,6 +12,7 @@
 
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_access.hpp>
+#include <glm/gtc/matrix_transform.hpp>
 #include <memory>
 
 typedef std::shared_ptr<class CFrameMgr> CFrameMgrRef;
@@ -32,10 +33,14 @@ public:
 	glm::dmat4 getRoomToVirtualSpaceFrame();
 	glm::dmat4 getVirtualToRoomSpaceFrame();
 
+	glm::dmat4 getVirtualToRoomSpaceFrameNoScale();
+
 
 	/// Sets the rigid-body CoordinateFrame transformation between the
 	/// Room and Virtual spaces.
 	void setRoomToVirtualSpaceFrame(const glm::dmat4 &roomToVirtual);
+
+	void setRoomToVirtualScaleFactor(double scale);
 
 	/// Use these to convert from RoomSpace to VirtualSpace, applies a
 	/// CoordinateFrame transformation as well as a scale.
@@ -72,6 +77,8 @@ protected:
 
 	/// Transformation from RoomSpace to VirtualSpace
 	glm::dmat4 _roomToVirtual;
+
+	double _roomToVirtualScale;
 };
 
 #endif

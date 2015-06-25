@@ -164,8 +164,8 @@ void App::initVBO(int threadId, MinVR::WindowRef window)
 
 	cubeMesh.reset(new GPUMesh(GL_STATIC_DRAW, sizeof(GPUMesh::Vertex)*cubeData.size(), sizeof(int)*cubeIndices.size(),0,cubeData,sizeof(int)*cubeIndices.size(), &cubeIndices[0]));
 
-	axis->initVBO(0);
-	feedback->initVBO(threadId, window);
+	//axis->initVBO(0);
+	//feedback->initVBO(threadId, window);
 
     // create vertex buffer objects, you need to delete them when program exits
     // Try to put both vertex coords array, vertex normal array and vertex color in the same buffer object.

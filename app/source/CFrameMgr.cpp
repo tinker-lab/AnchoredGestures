@@ -19,6 +19,11 @@ void CFrameMgr::setRoomToVirtualSpaceFrame(const glm::dmat4 &roomToVirtual)
 	_roomToVirtual = roomToVirtual;
 }
 
+void CFrameMgr::setRoomToVirtualScaleFactor(double scale)
+{
+	_roomToVirtualScale = scale;
+}
+
 glm::dvec3 CFrameMgr::roomPointToVirtualSpace(const glm::dvec3 &v)
 {
 	glm::dvec3 v2(_roomToVirtual[0][0] * v[0] + _roomToVirtual[1][0] * v[1] + _roomToVirtual[2][0] * v[2] + _roomToVirtual[3][0],
@@ -106,6 +111,19 @@ glm::dmat4 CFrameMgr::getVirtualToRoomSpaceFrame()
 {
 	// Compute virtualToRoom transformation
 	return glm::inverse(_roomToVirtual);
+}
+
+glm::dmat4 CFrameMgr::getVirtualToRoomSpaceFrameNoScale()
+{
+	glm::dmat4 roomToVirtualNoScale = _roomToVirtual;
+	roomToVirtualNoScale[0][0] /= _roomToVirtualScale;
+	roomToVirtualNoScale[1][1] /= _roomToVirtualScale;
+	roomToVirtualNoScale[2][2] /= _roomToVirtualScale;
+	roomToVirtualNoScale[3][0] /= _roomToVirtualScale;
+	roomToVirtualNoScale[3][0] /= _roomToVirtualScale;
+	roomToVirtualNoScale[3][0] /= _roomToVirtualScale;
+
+	return glm::inverse(roomToVirtualNoScale);
 }
 
 glm::dvec3 CFrameMgr::convertPointToObjectSpace(const glm::dmat4 &frame, const glm::dvec3 &v)

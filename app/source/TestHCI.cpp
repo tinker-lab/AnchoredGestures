@@ -174,6 +174,10 @@ void TestHCI::update(const std::vector<MinVR::EventRef> &events){
 			} 
 		}
 	} // end of data-updating for loop
+	
+	// give feedback object the touch data so
+	// it can draw touch positions
+	feedback->registeredTouchData = registeredTouchData;
 
 	//// At this point, the touch data should be updated, and hand positions
 	std::map<int, TouchDataRef>::iterator iter;
@@ -204,6 +208,7 @@ void TestHCI::update(const std::vector<MinVR::EventRef> &events){
 		xzTrans = true;
 		// negate the translation so this is actually virtual to room space
 		xzTransMat = glm::translate(glm::dmat4(1.0f), -1.0*registeredTouchData.begin()->second->roomPositionDifference());
+		feedback->displayText = "translating"; 
 	}
 
 	// from TUIO move
@@ -221,7 +226,7 @@ void TestHCI::update(const std::vector<MinVR::EventRef> &events){
 		yRotationAndScale(centOfRot, otherTouch);
 		yRotationAndScale(otherTouch, centOfRot);
 
-	
+		feedback->displayText = "rotating-scaling"; 
 	} // END OF yRotScale
 
 	//std::cout << "Touch size: " << registeredTouchData.size() << std::endl;
@@ -245,6 +250,7 @@ void TestHCI::update(const std::vector<MinVR::EventRef> &events){
 
 	if (xzRotFlag) { // might have to be xzRotFlag and not any other flag 
 
+		feedback->displayText = "rotating";
 
 		if(initRoomPos){
 			// pos1 and pos2 are where you put your fingers down. We're finding the centroid
@@ -289,6 +295,8 @@ void TestHCI::update(const std::vector<MinVR::EventRef> &events){
 		if(registeredTouchData.size() == 0) { //if no touch on screen then automatically exit the xzrot mode
 			xzRotFlag = false;
 			initRoomPos = true;
+			feedback->displayText = "";
+			feedback->centOfRot.x = DBL_MAX;
 			std::cout<<"no touchyyy so I quit"<<std::endl;
 		}
 		else { //if there are touch(s) then check if the touch is in bound of the rectangle
@@ -310,26 +318,29 @@ void TestHCI::update(const std::vector<MinVR::EventRef> &events){
 					centOfRot = iter->second->getCurrRoomPos();
 					centerRotMode = true;
 					std::cout << "Cent of Rot set" << std::endl;
+					feedback->centOfRot = centOfRot;
 				}
 
 				// only tries to change the xzRotFlag at the end of the data in the map
 				if(iter == std::prev(registeredTouchData.end(),1) && setxzRotFlag) {
 					xzRotFlag = false;
 					initRoomPos = true;
-					
+					feedback->displayText = ""; 
+					feedback->centOfRot.x = DBL_MAX;
 					std::cout << "all fingers went out of bound so Out of XZRot Mode" << std::endl;
 				}
 			} // end for loop over registeredTouchData
 
 			if(countFingers == registeredTouchData.size()){//all fingers in bound 
 				centerRotMode = false;
+				feedback->centOfRot.x = DBL_MAX;
 			}
 
 		} // end if/else block
 
 		
-		std::cout<<"currHandToTouch: "<<glm::to_string(currHandToTouch)<<std::endl;
-		std::cout<<"prevHandToTouch: "<<glm::to_string(prevHandToTouch)<<std::endl;
+		//std::cout<<"currHandToTouch: "<<glm::to_string(currHandToTouch)<<std::endl;
+		//std::cout<<"prevHandToTouch: "<<glm::to_string(prevHandToTouch)<<std::endl;
 		//std::cout<<"dot product of them: "<< glm::to_string(glm::dot(glm::normalize(currHandToTouch), glm::normalize(prevHandToTouch))) << std::endl;
 		
 			
@@ -387,6 +398,7 @@ void TestHCI::update(const std::vector<MinVR::EventRef> &events){
 
 		// check if we have two points for each hand
 		if (numTouchForHand1 == 2 && numTouchForHand2 == 2) {
+			feedback->displayText = "translating"; 
 			//std::cout << "In Y Trans Mode" << std::endl;
 			//calculate translate distance
 			glm::dvec3 rightTouch1 = glm::dvec3(0.0,-1.0,0.0);
@@ -453,11 +465,17 @@ void TestHCI::update(const std::vector<MinVR::EventRef> &events){
 		}
 	}
 
+	
+
 	///// Apply the correct matrix transforms based on updated state (booleans, registeredTouchData, instance variables)
 	if (xzTrans) {
 		translate(xzTransMat);
 	} else if (yTrans) {
 		translate(yTransMat);
+	}
+
+	if(registeredTouchData.size() == 0) {
+		feedback->displayText = "";
 	}
 
 	// this is bret's commented out line

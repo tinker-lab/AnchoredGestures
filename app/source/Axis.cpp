@@ -197,22 +197,6 @@ void Axis::draw(int threadId, MinVR::AbstractCameraRef camera, MinVR::WindowRef 
 	//camera->setObjectToWorldMatrix(cFrameMgr->getVirtualToRoomSpaceFrame());
 	shader->setUniform("model_mat", offAxisCamera->getLastAppliedModelMatrix());
 	glDrawArrays(GL_TRIANGLE_STRIP, 0, numAxisIndices);
-	
-	// y-axis
-	//glm::dmat4 yAxisRotMat = glm::rotate(glm::dmat4(1.0), 90.0, glm::dvec3(0.0, 0.0, 1.0));
-	//glm::dmat4 yAxisAtCorner = (cFrameMgr->getVirtualToRoomSpaceFrame()*yAxisRotMat);
-	//// yAxisAtCorner[3] 
-	//camera->setObjectToWorldMatrix(yAxisAtCorner);
-	//shader->setUniform("model_mat", offAxisCamera->getLastAppliedModelMatrix());
-	//glDrawArrays(GL_TRIANGLE_STRIP, 0, numAxisIndices);
-
-	//// z-axis
-	//glm::dmat4 zAxisRotMat = glm::rotate(glm::dmat4(1.0), -90.0, glm::dvec3(0.0, 1.0, 0.0));
-	//glm::dmat4 zAxisAtCorner = (cFrameMgr->getVirtualToRoomSpaceFrame()*zAxisRotMat);
-	////zAxisAtCorner[3] = glm::dvec4(0.3, 0.1, 0.0, 1.0); // modify fourth column
-	//camera->setObjectToWorldMatrix(zAxisAtCorner);
-	//shader->setUniform("model_mat", offAxisCamera->getLastAppliedModelMatrix());
-	//glDrawArrays(GL_TRIANGLE_STRIP, 0, numAxisIndices);
 
 	//Draw sphere
 	glBindVertexArray(sphereMesh->getVAOID());
