@@ -344,19 +344,19 @@ void App::drawGraphics(int threadId, MinVR::AbstractCameraRef camera,
 	glDrawArrays(GL_TRIANGLE_STRIP, 0, numBgQuadIndices);
 
 	
+	
+	
+
 	/////////////////////////////
-	// Draw Current HCI Stuff  //
+	// General Things          //
 	/////////////////////////////
 	shader->use();
 	shader->setUniform("projection_mat", offAxisCam->getLastAppliedProjectionMatrix());
 	shader->setUniform("view_mat", offAxisCam->getLastAppliedViewMatrix());
 	shader->setUniform("model_mat", offAxisCam->getLastAppliedModelMatrix());
-
-
 	//shader->setUniform("normal_matrix", glm::dmat3(offAxisCam->getLastAppliedModelMatrix()));
 	glm::dvec3 eye_world = glm::dvec3(glm::column(glm::inverse(offAxisCam->getLastAppliedViewMatrix()), 3));
 	shader->setUniform("eye_world", eye_world);
-	currentHCI->draw(threadId,camera,window);
 
 	/////////////////////////////
 	// Draw Cube               //
@@ -367,10 +367,13 @@ void App::drawGraphics(int threadId, MinVR::AbstractCameraRef camera,
 	glBindVertexArray(cubeMesh->getVAOID());
 	glDrawArrays(GL_TRIANGLES, 0, numCubeIndices);
 
-	
+	/////////////////////////////
+	// Draw Current HCI Stuff  //
+	/////////////////////////////
+	currentHCI->draw(threadId,camera,window);	
 
 	/////////////////////////////
-	// Draw Axes               //
+	// Draw Axes               // // These use the tex shader, not the phong shaders
 	/////////////////////////////
 	glm::dvec4 cornerTranslate(-1.7, 0.0, 0.95, 1.0); // modify fourth column
 	glm::dmat4 scaleAxisMat = glm::scale(
@@ -401,6 +404,7 @@ void App::drawGraphics(int threadId, MinVR::AbstractCameraRef camera,
 	//glEnable(GL_BLEND);
 	//glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
+	
 
 	/////////////////////////////
 	// Draw Visual Feedback    //
