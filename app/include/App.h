@@ -57,6 +57,7 @@ private:
 	AxisRef axis;
 	std::shared_ptr<MinVR::CameraOffAxis> offAxisCamera;
 	FeedbackRef feedback;
+	ExperimentMgrRef experimentMgr;
 };
 
 #endif /* APP_H_ */

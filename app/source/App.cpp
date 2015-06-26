@@ -43,6 +43,8 @@ void App::initializeContextSpecificVars(int threadId,
 
 	currentHCI.reset(new TestHCI(window->getCamera(0), cFrameMgr, texMan, feedback));
 	axis.reset(new Axis(window->getCamera(0), cFrameMgr, texMan));
+
+	experimentMgr.reset(new ExperimentMgr(currentHCI));
 	
 
 	initGL();
