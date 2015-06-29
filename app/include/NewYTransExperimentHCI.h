@@ -1,5 +1,5 @@
-#ifndef TESTHCI_H_
-#define TESTHCI_H_
+#ifndef NewYTransExperimentHCI_H_
+#define NewYTransExperimentHCI_H_
 
 #include "GL/glew.h"
 #include <GLFW/glfw3.h>
@@ -28,18 +28,14 @@ public:
 	TestHCI(MinVR::AbstractCameraRef camera, CFrameMgrRef cFrameMgr, TextureMgrRef textMan, FeedbackRef feedback);
 	virtual ~TestHCI();
 	void update(const std::vector<MinVR::EventRef> &events);
-    void draw(int threadId, MinVR::AbstractCameraRef camera, MinVR::WindowRef window);
 	glm::dvec3 convertScreenToRoomCoordinates(glm::dvec2 screenCoords);
 	void initializeContextSpecificVars(int threadId,MinVR::WindowRef window);
-	void TestHCI::initVBO(int threadId);
-	void initGL() ;
 
 	void closestTouchPair(std::map<int, TouchDataRef> thisRegisteredTouchData, glm::dvec3 &pos1, glm::dvec3 &pos2, double &minDistance);
 	void updateHandPos(const std::vector<MinVR::EventRef>& events);
 
 	// matrix transforms
 	void translate(glm::dmat4 transMat);
-	void yRotationAndScale(TouchDataRef centOfRotData, TouchDataRef otherTouchData);
 	
 
 private:
@@ -70,4 +66,4 @@ private:
 
 };
 
-#endif /* TESTHCI_H_ */
+#endif /* NewYTransExperimentHCI_H_ */
