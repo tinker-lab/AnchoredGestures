@@ -8,15 +8,19 @@ Need to know how to switch the currentHCI with another HCI
 
 */
 
-#include "ExperimentMgr.h"
+#include "app/include/ExperimentMgr.h"
 
-ExperimentMgr::ExperimentMgr(AbstractHCIRef currentHCI) { //might need ampersand
+
+ExperimentMgr::ExperimentMgr(AbstractHCIRef currentHCI, CFrameMgrRef mgr, MinVR::AbstractCameraRef camera, TextureMgrRef texMan) { //might need ampersand
 	
+	this->cFrameMgr = mgr;
 	this->currentHCI = currentHCI; // some new HCIs
+	this->texMan = texMan;
+	offAxisCamera = std::dynamic_pointer_cast<MinVR::CameraOffAxis>(camera);
 	trialNumber = 0;
 	newAnchored = false; // initialization depends on config file. don't set to false.
 	transformIndex = 0;
-	transforms = getTransforms(); // don't know how this works 
+	//transforms = getTransforms(); // don't know how this works 
 	experimentNumber = 0; // initialization depends on config file.
 }
 
@@ -29,6 +33,14 @@ void ExperimentMgr::switchHCI () {
 
 }
 
+void ExperimentMgr::initializeContextSpecificVars(int threadId, MinVR::WindowRef window){
+
+	// ExperimentMgr doesn't need texture manager, but tetrahedron does.
+	tetra.reset(new Tetrahedron(window->getCamera(0), cFrameMgr, texMan));
+	tetra->initializeContextSpecificVars(threadId);
+}
+
+
 // each trial is a tetra's orientation specified by a dmat4, in a config file
 // and a restart in time
 // and a new file to log output
@@ -40,6 +52,22 @@ void ExperimentMgr::switchTrial () {
 // calls a bunch of other methods and advances things as a whole
 void ExperimentMgr::advance () {
 
+}
+
+glm::dmat4 ExperimentMgr::getTransforms(){
+	
+/*fill in later*/	return glm::dmat4(0.0);
+
+}
+
+void ExperimentMgr::draw(int threadId, MinVR::AbstractCameraRef camera, MinVR::WindowRef window) {
+	// use transforms stored in the std::vector
+	// apply them to whatever objects we're rendering, and draw them.
+
+	camera->setObjectToWorldMatrix(glm::translate(glm::dmat4(1.0f), glm::dvec3(-0.5, 0.0, 1.0)));
+	//shader->setUniform("model_mat", offAxisCam->getLastAppliedModelMatrix());
+
+	tetra->draw(threadId, camera, window, "Koala2");
 }
 
 

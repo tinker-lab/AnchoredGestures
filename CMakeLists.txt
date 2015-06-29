@@ -37,7 +37,9 @@ set (SOURCEFILES
 		app/source/TestHCI.cpp
 		app/source/Axis.cpp
 		app/source/OrigAnchoredHCI.cpp
-		app/source/Feedback.cpp)
+		app/source/Feedback.cpp
+		app/source/Tetrahedron.cpp
+		app/source/ExperimentMgr.cpp)
 
 set (HEADERFILES 
 		app/include/App.h
@@ -54,7 +56,9 @@ set (HEADERFILES
 		app/include/TestHCI.h
 		app/include/Axis.h
 		app/include/OrigAnchoredHCI.h
-		app/include/Feedback.h)
+		app/include/Feedback.h
+		app/include/Tetrahedron.h
+		app/include/ExperimentMgr.h)
 
 
 source_group("Header Files" FILES ${HEADERFILES})

@@ -24,9 +24,9 @@ typedef std::shared_ptr<class Tetrahedron> TetrahedronRef;
 
 class Tetrahedron {
 public:
-	Tetrahedron();
+	Tetrahedron(MinVR::AbstractCameraRef camera, CFrameMgrRef cFrameMgr, TextureMgrRef texMan);
 	~Tetrahedron();
-	void initializeContextSpecificVars(int threadId,MinVR::WindowRef window);
+	void initializeContextSpecificVars(int threadId);
 	void initVBO(int threadId);
 	void initGL() ;
 
@@ -47,7 +47,10 @@ private:
 	TextureMgrRef texMan; 
 	CFrameMgrRef cFrameMgr;
 	std::shared_ptr<GLSLProgram> tetraShader;
-	
+	std::vector<int> cylinderIndices;
+	std::vector<GPUMesh::Vertex> cylinderData;
+	std::vector<GPUMesh::Vertex> sphereData;
+	std::vector<int> sphereIndices;
 
 };
 

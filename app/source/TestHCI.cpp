@@ -245,7 +245,7 @@ void TestHCI::update(const std::vector<MinVR::EventRef> &events){
 	if (minDistance < 0.06 && currHandPos1 != prevHandPos1) {
 		
 		xzRotFlag = true;
-		std::cout << "Inside XZRot Mode" << std::endl;
+		//std::cout << "Inside XZRot Mode" << std::endl;
 
 	}
 
@@ -261,10 +261,11 @@ void TestHCI::update(const std::vector<MinVR::EventRef> &events){
 
 		}
 
-		glm::dvec3 centOfRot (0.0);
+		// try to change around center of origin
+		glm::dvec3 centOfRot (glm::dvec3((glm::column(cFrameMgr->getVirtualToRoomSpaceFrame(), 3))));
 		//calculate the current handToTouch vector
 		
-		if(registeredTouchData.size() > 1 && !centerRotMode){
+		if(registeredTouchData.size() > 1 && !centerRotMode) {
 			roomTouchCentre = 0.5*(pos1 + pos2);
 		}
 		
@@ -276,11 +277,11 @@ void TestHCI::update(const std::vector<MinVR::EventRef> &events){
 
 
 		if (numTouchForHand1 >= numTouchForHand2) { 
-			std::cout << "Using right hand: " << std::endl; 
+			//std::cout << "Using right hand: " << std::endl; 
 			currHandToTouch = roomTouchCentre - currHandPos1;
 			prevHandToTouch = roomTouchCentre - prevHandPos1;
 		} else {
-			std::cout << "Using Left hand: " << std::endl; 
+			//std::cout << "Using Left hand: " << std::endl; 
 			currHandToTouch = roomTouchCentre - currHandPos2;
 			prevHandToTouch = roomTouchCentre - prevHandPos2;
 		}
@@ -299,7 +300,7 @@ void TestHCI::update(const std::vector<MinVR::EventRef> &events){
 			liftedFingers = true;
 			feedback->displayText = "";
 			feedback->centOfRot.x = DBL_MAX;
-			std::cout<<"no touchyyy so I quit"<<std::endl;
+			//std::cout<<"no touchyyy so I quit"<<std::endl;
 		}
 		else { //if there are touch(s) then check if the touch is in bound of the rectangle
 
@@ -312,14 +313,14 @@ void TestHCI::update(const std::vector<MinVR::EventRef> &events){
 				// not exactly sure why roomPos. > upRight.z , I think it should be <. but that doesn't work
 				if(!(iter->second->getCurrRoomPos().x > upRight.x || iter->second->getCurrRoomPos().z > upRight.z ||iter->second->getCurrRoomPos().x < lowLeft.x ||iter->second->getCurrRoomPos().z < lowLeft.z)){ //you are in the box
 
-					std::cout << "fingers in bound so STILL IN XZRot Mode" << std::endl;
+					//std::cout << "fingers in bound so STILL IN XZRot Mode" << std::endl;
 					setxzRotFlag = false; 
 					countFingers += 1;
 
 				} else{ // touch point not in box, assume as center of rotation
 					centOfRot = iter->second->getCurrRoomPos();
 					centerRotMode = true;
-					std::cout << "Cent of Rot set" << std::endl;
+					//std::cout << "Cent of Rot set" << std::endl;
 					feedback->centOfRot = centOfRot;
 				}
 
@@ -329,7 +330,7 @@ void TestHCI::update(const std::vector<MinVR::EventRef> &events){
 					initRoomPos = true;
 					feedback->displayText = ""; 
 					feedback->centOfRot.x = DBL_MAX;
-					std::cout << "all fingers went out of bound so Out of XZRot Mode" << std::endl;
+					//std::cout << "all fingers went out of bound so Out of XZRot Mode" << std::endl;
 
 					// found bug where person just drags their fingers across the table, and it reinitiates xzRotMode
 					liftedFingers = false;
@@ -376,7 +377,7 @@ void TestHCI::update(const std::vector<MinVR::EventRef> &events){
 			//std::cout<<"alpha in degree after: "<<glm::degrees(alpha)<<std::endl;
 			//std::cout<<"normProjCross: "<<glm::to_string(normProjCross)<<std::endl;
 
-			glm::dmat4 XZRotMat = glm::rotate(glm::dmat4(1.0), glm::degrees(alpha) * 2.0, glm::normalize(projCross));
+			glm::dmat4 XZRotMat = glm::rotate(glm::dmat4(1.0), glm::degrees(alpha) /* * 2.0 */, glm::normalize(projCross));
 
 			// have translations when we have a touch point not in the bounding box
 
@@ -403,7 +404,7 @@ void TestHCI::update(const std::vector<MinVR::EventRef> &events){
 
 		// check if we have two points for each hand
 		if (numTouchForHand1 == 2 && numTouchForHand2 == 2) {
-			feedback->displayText = "translating"; 
+			//feedback->displayText = "translating"; 
 			//std::cout << "In Y Trans Mode" << std::endl;
 			//calculate translate distance
 			glm::dvec3 rightTouch1 = glm::dvec3(0.0,-1.0,0.0);
@@ -446,8 +447,8 @@ void TestHCI::update(const std::vector<MinVR::EventRef> &events){
 			glm::dvec3 leftAfter= currHandPos2 - leftTouchCentre;
 			glm::dvec3 leftZVector= glm::cross(glm::normalize(leftBefore),glm::normalize(leftAfter));
 			
-			std::cout<<"outwardrightZVector: "<<glm::to_string(rightZVector)<<std::endl;
-			std::cout<<"outwardleftZVector: "<<glm::to_string(leftZVector)<<std::endl;
+			//std::cout<<"outwardrightZVector: "<<glm::to_string(rightZVector)<<std::endl;
+			//std::cout<<"outwardleftZVector: "<<glm::to_string(leftZVector)<<std::endl;
 
 			double rightAngle = glm::acos(glm::clamp(glm::dot(glm::normalize(rightBefore), glm::normalize(rightAfter)), -1.0, 1.0));
 			double leftAngle = glm::acos(glm::clamp(glm::dot(glm::normalize(leftBefore), glm::normalize(leftAfter)), -1.0, 1.0));
@@ -456,7 +457,7 @@ void TestHCI::update(const std::vector<MinVR::EventRef> &events){
 			if (leftZVector.z < 0) {
 				angle = -angle;
 			}
-			std::cout<<"angle: "<<angle<<std::endl;
+			//std::cout<<"angle: "<<angle<<std::endl;
 			if (glm::abs(angle) > (M_PI/360.0)) { 
 				double scale = 1.0;
 				double transBy = scale * angle / (M_PI/2.0);

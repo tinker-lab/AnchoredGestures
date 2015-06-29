@@ -44,7 +44,7 @@ void App::initializeContextSpecificVars(int threadId,
 	currentHCI.reset(new TestHCI(window->getCamera(0), cFrameMgr, texMan, feedback));
 	axis.reset(new Axis(window->getCamera(0), cFrameMgr, texMan));
 
-	experimentMgr.reset(new ExperimentMgr(currentHCI));
+	experimentMgr.reset(new ExperimentMgr(currentHCI, cFrameMgr, window->getCamera(0), texMan));
 	
 
 	initGL();
@@ -53,8 +53,7 @@ void App::initializeContextSpecificVars(int threadId,
 
 	axis->initializeContextSpecificVars(threadId, window);
 	feedback->initializeContextSpecificVars(threadId, window);
-	//glClearColor(0.f, 0.5f, 0.f, 0.f);
-
+	experimentMgr->initializeContextSpecificVars(threadId, window);
 	
 	GLenum err;
 	if((err = glGetError()) != GL_NO_ERROR) {
@@ -216,7 +215,7 @@ void App::initVBO(int threadId, MinVR::WindowRef window)
  //   glBufferSubDataARB(GL_ARRAY_BUFFER_ARB, sizeof(vertices), sizeof(normals), normals);                // copy normals after vertices
  //   glBufferSubDataARB(GL_ARRAY_BUFFER_ARB, sizeof(vertices)+sizeof(normals), sizeof(colors), colors);  // copy colours after normals
 
-	
+
 	GLenum err;
 	if((err = glGetError()) != GL_NO_ERROR) {
 		std::cout << "GLERROR initVBO: "<<err<<std::endl;
@@ -343,7 +342,7 @@ void App::drawGraphics(int threadId, MinVR::AbstractCameraRef camera,
 	camera->setObjectToWorldMatrix(glm::dmat4(1.0));
 	bgShader->setUniform("model_mat", offAxisCamera->getLastAppliedModelMatrix());
 	glBindVertexArray(bgMesh->getVAOID());
-	glDrawArrays(GL_TRIANGLE_STRIP, 0, numBgQuadIndices);
+	//glDrawArrays(GL_TRIANGLE_STRIP, 0, numBgQuadIndices);
 
 	
 	
@@ -366,8 +365,8 @@ void App::drawGraphics(int threadId, MinVR::AbstractCameraRef camera,
 	camera->setObjectToWorldMatrix(cFrameMgr->getVirtualToRoomSpaceFrame());
 	shader->setUniform("model_mat", offAxisCamera->getLastAppliedModelMatrix());
 	texMan->getTexture(threadId, "Koala1")->bind(0);
-	glBindVertexArray(cubeMesh->getVAOID());
-	glDrawArrays(GL_TRIANGLES, 0, numCubeIndices);
+	/*glBindVertexArray(cubeMesh->getVAOID());
+	glDrawArrays(GL_TRIANGLES, 0, numCubeIndices);*/
 
 	/////////////////////////////
 	// Draw Current HCI Stuff  //
@@ -412,6 +411,11 @@ void App::drawGraphics(int threadId, MinVR::AbstractCameraRef camera,
 	// Draw Visual Feedback    //
 	/////////////////////////////
 	feedback->draw(threadId, camera, window);
+
+	/////////////////////////////
+	// Draw Experiment Things  //
+	/////////////////////////////
+	experimentMgr->draw(threadId, camera, window);
 
 	
 

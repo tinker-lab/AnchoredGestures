@@ -26,6 +26,7 @@
 #include <MVRCore/CameraOffAxis.H>
 #include "app/include/Axis.h"
 #include "app/include/Feedback.h"
+#include "app/include/ExperimentMgr.h"
 
 class App : public MinVR::AbstractMVRApp {
 public:

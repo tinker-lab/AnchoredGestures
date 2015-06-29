@@ -1,27 +1,62 @@
-#include "app/includes/Tetrahedron.h"
+#include "app/include/Tetrahedron.h"
 
-Tetrahedron::Tetrahedron() {
-
+Tetrahedron::Tetrahedron(MinVR::AbstractCameraRef camera, CFrameMgrRef cFrameMgr, TextureMgrRef texMan) {
+	offAxisCamera = std::dynamic_pointer_cast<MinVR::CameraOffAxis>(camera);
+	this->texMan = texMan;
+	this->cFrameMgr = cFrameMgr;
 }
 
 Tetrahedron::~Tetrahedron() {
 }
 
-void initializeContextSpecificVars(int threadId,MinVR::WindowRef window){
-	GPUcylinderOffset = 25;
+void Tetrahedron::initializeContextSpecificVars(int threadId) {
+	GPUcylinderOffset = 50; // had it at 25 before
+	initVBO(threadId);
+	initGL();
 }
 
 void Tetrahedron::initVBO(int threadId) {
+
+	glm::dvec3 makeOriginAsCentroid (0.0, -0.1875, 0.05);
 	// modifies the cylinder and sphere GPUMeshes
-	makeCylinder(glm::dvec3 pointA, glm::dvec3 pointB);
+	//-------------------first cylinder-------------------------
+	glm::dvec3 pointA = -makeOriginAsCentroid + glm::dvec3(0.2, -0.3, 0.2); //a
+	glm::dvec3 pointB = -makeOriginAsCentroid + glm::dvec3(-0.2, -0.3, 0.2); //b
+	makeCylinder(pointA, pointB);
+
+	//-------------------second cylinder-------------------------
+	pointA = -makeOriginAsCentroid + glm::dvec3(0.2, -0.3, 0.2); //a
+	pointB = -makeOriginAsCentroid + glm::dvec3(0.0, -0.3, -0.2); //c
+	makeCylinder(pointA, pointB);
+
+	//-------------------third cylinder-------------------------
+	pointA = -makeOriginAsCentroid + glm::dvec3(-0.2,-0.3,0.2); //b
+	pointB = -makeOriginAsCentroid + glm::dvec3(0.0, -0.3, -0.2); //c
+	makeCylinder(pointA, pointB);
+
+	//-------------------fourth cylinder-------------------------
+	pointA = -makeOriginAsCentroid + glm::dvec3(0.2, -0.3, 0.2); //a
+	pointB = -makeOriginAsCentroid + glm::dvec3(0.0, 0.15, 0.0); //d
+	makeCylinder(pointA, pointB);
+
+	//-------------------fifth cylinder-------------------------
+	pointA = -makeOriginAsCentroid + glm::dvec3(-0.2, -0.3, 0.2); //b
+	pointB = -makeOriginAsCentroid + glm::dvec3(0.0, 0.15, 0.0); //d
+	makeCylinder(pointA, pointB);
+
+	//-------------------sixth cylinder-------------------------
+	pointA = -makeOriginAsCentroid + glm::dvec3(0.0, -0.3, -0.2); //c
+	pointB = -makeOriginAsCentroid + glm::dvec3(0.0, 0.15, 0.0); //d
+	makeCylinder(pointA, pointB);
 
 
 
 	//initialize cylinderMesh Object after all the cylinder points are push into mesh
-	cylinderMesh.reset(new GPUMesh(GL_STATIC_DRAW, sizeof(GPUMesh::Vertex)*axisData.size(), sizeof(int)*axisIndices.size(), 0, axisData,sizeof(int)*axisIndices.size(), &axisIndices[0]));
+	cylinderMesh.reset(new GPUMesh(GL_STATIC_DRAW, sizeof(GPUMesh::Vertex)*cylinderData.size(), sizeof(int)*cylinderIndices.size(), 0, cylinderData,sizeof(int)*cylinderIndices.size(), &cylinderIndices[0]));
 
-
-	makeSphere(glm::dvec3 center);
+	//make one sphere then translate it
+	glm::dvec3 center = glm::dvec3(0.0,0.0,0.0);
+	makeSphere(center);
 	
 	//initialize sphereMesh Object after all the sphere points are push into mesh
 	sphereMesh.reset(new GPUMesh(GL_STATIC_DRAW, sizeof(GPUMesh::Vertex)*sphereData.size(), sizeof(int)*sphereIndices.size(), 0, sphereData,sizeof(int)*sphereIndices.size(), &sphereIndices[0]));
@@ -33,13 +68,13 @@ void Tetrahedron::initVBO(int threadId) {
 void Tetrahedron::initGL() {
 
 	glShadeModel(GL_SMOOTH);                    // shading mathod: GL_SMOOTH or GL_FLAT
-    	glPixelStorei(GL_UNPACK_ALIGNMENT, 4);      // 4-byte pixel alignment
+    glPixelStorei(GL_UNPACK_ALIGNMENT, 4);      // 4-byte pixel alignment
 
 	//load in shaders
 	std::map<std::string, std::string> args, dummyArgs;
 	tetraShader.reset(new GLSLProgram());
-	tetraShader->compileShader(MinVR::DataFileUtils::findDataFile("tex.vert").c_str(), GLSLShader::VERTEX, dummyArgs);
-	tetraShader->compileShader(MinVR::DataFileUtils::findDataFile("tex.frag").c_str(), GLSLShader::FRAGMENT, args);
+	tetraShader->compileShader(MinVR::DataFileUtils::findDataFile("phong.vert").c_str(), GLSLShader::VERTEX, dummyArgs);
+	tetraShader->compileShader(MinVR::DataFileUtils::findDataFile("phong.frag").c_str(), GLSLShader::FRAGMENT, args);
 	tetraShader->link();
 
 }
@@ -64,21 +99,28 @@ glm::dvec3 Tetrahedron::getPosition(double latitude, double longitude) {
 }
 
 
-void makeCylinder(glm::dvec3 pointA, glm::dvec3 pointB){
-//making cylinder body
-	std::vector<int> axisIndices;
-	std::vector<GPUMesh::Vertex> axisData;
-	GPUMesh::Vertex axisVert;
-	for(int i=0; i < GPUcylinderOffset; i++){
-		axisVert.position = glm::dvec3(0.0f,0.1*glm::cos(i*piTwelfths),0.1*glm::sin(i*piTwelfths));
-		axisVert.normal =glm::normalize(glm::dvec3(0.0f,glm::cos(i*piTwelfths),glm::sin(i*piTwelfths)));
-		axisVert.texCoord0 = glm::dvec2(0.0, 0.0);
-		axisData.push_back(axisVert);
-		axisIndices.push_back(axisData.size()-1);
+void Tetrahedron::makeCylinder(glm::dvec3 pointA, glm::dvec3 pointB){
 
-		axisVert.position = glm::dvec3(0.8f,0.1*glm::cos(i*piTwelfths),0.1*glm::sin(i*piTwelfths));
-		axisData.push_back(axisVert);
-		axisIndices.push_back(axisData.size()-1);
+	double piTwelfths = (M_PI/12.0);
+
+	//making cylinder body
+
+	GPUMesh::Vertex cylinderVert;
+	glm::dvec3 mainVector = pointB - pointA; 
+	glm::dvec3 normRvec = glm::normalize(glm::cross(mainVector,glm::dvec3(0.0, 1.0, 0.0)));
+	glm::dvec3 normNvec = glm::normalize(glm::cross(mainVector, normRvec));
+
+
+	for(int i=0; i < 25; i++){
+		cylinderVert.position = pointA + normRvec*0.01*glm::cos(i*piTwelfths)+ normNvec*0.01*glm::sin(i*piTwelfths);
+		cylinderVert.normal = glm::normalize(normRvec*glm::cos(i*piTwelfths)+ normNvec*glm::sin(i*piTwelfths));
+		cylinderVert.texCoord0 = glm::dvec2(0.0, 0.0);
+		cylinderData.push_back(cylinderVert);
+		cylinderIndices.push_back(cylinderData.size()-1);
+
+		cylinderVert.position = pointB + normRvec*0.01*glm::cos(i*piTwelfths)+ normNvec*0.01*glm::sin(i*piTwelfths);
+		cylinderData.push_back(cylinderVert);
+		cylinderIndices.push_back(cylinderData.size()-1);
 	}
 
 
@@ -86,11 +128,10 @@ void makeCylinder(glm::dvec3 pointA, glm::dvec3 pointB){
 
 }
 
-void makeSphere(glm::dvec3 center){
+void Tetrahedron::makeSphere(glm::dvec3 center){
 
 
-std::vector<int> sphereIndices;
-	std::vector<GPUMesh::Vertex> sphereData;
+
 	GPUMesh::Vertex sphereVert;
 
 	// fill up the empty space
@@ -136,7 +177,7 @@ std::vector<int> sphereIndices;
 	
 }
 
-void draw(int threadId, MinVR::AbstractCameraRef camera, MinVR::WindowRef window, std::string textureName){
+void Tetrahedron::draw(int threadId, MinVR::AbstractCameraRef camera, MinVR::WindowRef window, std::string textureName){
 	
 	const int numCylinderIndices = (int)(cylinderMesh->getFilledIndexByteSize()/sizeof(int));
 	const int numSphereIndices = (int)(sphereMesh->getFilledIndexByteSize()/sizeof(int));
@@ -144,20 +185,22 @@ void draw(int threadId, MinVR::AbstractCameraRef camera, MinVR::WindowRef window
 	tetraShader->use();
 	tetraShader->setUniform("projection_mat", offAxisCamera->getLastAppliedProjectionMatrix());
 	tetraShader->setUniform("view_mat", offAxisCamera->getLastAppliedViewMatrix());
-	
-	glm::dvec3 eye_world = glm::dvec3(glm::column(glm::inverse(offAxisCamera->getLastAppliedViewMatrix()), 3));
-	tetraShader->setUniform("eye_world", eye_world);
-	texMan->getTexture(threadId, textureName)->bind(0);
-	tetraShader->setUniform("textureSampler", 0);
+
+	//glm::dvec3 eye_world = glm::dvec3(glm::column(glm::inverse(offAxisCamera->getLastAppliedViewMatrix()), 3));
+	//tetraShader->setUniform("eye_world", eye_world);
+	texMan->getTexture(threadId, textureName)->bind(6);
+	tetraShader->setUniform("textureSampler", 6);
 
 	// Begin drawing cylinder
 	glBindVertexArray(cylinderMesh->getVAOID());
 
-	// cylinders
+	// transformable tetrahedron
 	camera->setObjectToWorldMatrix(cFrameMgr->getVirtualToRoomSpaceFrame());
 	tetraShader->setUniform("model_mat", offAxisCamera->getLastAppliedModelMatrix());
-	for(int c = 0; c < 6 ; c++){
-	glDrawArrays(GL_TRIANGLE_STRIP, c*GPUcylinderOffset, (c+1)*GPUcylinderOffset);
+	for(int c = 0; c < 6 ; c++) {
+		//std::cout << "The indexes for drawing: " << c * GPUcylinderOffset << ", " << (c+1) * GPUcylinderOffset << std::endl;
+		//std::cout << 0 << ", " << numCylinderIndices << std::endl;
+		glDrawArrays(GL_TRIANGLE_STRIP, c*GPUcylinderOffset, GPUcylinderOffset);
 	}
 
 	//Draw sphere
@@ -166,10 +209,24 @@ void draw(int threadId, MinVR::AbstractCameraRef camera, MinVR::WindowRef window
 
 	// 4 spheres
 	for (int t = 0; t < 4; t++) {
-		glm::dmat4 sphereTransMat1 = glm::translate();//fill in later
-		tetraShader->setUniform("model_mat", offAxisCamera->getLastAppliedModelMatrix()*sphereTransMat1);
+		//fill in later  glm::dmat4 sphereTransMat1 = glm::translate();
+		//tetraShader->setUniform("model_mat", offAxisCamera->getLastAppliedModelMatrix()*sphereTransMat1);
 		glDrawArrays(GL_TRIANGLES, 0, numSphereIndices);
 	} 
+
+
+	// Begin drawing the second cylinder
+	glBindVertexArray(cylinderMesh->getVAOID());
+
+	// static tetrahedron
+	glm::dmat4 tetraPosition = glm::translate(glm::dmat4(1.0),glm::dvec3(-0.9, 0.0, 0.0));
+	camera->setObjectToWorldMatrix(tetraPosition);
+	tetraShader->setUniform("model_mat", offAxisCamera->getLastAppliedModelMatrix());
+	for(int c = 0; c < 6 ; c++) {
+		//std::cout << "The indexes for drawing: " << c * GPUcylinderOffset << ", " << (c+1) * GPUcylinderOffset << std::endl;
+		//std::cout << 0 << ", " << numCylinderIndices << std::endl;
+		glDrawArrays(GL_TRIANGLE_STRIP, c*GPUcylinderOffset, GPUcylinderOffset);
+	}
 }
 
 

@@ -32,8 +32,8 @@ void Axis::initVBO(int threadId){
 	std::vector<GPUMesh::Vertex> axisData;
 	GPUMesh::Vertex axisVert;
 	for(int i=0; i < 25; i++){
-		axisVert.position = glm::dvec3(0.0f,0.1*glm::cos(i*piTwelfths),0.1*glm::sin(i*piTwelfths));
-		axisVert.normal =glm::normalize(glm::dvec3(0.0f,glm::cos(i*piTwelfths),glm::sin(i*piTwelfths)));
+		axisVert.position = glm::dvec3(0.0f, 0.1*glm::cos(i*piTwelfths), 0.1*glm::sin(i*piTwelfths));
+		axisVert.normal =glm::normalize(glm::dvec3(0.0f, glm::cos(i*piTwelfths), glm::sin(i*piTwelfths)));
 		axisVert.texCoord0 = glm::dvec2(0.0, 0.0);
 		axisData.push_back(axisVert);
 		axisIndices.push_back(axisData.size()-1);
