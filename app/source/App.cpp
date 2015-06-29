@@ -333,7 +333,7 @@ void App::drawGraphics(int threadId, MinVR::AbstractCameraRef camera,
 	/////////////////////////////
 	// Draw Background Picture //
 	/////////////////////////////
-	bgShader->use();
+	/*bgShader->use();
 	bgShader->setUniform("projection_mat", offAxisCam->getLastAppliedProjectionMatrix());
 	bgShader->setUniform("view_mat", offAxisCam->getLastAppliedViewMatrix());
 	bgShader->setUniform("model_mat", offAxisCam->getLastAppliedModelMatrix());
@@ -342,7 +342,7 @@ void App::drawGraphics(int threadId, MinVR::AbstractCameraRef camera,
 	camera->setObjectToWorldMatrix(glm::dmat4(1.0));
 	bgShader->setUniform("model_mat", offAxisCamera->getLastAppliedModelMatrix());
 	glBindVertexArray(bgMesh->getVAOID());
-	//glDrawArrays(GL_TRIANGLE_STRIP, 0, numBgQuadIndices);
+	glDrawArrays(GL_TRIANGLE_STRIP, 0, numBgQuadIndices);*/
 
 	
 	
