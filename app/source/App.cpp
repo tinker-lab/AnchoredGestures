@@ -372,6 +372,11 @@ void App::drawGraphics(int threadId, MinVR::AbstractCameraRef camera,
 	// Draw Current HCI Stuff  //
 	/////////////////////////////
 	currentHCI->draw(threadId,camera,window);	
+	
+	/////////////////////////////
+	// Draw Experiment Things  //
+	/////////////////////////////
+	experimentMgr->draw(threadId, camera, window);
 
 	/////////////////////////////
 	// Draw Axes               // // These use the tex shader, not the phong shaders
@@ -405,17 +410,10 @@ void App::drawGraphics(int threadId, MinVR::AbstractCameraRef camera,
 	//glEnable(GL_BLEND);
 	//glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
-	
-
 	/////////////////////////////
 	// Draw Visual Feedback    //
 	/////////////////////////////
 	feedback->draw(threadId, camera, window);
-
-	/////////////////////////////
-	// Draw Experiment Things  //
-	/////////////////////////////
-	experimentMgr->draw(threadId, camera, window);
 
 	
 

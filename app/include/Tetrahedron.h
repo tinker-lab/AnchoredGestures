@@ -52,6 +52,12 @@ private:
 	std::vector<GPUMesh::Vertex> sphereData;
 	std::vector<int> sphereIndices;
 
+	// tetraVertices
+	glm::dvec3 pointA;
+	glm::dvec3 pointB;
+	glm::dvec3 pointC;
+	glm::dvec3 pointD;
+
 };
 
 #endif /* TETRAHEDRON_H_ */
