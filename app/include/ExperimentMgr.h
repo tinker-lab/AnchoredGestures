@@ -22,6 +22,7 @@
 #include "app/include/NewYTransExperimentHCI.h"
 #include "app/include/CurrentHCIMgr.h"
 #include "app/include/NewXZRotExperimentHCI.h"
+#include "app/include/NewAnchoredExperimentHCI.h"
 
 typedef std::shared_ptr<class ExperimentMgr> ExperimentMgrRef;
 
