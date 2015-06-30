@@ -17,12 +17,16 @@
 #include "CFrameMgr.H"
 #include "MVRCore/AbstractCamera.H"
 #include "app/include/TextureMgr.h"
+#include "app/include/TestHCI.h"
+#include "app/include/Feedback.h"
+#include "app/include/NewYTransExperimentHCI.h"
+#include "app/include/CurrentHCIMgr.h"
 
 typedef std::shared_ptr<class ExperimentMgr> ExperimentMgrRef;
 
 class ExperimentMgr {
 public:
-	ExperimentMgr(AbstractHCIRef currentHCI, CFrameMgrRef cFrameMgr, MinVR::AbstractCameraRef camera, TextureMgrRef texMan); //maybe need ampersand
+	ExperimentMgr(CurrentHCIMgrRef currentHCIMgr, CFrameMgrRef cFrameMgr, MinVR::AbstractCameraRef camera, TextureMgrRef texMan, FeedbackRef feedback); //maybe need ampersand
 	virtual ~ExperimentMgr();
 	void switchHCI ();
 	void switchTrial ();
@@ -35,12 +39,12 @@ public:
 
 private:
 	void initGL();
-	AbstractHCIRef currentHCI;
+	CurrentHCIMgrRef currentHCIMgr;
 	TetrahedronRef tetra;
 	int transformIndex;
 	std::vector<glm::dmat4> transforms;
 	TextureMgrRef texMan;
-	
+	FeedbackRef feedback;
 	int experimentNumber;
 	int trialNumber; // 0 to 4
 	bool newAnchored;

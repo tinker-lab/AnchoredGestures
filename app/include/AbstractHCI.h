@@ -18,10 +18,10 @@ public:
 	AbstractHCI(CFrameMgrRef cFrameMgr, FeedbackRef feedback);
 	virtual ~AbstractHCI();
 	virtual void update(const std::vector<MinVR::EventRef> &events) = 0;
-	virtual void draw(int threadId, MinVR::AbstractCameraRef camera, MinVR::WindowRef window) = 0;
+	virtual void draw(int threadId, MinVR::AbstractCameraRef camera, MinVR::WindowRef window);
 	virtual void initializeContextSpecificVars(int threadId,MinVR::WindowRef window) = 0;
-	virtual void initVBO(int threadId) = 0;
-	virtual void initGL() = 0;
+	virtual void initVBO(int threadId);
+	virtual void initGL();
 
 protected:
 	CFrameMgrRef cFrameMgr;

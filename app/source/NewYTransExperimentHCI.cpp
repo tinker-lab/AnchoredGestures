@@ -1,23 +1,24 @@
-#include "app/include/TestHCI.h"
+#include "app/include/NewYTransExperimentHCI.h"
 
 const double THRESH = 0.00134;
 
 
-TestHCI::TestHCI(MinVR::AbstractCameraRef camera, CFrameMgrRef cFrameMgr, TextureMgrRef texMan, FeedbackRef feedback) : AbstractHCI(cFrameMgr, feedback) {
+NewYTransExperimentHCI::NewYTransExperimentHCI(MinVR::AbstractCameraRef camera, CFrameMgrRef cFrameMgr, TextureMgrRef texMan, FeedbackRef feedback) : AbstractHCI(cFrameMgr, feedback) {
 	offAxisCamera = std::dynamic_pointer_cast<MinVR::CameraOffAxis>(camera);
 	this->texMan = texMan;
 	startTime = getCurrentTime();
+	std::cout<<"NewYTansExperimentHCI has been created"<<std::endl;
 	
 }
 
-TestHCI::~TestHCI(){
+NewYTransExperimentHCI::~NewYTransExperimentHCI(){
 
 }
 
-void TestHCI::initializeContextSpecificVars(int threadId,MinVR::WindowRef window) {
+void NewYTransExperimentHCI::initializeContextSpecificVars(int threadId,MinVR::WindowRef window) {
 
 	initVBO(threadId);
-	std::cout<<"TuioHCIinit is been called"<<std::endl;
+	std::cout<<"NewYTansExperimentHCI  is been called"<<std::endl;
 	prevHandPos1 = glm::dvec3(DBL_MAX, -1.0, DBL_MAX);
 	prevHandPos2 = glm::dvec3(DBL_MAX, -1.0, DBL_MAX);
 	currHandPos1 = glm::dvec3(DBL_MAX, -1.0, DBL_MAX);
@@ -33,56 +34,14 @@ void TestHCI::initializeContextSpecificVars(int threadId,MinVR::WindowRef window
 	}
 }
 
-void TestHCI::initVBO(int threadId) {
-	GLfloat vertices[]  = { 0.25f, 0.0f, 0.25f,  -0.25f, 0.0f, -0.25f,  -0.25f, 0.0f, 0.25f,
 
 
-		};
-	GLfloat normals[]   = { 0, 1, 0,   0, 1, 0,   0, 1, 0};
-	
-	GLfloat texture[] = {1,1,0, 0,0,0, 0,1,0 };//third coordinate is never used. only have it so the for loop could work
-	
-	std::vector<int> cubeIndices;
-	std::vector<GPUMesh::Vertex> cubeData;
-	GPUMesh::Vertex vert;
-	for(int i=0; i < 9; i = i +3){
-		vert.position = glm::dvec3(vertices[i],vertices[i+1],vertices[i+2]);
-		vert.normal = glm::normalize(glm::dvec3(normals[i],normals[i+1],normals[i+2]));
-		vert.texCoord0 = glm::dvec2(texture[i],texture[i+1]);
-		cubeData.push_back(vert);
-		cubeIndices.push_back(cubeData.size()-1);
-
-	}
-	_vboId[threadId] = GLuint(0);
-
-	cubeMesh.reset(new GPUMesh(GL_STATIC_DRAW, sizeof(GPUMesh::Vertex)*cubeData.size(), sizeof(int)*cubeIndices.size(), 0, cubeData, sizeof(int)*cubeIndices.size(), &cubeIndices[0]));
-	
 
 
-	GLenum err;
-	if((err = glGetError()) != GL_NO_ERROR) {
-		std::cout << "GLERROR initVBO: "<<err<<std::endl;
-	}
-}
-
-void TestHCI::initGL() {
-
-	glShadeModel(GL_SMOOTH);                    // shading mathod: GL_SMOOTH or GL_FLAT
-    glPixelStorei(GL_UNPACK_ALIGNMENT, 4);      // 4-byte pixel alignment
-
-	//load in shaders
-	std::map<std::string, std::string> args, dummyArgs;
-	shader.reset(new GLSLProgram());
-	shader->compileShader(MinVR::DataFileUtils::findDataFile("tuioPhong.vert").c_str(), GLSLShader::VERTEX, dummyArgs);
-	shader->compileShader(MinVR::DataFileUtils::findDataFile("tuioPhong.frag").c_str(), GLSLShader::FRAGMENT, args);
-	shader->link();
-
-}
-
-//void TestHCI::testForCrazyInput
+//void NewYTransExperimentHCI::testForCrazyInput
 
 // this function produces a map, which we can later query to draw things.
-void TestHCI::update(const std::vector<MinVR::EventRef> &events){
+void NewYTransExperimentHCI::update(const std::vector<MinVR::EventRef> &events){
 
 	//later to be pass into closestTouchPair function
 	glm::dvec3 pos1;
@@ -211,7 +170,7 @@ void TestHCI::update(const std::vector<MinVR::EventRef> &events){
 
 		// check if we have two points for each hand
 		if (numTouchForHand1 == 2 && numTouchForHand2 == 2) {
-			//feedback->displayText = "translating"; 
+			feedback->displayText = "translating"; 
 			//std::cout << "In Y Trans Mode" << std::endl;
 			//calculate translate distance
 			glm::dvec3 rightTouch1 = glm::dvec3(0.0,-1.0,0.0);
@@ -294,7 +253,7 @@ void TestHCI::update(const std::vector<MinVR::EventRef> &events){
 	//updateHandPos(events);
 }
 
-void TestHCI::closestTouchPair(std::map<int, TouchDataRef> thisRegisteredTouchData, glm::dvec3 &pos1, glm::dvec3 &pos2, double &minDistance) {
+void NewYTransExperimentHCI::closestTouchPair(std::map<int, TouchDataRef> thisRegisteredTouchData, glm::dvec3 &pos1, glm::dvec3 &pos2, double &minDistance) {
 	std::map<int, TouchDataRef>::iterator it1;
 	std::map<int, TouchDataRef>::iterator it2;
 
@@ -316,96 +275,21 @@ void TestHCI::closestTouchPair(std::map<int, TouchDataRef> thisRegisteredTouchDa
 	//std::cout << "Calculating minDist: " << minDistance << std::endl;
 }
 
-void TestHCI::draw(int threadId, MinVR::AbstractCameraRef camera, MinVR::WindowRef window){
 
 
-	/*glm::dmat4 translate = glm::translate(glm::dmat4(1.0f), glm::dvec3(0.0f, 0.0f, -5.0f));
-	camera->setObjectToWorldMatrix(glm::translate(glm::dmat4(1.0f), glm::dvec3(0.0f, -3.5f, -3.0f)));
-	glm::dvec2 rotAngles(-20.0, 45.0);
-	glm::dmat4 rotate1 = glm::rotate(translate, rotAngles.y, glm::dvec3(0.0,1.0,0.0));
-	camera->setObjectToWorldMatrix(glm::rotate(rotate1, rotAngles.x, glm::dvec3(1.0,0,0)));*/
-
-	shader->use();
-	MinVR::CameraOffAxis* offAxisCam = dynamic_cast<MinVR::CameraOffAxis*>(camera.get());
-
-	shader->setUniform("projection_mat", offAxisCam->getLastAppliedProjectionMatrix());
-	shader->setUniform("view_mat", offAxisCam->getLastAppliedViewMatrix());
-	
-	//shader->setUniform("normal_matrix", glm::dmat3(offAxisCam->getLastAppliedModelMatrix()));
-	//glm::dvec3 eye_world = glm::dvec3(glm::column(glm::inverse(offAxisCam->getLastAppliedViewMatrix()), 3));
-	//shader->setUniform("eye_world", eye_world);
-	texMan->getTexture(threadId, "Koala")->bind(0);
-	shader->setUniform("koalaTextureSampler",0);
-
-
-	//--------------------
-	std::vector<GPUMesh::Vertex> cpuVerts;
-	std::vector<int> cpuIndices;
-	GPUMesh::Vertex vert;
-	vert.normal = glm::dvec3(0,0,1);
-	vert.position=glm::dvec3(0.04,0,0);
-	vert.texCoord0 = glm::dvec2(0,0);
-	cpuVerts.push_back(vert);
-	cpuIndices.push_back(cpuVerts.size()-1);
-
-	vert.position=glm::dvec3(0.0,0,0);
-	cpuVerts.push_back(vert);
-	cpuIndices.push_back(cpuVerts.size()-1);
-
-	vert.position=currHandToTouch+glm::dvec3(0.04, 0,0);
-	//std::cout<<"----------- "<<glm::to_string(handPosCur)<<std::endl;
-	cpuVerts.push_back(vert);
-	cpuIndices.push_back(cpuVerts.size()-1);
-
-	vert.position=currHandToTouch;
-	cpuVerts.push_back(vert);
-	cpuIndices.push_back(cpuVerts.size()-1);
-
-	GPUMeshRef vectorMesh(new GPUMesh(GL_DYNAMIC_DRAW, sizeof(GPUMesh::Vertex)*cpuVerts.size(), sizeof(int)*cpuIndices.size(), 0, cpuVerts, sizeof(int)*cpuIndices.size(), &cpuIndices[0]));
-	glBindVertexArray(vectorMesh->getVAOID());
-	camera->setObjectToWorldMatrix(glm::translate(glm::dmat4(1.0f), glm::dvec3(-0.5, 0.0, 0.0)));
-	shader->setUniform("model_mat", offAxisCam->getLastAppliedModelMatrix());
-	glDrawArrays(GL_TRIANGLE_STRIP, 0, cpuIndices.size());
-
-
-	cpuVerts.clear();
-	cpuIndices.clear();
-	vert.normal = glm::dvec3(0.0,1.0, 0.0);
-	vert.position = roomTouchCentre;
-	vert.texCoord0 = glm::dvec2(0.0, 0.0);
-
-	double pi_OverTwelve = M_PI/12.0;
-
-	for(int i=0; i < 25; i++){
-		vert.position = glm::dvec3(0.1*glm::cos(i*pi_OverTwelve), 0.0, 0.1*glm::sin(i*pi_OverTwelve)) + roomTouchCentre;
-		vert.texCoord0 = glm::dvec2(0.0, 0.0);
-		cpuVerts.push_back(vert);
-		cpuIndices.push_back(cpuVerts.size()-1);
-	}
-
-	vectorMesh.reset(new GPUMesh(GL_DYNAMIC_DRAW, sizeof(GPUMesh::Vertex)*cpuVerts.size(), sizeof(int)*cpuIndices.size(), 0, cpuVerts, sizeof(int)*cpuIndices.size(), &cpuIndices[0]));
-	glBindVertexArray(vectorMesh->getVAOID());
-	glDrawArrays(GL_TRIANGLE_FAN, 0, cpuIndices.size());
-
-
-	std::map<int, TouchDataRef>::iterator it;
-	glm::dvec3 roomCoord;
-
-}
-
-glm::dvec3 TestHCI::convertScreenToRoomCoordinates(glm::dvec2 screenCoords) {
+glm::dvec3 NewYTransExperimentHCI::convertScreenToRoomCoordinates(glm::dvec2 screenCoords) {
 	glm::dvec3 xVec = offAxisCamera->getTopRight() - offAxisCamera->getTopLeft();
 	glm::dvec3 yVec = offAxisCamera->getBottomRight() - offAxisCamera->getTopRight();
 	return offAxisCamera->getTopLeft() + (screenCoords.x * xVec) + (screenCoords.y * yVec);
 }
 
 
-void TestHCI::translate(glm::dmat4 transMat){
+void NewYTransExperimentHCI::translate(glm::dmat4 transMat){
 	glm::dmat4 newTransform = cFrameMgr->getRoomToVirtualSpaceFrame()*transMat;
 	cFrameMgr->setRoomToVirtualSpaceFrame(newTransform);
 }
 
-void TestHCI::yRotationAndScale(TouchDataRef centOfRotData, TouchDataRef roomCoordData) {
+void NewYTransExperimentHCI::yRotationAndScale(TouchDataRef centOfRotData, TouchDataRef roomCoordData) {
 	// have to do calculations, switching between both touch points 
 
 	// translate to origin

@@ -8,3 +8,17 @@ AbstractHCI::AbstractHCI(CFrameMgrRef mgr, FeedbackRef feedback) {
 AbstractHCI::~AbstractHCI(){
 
 }
+
+void AbstractHCI::draw(int threadId, MinVR::AbstractCameraRef camera, MinVR::WindowRef window){
+
+}
+
+
+void AbstractHCI::initVBO(int threadId){
+
+}
+
+
+void AbstractHCI::initGL(){
+
+}

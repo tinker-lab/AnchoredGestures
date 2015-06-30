@@ -22,20 +22,21 @@
 #include <iterator>
 
 
-class TestHCI : public AbstractHCI {
+class NewYTransExperimentHCI : public AbstractHCI {
 
 public:
-	TestHCI(MinVR::AbstractCameraRef camera, CFrameMgrRef cFrameMgr, TextureMgrRef textMan, FeedbackRef feedback);
-	virtual ~TestHCI();
+	NewYTransExperimentHCI(MinVR::AbstractCameraRef camera, CFrameMgrRef cFrameMgr, TextureMgrRef textMan, FeedbackRef feedback);
+	virtual ~NewYTransExperimentHCI();
 	void update(const std::vector<MinVR::EventRef> &events);
 	glm::dvec3 convertScreenToRoomCoordinates(glm::dvec2 screenCoords);
 	void initializeContextSpecificVars(int threadId,MinVR::WindowRef window);
 
 	void closestTouchPair(std::map<int, TouchDataRef> thisRegisteredTouchData, glm::dvec3 &pos1, glm::dvec3 &pos2, double &minDistance);
 	void updateHandPos(const std::vector<MinVR::EventRef>& events);
-
+	
 	// matrix transforms
 	void translate(glm::dmat4 transMat);
+	void yRotationAndScale(TouchDataRef centOfRotData, TouchDataRef roomCoordData);
 	
 
 private:

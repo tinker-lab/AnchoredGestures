@@ -27,7 +27,7 @@ void App::doUserInputAndPreDrawComputation(
 
 	}
 	
-	currentHCI->update(events);
+	currentHCIMgr->currentHCI->update(events);
 }
 
 void App::initializeContextSpecificVars(int threadId,
@@ -41,10 +41,11 @@ void App::initializeContextSpecificVars(int threadId,
 	cFrameMgr.reset(new CFrameMgr());
 	feedback.reset(new Feedback(window->getCamera(0), cFrameMgr, texMan));
 
-	currentHCI.reset(new TestHCI(window->getCamera(0), cFrameMgr, texMan, feedback));
+	currentHCIMgr.reset(new CurrentHCIMgr());
+	currentHCIMgr->currentHCI.reset(new TestHCI(window->getCamera(0), cFrameMgr, texMan, feedback));//create prompHCI then reset later
 	axis.reset(new Axis(window->getCamera(0), cFrameMgr, texMan));
 
-	experimentMgr.reset(new ExperimentMgr(currentHCI, cFrameMgr, window->getCamera(0), texMan));
+	experimentMgr.reset(new ExperimentMgr(currentHCIMgr, cFrameMgr, window->getCamera(0), texMan, feedback));
 	
 
 	initGL();
@@ -60,7 +61,7 @@ void App::initializeContextSpecificVars(int threadId,
 		std::cout << "openGL ERROR in initializeContextSpecificVars: "<<err<<std::endl;
 	}
 	
-	currentHCI->initializeContextSpecificVars(threadId, window);
+	
 }
 
 
@@ -258,7 +259,7 @@ void App::initGL()
 	bgShader->link();
 
 	//initGL for the HCIs
-	currentHCI->initGL();
+	currentHCIMgr->currentHCI->initGL();
 
 
 	GLenum err;
@@ -371,7 +372,7 @@ void App::drawGraphics(int threadId, MinVR::AbstractCameraRef camera,
 	/////////////////////////////
 	// Draw Current HCI Stuff  //
 	/////////////////////////////
-	currentHCI->draw(threadId,camera,window);	
+	//currentHCIMgr->currentHCI->draw(threadId,camera,window);	
 	
 	/////////////////////////////
 	// Draw Experiment Things  //

@@ -27,6 +27,7 @@
 #include "app/include/Axis.h"
 #include "app/include/Feedback.h"
 #include "app/include/ExperimentMgr.h"
+#include "app/include/CurrentHCIMgr.h"
 
 class App : public MinVR::AbstractMVRApp {
 public:
@@ -52,7 +53,8 @@ private:
 	std::shared_ptr<GLSLProgram> shader;
 	std::shared_ptr<GLSLProgram> bgShader;
 	std::map<int, GLuint> _vboId;
-	std::shared_ptr<AbstractHCI> currentHCI;
+
+	CurrentHCIMgrRef currentHCIMgr;
 	std::shared_ptr<CFrameMgr> cFrameMgr;
 	TextureMgrRef texMan; 
 	AxisRef axis;
