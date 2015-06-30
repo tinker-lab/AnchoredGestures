@@ -21,6 +21,7 @@
 #include "app/include/Feedback.h"
 #include "app/include/NewYTransExperimentHCI.h"
 #include "app/include/CurrentHCIMgr.h"
+#include "app/include/NewXZRotExperimentHCI.h"
 
 typedef std::shared_ptr<class ExperimentMgr> ExperimentMgrRef;
 

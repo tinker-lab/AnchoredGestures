@@ -41,7 +41,7 @@ void ExperimentMgr::initializeContextSpecificVars(int threadId, MinVR::WindowRef
 	tetra->initializeContextSpecificVars(threadId);
 	std::cout<<"resting current HCI from ExperimentMgr"<<std::endl;
 	
-	currentHCIMgr->currentHCI.reset(new NewYTransExperimentHCI(window->getCamera(0), cFrameMgr, texMan, feedback)); //call whatever 
+	currentHCIMgr->currentHCI.reset(new NewXZRotExperimentHCI(window->getCamera(0), cFrameMgr, texMan, feedback)); //call whatever 
 
 	currentHCIMgr->currentHCI->initializeContextSpecificVars(threadId, window);
 	std::cout<<" DONE resting current HCI from ExperimentMgr"<<std::endl;
