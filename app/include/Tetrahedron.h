@@ -35,7 +35,11 @@ public:
 	void draw(int threadId, MinVR::AbstractCameraRef camera, MinVR::WindowRef window, std::string textureName);
 	void makeCylinder(glm::dvec3 pointA, glm::dvec3 pointB);
 	void makeSphere(glm::dvec3 center);
-
+	// tetraVertices
+	glm::dvec3 pointA;
+	glm::dvec3 pointB;
+	glm::dvec3 pointC;
+	glm::dvec3 pointD;
 	
 private:
 	std::map<int, GLuint> _vboId;
@@ -52,11 +56,7 @@ private:
 	std::vector<GPUMesh::Vertex> sphereData;
 	std::vector<int> sphereIndices;
 
-	// tetraVertices
-	glm::dvec3 pointA;
-	glm::dvec3 pointB;
-	glm::dvec3 pointC;
-	glm::dvec3 pointD;
+	
 
 };
 

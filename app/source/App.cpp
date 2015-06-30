@@ -28,6 +28,14 @@ void App::doUserInputAndPreDrawComputation(
 	}
 	
 	currentHCIMgr->currentHCI->update(events);
+	if (experimentMgr->checkFinish()) {
+		// Does the following:
+		// switch HCI
+		// update trial number
+		// update experiment number
+		// point to next matrices we need for experiment
+		experimentMgr->advance();
+	} 
 }
 
 void App::initializeContextSpecificVars(int threadId,

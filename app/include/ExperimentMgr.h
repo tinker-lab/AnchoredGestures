@@ -23,6 +23,7 @@
 #include "app/include/CurrentHCIMgr.h"
 #include "app/include/NewXZRotExperimentHCI.h"
 #include "app/include/NewAnchoredExperimentHCI.h"
+#include <MVRCore/ConfigVal.H>
 
 typedef std::shared_ptr<class ExperimentMgr> ExperimentMgrRef;
 
@@ -35,7 +36,7 @@ public:
 	void advance ();
 	void initializeContextSpecificVars(int threadId, MinVR::WindowRef window);
 	glm::dmat4 getTransforms();
-
+	bool checkFinish();
 	void draw(int threadId, MinVR::AbstractCameraRef camera, MinVR::WindowRef window);
 
 
@@ -52,6 +53,9 @@ private:
 	bool newAnchored;
 	CFrameMgrRef cFrameMgr;
 	std::shared_ptr<MinVR::CameraOffAxis> offAxisCamera;
+
+	//delete later, preliminary testing purposes only
+	glm::dmat4 transMat1;
 	
 };
 
