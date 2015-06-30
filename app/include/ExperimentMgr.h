@@ -53,10 +53,9 @@ private:
 	bool newAnchored;
 	CFrameMgrRef cFrameMgr;
 	std::shared_ptr<MinVR::CameraOffAxis> offAxisCamera;
-
-	//delete later, preliminary testing purposes only
-	glm::dmat4 transMat1;
-	
+	std::vector<glm::dmat4> transMats;
+	std::vector<glm::dmat4> rotMats;
+	std::vector<glm::dmat4> combinedMats;
 };
 
 #endif /* EXPERIMENTMGR_H_ */

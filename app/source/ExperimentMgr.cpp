@@ -19,23 +19,13 @@ ExperimentMgr::ExperimentMgr(CurrentHCIMgrRef currentHCIMgr, CFrameMgrRef mgr, M
 	this->feedback = feedback;
 	offAxisCamera = std::dynamic_pointer_cast<MinVR::CameraOffAxis>(camera);
 
-	trialNumber = 1; // 1 - 5 
-	newAnchored = false; // initialization depends on config file. don't set to false.
-	transformIndex = 1; // 1 - 5 but randomized
-
-	// get transforms
-	transMat1 = MinVR::ConfigVal("TransMats1", glm::dmat4(1.0), false); // identity so far
-	experimentNumber = 0; // initialization depends on config file.
-
-
-	double d = MinVR::ConfigVal("Test", 0.5, false);
-	std::vector<std::string> strings = MinVR::splitStringIntoArray(MinVR::ConfigVal("TestMulti", "", false));
-
 }	
 
 ExperimentMgr::~ExperimentMgr() {
 	
 }
+
+
 
 // apparently you're going to have a bunch of dmat4s loaded into a vector...
 void ExperimentMgr::switchHCI () {
@@ -53,6 +43,59 @@ void ExperimentMgr::initializeContextSpecificVars(int threadId, MinVR::WindowRef
 
 	currentHCIMgr->currentHCI->initializeContextSpecificVars(threadId, window);
 	std::cout<<" DONE resting current HCI from ExperimentMgr"<<std::endl;
+
+	//////////////////////////
+	// Experiment Variables //
+	//////////////////////////
+	trialNumber = 1; // 1 - 5 
+	newAnchored = false; // initialization depends on config file. don't set to false.
+	transformIndex = 1; // 1 - 5 but randomized
+
+	// get translation transforms
+	glm::dmat4 transMat1 = MinVR::ConfigVal("TransMat1", glm::dmat4(0.0), false); 
+	glm::dmat4 transMat2 = MinVR::ConfigVal("TransMat2", glm::dmat4(0.0), false); 
+	glm::dmat4 transMat3 = MinVR::ConfigVal("TransMat3", glm::dmat4(0.0), false); 
+	glm::dmat4 transMat4 = MinVR::ConfigVal("TransMat4", glm::dmat4(0.0), false); 
+	glm::dmat4 transMat5 = MinVR::ConfigVal("TransMat5", glm::dmat4(0.0), false); 
+
+	// put transforms into a vector
+	transMats.push_back(transMat1);
+	transMats.push_back(transMat2);
+	transMats.push_back(transMat3);
+	transMats.push_back(transMat4);
+	transMats.push_back(transMat5);
+
+	//// get rotation transforms
+	glm::dmat4 rotMat1 = MinVR::ConfigVal("RotMat1", glm::dmat4(0.0), false); 
+	glm::dmat4 rotMat2 = MinVR::ConfigVal("RotMat2", glm::dmat4(0.0), false); 
+	glm::dmat4 rotMat3 = MinVR::ConfigVal("RotMat3", glm::dmat4(0.0), false); 
+	glm::dmat4 rotMat4 = MinVR::ConfigVal("RotMat4", glm::dmat4(0.0), false); 
+	glm::dmat4 rotMat5 = MinVR::ConfigVal("RotMat5", glm::dmat4(0.0), false); 
+
+	// put transforms into a vector
+	rotMats.push_back(rotMat1);
+	rotMats.push_back(rotMat2);
+	rotMats.push_back(rotMat3);
+	rotMats.push_back(rotMat4);
+	rotMats.push_back(rotMat5);
+
+	//// get combined transforms
+	glm::dmat4 combinedMat1 = MinVR::ConfigVal("CombinedMat1", glm::dmat4(0.0), false); 
+	glm::dmat4 combinedMat2 = MinVR::ConfigVal("CombinedMat2", glm::dmat4(0.0), false); 
+	glm::dmat4 combinedMat3 = MinVR::ConfigVal("CombinedMat3", glm::dmat4(0.0), false); 
+	glm::dmat4 combinedMat4 = MinVR::ConfigVal("CombinedMat4", glm::dmat4(0.0), false); 
+	glm::dmat4 combinedMat5 = MinVR::ConfigVal("CombinedMat5", glm::dmat4(0.0), false); 
+
+	// put transforms into a vector
+	combinedMats.push_back(combinedMat1);
+	combinedMats.push_back(combinedMat2);
+	combinedMats.push_back(combinedMat3);
+	combinedMats.push_back(combinedMat4);
+	combinedMats.push_back(combinedMat5);
+
+	experimentNumber = 0; // initialization depends on config file.
+	double d = MinVR::ConfigVal("Test", 0.5, false);
+	std::vector<std::string> strings = MinVR::splitStringIntoArray(MinVR::ConfigVal("TestMulti", "", false));
 }
 
 
@@ -86,17 +129,26 @@ bool ExperimentMgr::checkFinish() {
 	const double nearEnough = 0.03;
 	
 	glm::dmat4 currHCItransform = cFrameMgr->getVirtualToRoomSpaceFrame();
+	glm::dmat4 staticTransform = transMats[0]; //glm::translate(glm::dmat4(1.0),glm::dvec3(-0.9, 0.0, 0.0));
+	glm::dmat4 shouldBeThisOne = glm::translate(glm::dmat4(1.0),glm::dvec3(-0.9, 0.0, 0.0));
+	
+	/*std::cout << "Muh xforms: " << glm::to_string(transMats[0]) << std::endl;
+	std::cout << "Muh xforms2: " << glm::to_string(transMats[1]) << std::endl;
+	std::cout << "Muh xforms3: " << glm::to_string(transMats[2]) << std::endl;
+	std::cout << "Muh xforms4: " << glm::to_string(transMats[3]) << std::endl;
+	std::cout << "Muh xforms5: " << glm::to_string(transMats[4]) << std::endl;*/
+
 	glm::dvec3 transformableTetraPointA = glm::dvec3(currHCItransform * glm::dvec4(tetra->pointA, 1.0));
-	glm::dvec3 staticTetraPointA = glm::dvec3(glm::translate(glm::dmat4(1.0),glm::dvec3(-0.9, 0.0, 0.0)) * glm::dvec4(tetra->pointA, 1.0));
+	glm::dvec3 staticTetraPointA = glm::dvec3(staticTransform * glm::dvec4(tetra->pointA, 1.0));
 
-	glm::dvec3 transformableTetraPointB = glm::dvec3(currHCItransform * glm::dvec4(tetra->pointA, 1.0));
-	glm::dvec3 staticTetraPointB = glm::dvec3(glm::translate(glm::dmat4(1.0),glm::dvec3(-0.9, 0.0, 0.0)) * glm::dvec4(tetra->pointA, 1.0));
+	glm::dvec3 transformableTetraPointB = glm::dvec3(currHCItransform * glm::dvec4(tetra->pointB, 1.0));
+	glm::dvec3 staticTetraPointB = glm::dvec3(staticTransform * glm::dvec4(tetra->pointB, 1.0));
 
-	glm::dvec3 transformableTetraPointC = glm::dvec3(currHCItransform * glm::dvec4(tetra->pointA, 1.0));
-	glm::dvec3 staticTetraPointC = glm::dvec3(glm::translate(glm::dmat4(1.0),glm::dvec3(-0.9, 0.0, 0.0)) * glm::dvec4(tetra->pointA, 1.0));
+	glm::dvec3 transformableTetraPointC = glm::dvec3(currHCItransform * glm::dvec4(tetra->pointC, 1.0));
+	glm::dvec3 staticTetraPointC = glm::dvec3(staticTransform * glm::dvec4(tetra->pointC, 1.0));
 
-	glm::dvec3 transformableTetraPointD = glm::dvec3(currHCItransform * glm::dvec4(tetra->pointA, 1.0));
-	glm::dvec3 staticTetraPointD = glm::dvec3(glm::translate(glm::dmat4(1.0),glm::dvec3(-0.9, 0.0, 0.0)) * glm::dvec4(tetra->pointA, 1.0));
+	glm::dvec3 transformableTetraPointD = glm::dvec3(currHCItransform * glm::dvec4(tetra->pointD, 1.0));
+	glm::dvec3 staticTetraPointD = glm::dvec3(staticTransform * glm::dvec4(tetra->pointD, 1.0));
 
 	/*std::cout << "Static point: " << glm::to_string(staticTetraPointA) << std::endl;
 	std::cout << "Transformable point: " << glm::to_string(transformableTetraPointA) << std::endl;
@@ -108,11 +160,11 @@ bool ExperimentMgr::checkFinish() {
 	bool nearD = glm::distance(transformableTetraPointD, staticTetraPointD) < nearEnough;
 
 	if (nearA && nearB && nearC && nearD) {
-		//std::cout << "You are winner. Ha ha ha!" << std::endl;
+		std::cout << "You are winner. Ha ha ha!" << std::endl;
 		return true;
 	}
 	
-	//std::cout << "Y U NAGUT WAINNING?" << std::endl;
+	std::cout << "Y U NAGUT WAINNING?" << std::endl;
 	return false;
 
 }
@@ -122,8 +174,8 @@ void ExperimentMgr::draw(int threadId, MinVR::AbstractCameraRef camera, MinVR::W
 	// apply them to whatever objects we're rendering, and draw them.
 
 	camera->setObjectToWorldMatrix(glm::translate(glm::dmat4(1.0f), glm::dvec3(-0.5, 0.0, 1.0)));
-	//shader->setUniform("model_mat", offAxisCam->getLastAppliedModelMatrix());
-
+	
+	// draws both the static and the transformable tetrahedron
 	tetra->draw(threadId, camera, window, "Koala2");
 }
 
