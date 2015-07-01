@@ -24,6 +24,7 @@
 #include "app/include/NewXZRotExperimentHCI.h"
 #include "app/include/NewAnchoredExperimentHCI.h"
 #include <MVRCore/ConfigVal.H>
+#include <MVRCore/Time.h>
 
 typedef std::shared_ptr<class ExperimentMgr> ExperimentMgrRef;
 
@@ -32,12 +33,13 @@ public:
 	ExperimentMgr(CurrentHCIMgrRef currentHCIMgr, CFrameMgrRef cFrameMgr, MinVR::AbstractCameraRef camera, TextureMgrRef texMan, FeedbackRef feedback); //maybe need ampersand
 	virtual ~ExperimentMgr();
 	void switchHCI ();
-	void switchTrial ();
 	void advance ();
 	void initializeContextSpecificVars(int threadId, MinVR::WindowRef window);
 	glm::dmat4 getTransforms();
 	bool checkFinish();
 	void draw(int threadId, MinVR::AbstractCameraRef camera, MinVR::WindowRef window);
+	void resetTimer();
+	
 
 
 private:
@@ -48,14 +50,16 @@ private:
 	std::vector<glm::dmat4> transforms;
 	TextureMgrRef texMan;
 	FeedbackRef feedback;
-	int experimentNumber;
-	int trialNumber; // 0 to 4
+	int trialCount; // 0 to 4
 	bool newAnchored;
 	CFrameMgrRef cFrameMgr;
 	std::shared_ptr<MinVR::CameraOffAxis> offAxisCamera;
 	std::vector<glm::dmat4> transMats;
 	std::vector<glm::dmat4> rotMats;
 	std::vector<glm::dmat4> combinedMats;
+	int HCIExperiment;
+	MinVR::TimeStamp startTime;
+	glm::dmat4 staticTransform;
 };
 
 #endif /* EXPERIMENTMGR_H_ */

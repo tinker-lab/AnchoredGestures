@@ -172,7 +172,7 @@ void Tetrahedron::makeSphere(glm::dvec3 center){
 	
 }
 
-void Tetrahedron::draw(int threadId, MinVR::AbstractCameraRef camera, MinVR::WindowRef window, std::string textureName){
+void Tetrahedron::draw(int threadId, MinVR::AbstractCameraRef camera, MinVR::WindowRef window, std::string textureName, glm::dmat4 transMat){
 	
 	const int numCylinderIndices = (int)(cylinderMesh->getFilledIndexByteSize()/sizeof(int));
 	const int numSphereIndices = (int)(sphereMesh->getFilledIndexByteSize()/sizeof(int));
@@ -191,8 +191,8 @@ void Tetrahedron::draw(int threadId, MinVR::AbstractCameraRef camera, MinVR::Win
 	////////////////////////
 	glBindVertexArray(cylinderMesh->getVAOID());
 	// tetraPosition will be loaded in from a config file later
-	glm::dmat4 tetraPosition = glm::translate(glm::dmat4(1.0),glm::dvec3(-0.9, 0.0, 0.0));
-	camera->setObjectToWorldMatrix(tetraPosition);
+	//glm::dmat4 tetraPosition = glm::translate(glm::dmat4(1.0),glm::dvec3(0.0, 0.0, 0.0));
+	camera->setObjectToWorldMatrix(transMat);
 	tetraShader->setUniform("model_mat", offAxisCamera->getLastAppliedModelMatrix());
 	for(int c = 0; c < 6 ; c++) {
 		//std::cout << "The indexes for drawing: " << c * GPUcylinderOffset << ", " << (c+1) * GPUcylinderOffset << std::endl;

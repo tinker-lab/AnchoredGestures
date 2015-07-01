@@ -18,7 +18,7 @@ ExperimentMgr::ExperimentMgr(CurrentHCIMgrRef currentHCIMgr, CFrameMgrRef mgr, M
 	this->texMan = texMan;
 	this->feedback = feedback;
 	offAxisCamera = std::dynamic_pointer_cast<MinVR::CameraOffAxis>(camera);
-
+	startTime = getCurrentTime();
 }	
 
 ExperimentMgr::~ExperimentMgr() {
@@ -27,10 +27,6 @@ ExperimentMgr::~ExperimentMgr() {
 
 
 
-// apparently you're going to have a bunch of dmat4s loaded into a vector...
-void ExperimentMgr::switchHCI () {
-
-}
 
 void ExperimentMgr::initializeContextSpecificVars(int threadId, MinVR::WindowRef window){
 
@@ -39,17 +35,29 @@ void ExperimentMgr::initializeContextSpecificVars(int threadId, MinVR::WindowRef
 	tetra->initializeContextSpecificVars(threadId);
 	std::cout<<"resting current HCI from ExperimentMgr"<<std::endl;
 	
-	currentHCIMgr->currentHCI.reset(new NewAnchoredExperimentHCI(window->getCamera(0), cFrameMgr, texMan, feedback)); //call whatever 
-
-	currentHCIMgr->currentHCI->initializeContextSpecificVars(threadId, window);
 	std::cout<<" DONE resting current HCI from ExperimentMgr"<<std::endl;
 
 	//////////////////////////
 	// Experiment Variables //
 	//////////////////////////
-	trialNumber = 1; // 1 - 5 
+	trialCount = 0; // 1 - 5 
+	HCIExperiment = 1;
 	newAnchored = false; // initialization depends on config file. don't set to false.
 	transformIndex = 1; // 1 - 5 but randomized
+
+
+	if(HCIExperiment == 1){
+		currentHCIMgr->currentHCI.reset(new NewYTransExperimentHCI(window->getCamera(0), cFrameMgr, texMan, feedback));
+	}
+	if(HCIExperiment == 2){
+		currentHCIMgr->currentHCI.reset(new NewXZRotExperimentHCI(window->getCamera(0), cFrameMgr, texMan, feedback));
+	}
+	if(HCIExperiment == 3){
+		currentHCIMgr->currentHCI.reset(new NewAnchoredExperimentHCI(window->getCamera(0), cFrameMgr, texMan, feedback));
+	}
+	
+	currentHCIMgr->currentHCI->initializeContextSpecificVars(threadId, window);
+
 
 	// get translation transforms
 	glm::dmat4 transMat1 = MinVR::ConfigVal("TransMat1", glm::dmat4(0.0), false); 
@@ -93,7 +101,7 @@ void ExperimentMgr::initializeContextSpecificVars(int threadId, MinVR::WindowRef
 	combinedMats.push_back(combinedMat4);
 	combinedMats.push_back(combinedMat5);
 
-	experimentNumber = 0; // initialization depends on config file.
+ // initialization depends on config file.
 	double d = MinVR::ConfigVal("Test", 0.5, false);
 	std::vector<std::string> strings = MinVR::splitStringIntoArray(MinVR::ConfigVal("TestMulti", "", false));
 }
@@ -102,10 +110,7 @@ void ExperimentMgr::initializeContextSpecificVars(int threadId, MinVR::WindowRef
 // each trial is a tetra's orientation specified by a dmat4, in a config file
 // and a restart in time
 // and a new file to log output
-// and a switch in the current HCI
-void ExperimentMgr::switchTrial () {
 
-}
 
 // Does the following:
 // switch HCI
@@ -113,6 +118,16 @@ void ExperimentMgr::switchTrial () {
 // update experiment number
 // point to next matrices we need for experiment
 void ExperimentMgr::advance () {
+	trialCount += 1;
+	if(trialCount == 5){
+		trialCount = 0;
+		//swtichHCI becauuse finish all trials 
+	}
+	
+}
+
+
+void ExperimentMgr::resetTimer(){
 
 }
 
@@ -122,6 +137,13 @@ glm::dmat4 ExperimentMgr::getTransforms(){
 
 }
 
+
+// apparently you're going to have a bunch of dmat4s loaded into a vector...
+void ExperimentMgr::switchHCI () {
+	
+}
+
+
 // assume Cframe manager has updated matrices
 // since App calls currentHCI->update before this call
 bool ExperimentMgr::checkFinish() {
@@ -129,8 +151,9 @@ bool ExperimentMgr::checkFinish() {
 	const double nearEnough = 0.03;
 	
 	glm::dmat4 currHCItransform = cFrameMgr->getVirtualToRoomSpaceFrame();
-	glm::dmat4 staticTransform = transMats[0]; //glm::translate(glm::dmat4(1.0),glm::dvec3(-0.9, 0.0, 0.0));
-	glm::dmat4 shouldBeThisOne = glm::translate(glm::dmat4(1.0),glm::dvec3(-0.9, 0.0, 0.0));
+	staticTransform = transMats[trialCount]; //glm::translate(glm::dmat4(1.0),glm::dvec3(-0.9, 0.0, 0.0));
+	
+	std::cout<<"staticTransform: "<<glm::to_string(staticTransform)<<std::endl;
 	
 	/*std::cout << "Muh xforms: " << glm::to_string(transMats[0]) << std::endl;
 	std::cout << "Muh xforms2: " << glm::to_string(transMats[1]) << std::endl;
@@ -160,11 +183,10 @@ bool ExperimentMgr::checkFinish() {
 	bool nearD = glm::distance(transformableTetraPointD, staticTetraPointD) < nearEnough;
 
 	if (nearA && nearB && nearC && nearD) {
-		std::cout << "You are winner. Ha ha ha!" << std::endl;
-		return true;
+		std::cout<<"ayyyyyyyy gurlll"<<std::endl;
+		return true; 
 	}
 	
-	std::cout << "Y U NAGUT WAINNING?" << std::endl;
 	return false;
 
 }
@@ -176,7 +198,7 @@ void ExperimentMgr::draw(int threadId, MinVR::AbstractCameraRef camera, MinVR::W
 	camera->setObjectToWorldMatrix(glm::translate(glm::dmat4(1.0f), glm::dvec3(-0.5, 0.0, 1.0)));
 	
 	// draws both the static and the transformable tetrahedron
-	tetra->draw(threadId, camera, window, "Koala2");
+	tetra->draw(threadId, camera, window, "Koala2", staticTransform );
 }
 
 
