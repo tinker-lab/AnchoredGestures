@@ -103,7 +103,7 @@ void NewXZRotExperimentHCI::update(const std::vector<MinVR::EventRef> &events){
 
 		// Update hand positions
 		if (name == "Hand_Tracker1") {
-			//std::cout << "Inside hand tracking 1 event " << std::endl;
+			//std::cout << "Inside hand tracking 1 event (xz) " << std::endl;
 			//only enter one time to init prevHandPos1
 			if (prevHandPos1.y == -1.0) {
 				glm::dvec3 currHandPos1 (events[p]->getCoordinateFrameData()[3]);
@@ -121,7 +121,7 @@ void NewXZRotExperimentHCI::update(const std::vector<MinVR::EventRef> &events){
 		//std::cout<<"prevHandPos1: "<<glm::to_string(prevHandPos1)<<std::endl;
 
 		if(name == "Hand_Tracker2") {
-			//std::cout << "Inside hand tracking 2 event " << std::endl;
+			//std::cout << "Inside hand tracking 2 event (xz) " << std::endl;
 			if (prevHandPos2.y == -1.0) {
 				glm::dvec3 currHandPos2 (events[p]->getCoordinateFrameData()[3]);
 				prevHandPos2 = currHandPos2;
@@ -158,7 +158,7 @@ void NewXZRotExperimentHCI::update(const std::vector<MinVR::EventRef> &events){
 		}
 	} // end touch enumeration
 	
-
+	std::cout<<"GOT TO HERE"<<std::endl;
 	 //from TUIO move
 	
 
@@ -211,14 +211,26 @@ void NewXZRotExperimentHCI::update(const std::vector<MinVR::EventRef> &events){
 
 		if (numTouchForHand1 >= numTouchForHand2) { 
 			//std::cout << "Using right hand: " << std::endl; 
-			currHandToTouch = roomTouchCentre - currHandPos1;
-			prevHandToTouch = roomTouchCentre - prevHandPos1;
+			if (roomTouchCentre - currHandPos1 != glm::dvec3(0.0)) {//zero guard
+				currHandToTouch = roomTouchCentre - currHandPos1;
+			}
+
+			if (roomTouchCentre - prevHandPos1 != glm::dvec3(0.0)) {//zero guard
+				prevHandToTouch = roomTouchCentre - prevHandPos1;
+			}
+
 		} else {
-			//std::cout << "Using Left hand: " << std::endl; 
-			currHandToTouch = roomTouchCentre - currHandPos2;
-			prevHandToTouch = roomTouchCentre - prevHandPos2;
+			//std::cout << "Using Left hand: " << std::endl;
+
+			if (roomTouchCentre - currHandPos2 != glm::dvec3(0.0)) { //zero guard
+				currHandToTouch = roomTouchCentre - currHandPos2;
+			}
+
+			if (roomTouchCentre - prevHandPos2 != glm::dvec3(0.0)) { //zero guard
+				prevHandToTouch = roomTouchCentre - prevHandPos2;
+			}
 		}
-		
+
 
 		//set up the 2 vertices for a square boundry for the gesture
 		glm::dvec3 upRight = glm::dvec3(initRoomTouchCentre.x+0.2, 0.0, initRoomTouchCentre.z+0.2);

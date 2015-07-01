@@ -24,7 +24,7 @@ typedef std::shared_ptr<class Tetrahedron> TetrahedronRef;
 
 class Tetrahedron {
 public:
-	Tetrahedron(MinVR::AbstractCameraRef camera, CFrameMgrRef cFrameMgr, TextureMgrRef texMan);
+	Tetrahedron(MinVR::AbstractCameraRef camera, CFrameMgrRef cFrameMgr, TextureMgrRef texMan, double errorMargin);
 	~Tetrahedron();
 	void initializeContextSpecificVars(int threadId);
 	void initVBO(int threadId);
@@ -44,7 +44,7 @@ public:
 private:
 	std::map<int, GLuint> _vboId;
 	std::shared_ptr<MinVR::CameraOffAxis> offAxisCamera;
-
+	
 	GPUMeshRef cylinderMesh; // holds six cylinders
 	GPUMeshRef sphereMesh; //only one sphere
 	int GPUcylinderOffset;
@@ -55,6 +55,8 @@ private:
 	std::vector<GPUMesh::Vertex> cylinderData;
 	std::vector<GPUMesh::Vertex> sphereData;
 	std::vector<int> sphereIndices;
+
+	double sphereRadius;
 
 	
 

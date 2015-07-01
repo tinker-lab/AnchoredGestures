@@ -61,6 +61,14 @@ private:
 	std::shared_ptr<MinVR::CameraOffAxis> offAxisCamera;
 	FeedbackRef feedback;
 	ExperimentMgrRef experimentMgr;
+
+	AbstractHCIRef newYTransHCI;
+	AbstractHCIRef newXZRotHCI;
+	AbstractHCIRef newAnchoredHCI;
+	AbstractHCIRef oldYTransHCI;
+	AbstractHCIRef oldXZRotHCI;
+	AbstractHCIRef oldAnchoredHCI;
+
 };
 
 #endif /* APP_H_ */

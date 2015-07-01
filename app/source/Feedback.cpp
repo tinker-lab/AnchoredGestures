@@ -233,7 +233,7 @@ void Feedback::draw(int threadId, MinVR::AbstractCameraRef camera, MinVR::Window
 	// draw the touch texture
 	// somehow need the room position of the touch
 	glBindVertexArray(touchMesh->getVAOID());
-	texMan->getTexture(threadId, "touch")->bind(2);
+	texMan->getTexture(threadId, "touch2")->bind(2);
 	shader->setUniform("textureSampler", 2);
 
 	std::map<int, TouchDataRef>::iterator it;

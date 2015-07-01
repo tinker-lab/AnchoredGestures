@@ -1,9 +1,11 @@
 #include "app/include/Tetrahedron.h"
 
-Tetrahedron::Tetrahedron(MinVR::AbstractCameraRef camera, CFrameMgrRef cFrameMgr, TextureMgrRef texMan) {
+Tetrahedron::Tetrahedron(MinVR::AbstractCameraRef camera, CFrameMgrRef cFrameMgr, TextureMgrRef texMan, double errorMargin) {
 	offAxisCamera = std::dynamic_pointer_cast<MinVR::CameraOffAxis>(camera);
 	this->texMan = texMan;
 	this->cFrameMgr = cFrameMgr;
+	this->sphereRadius = errorMargin;
+
 }
 
 Tetrahedron::~Tetrahedron() {
@@ -125,8 +127,6 @@ void Tetrahedron::makeCylinder(glm::dvec3 pointA, glm::dvec3 pointB){
 
 void Tetrahedron::makeSphere(glm::dvec3 center){
 
-
-
 	GPUMesh::Vertex sphereVert;
 
 	// fill up the empty space
@@ -147,7 +147,7 @@ void Tetrahedron::makeSphere(glm::dvec3 center){
 			curr_lon = k*lonUnit;
 
 			//first vertex
-			sphereVert.position = 0.04 * getPosition(curr_lat, curr_lon);
+			sphereVert.position = sphereRadius * getPosition(curr_lat, curr_lon);
 			sphereVert.normal = sphereVert.position;
 			sphereVert.texCoord0 = glm::dvec2(0.5,0.5);
 
@@ -155,7 +155,7 @@ void Tetrahedron::makeSphere(glm::dvec3 center){
 			sphereIndices.push_back(sphereData.size()-1);
 
 			// second vertex
-			sphereVert.position = 0.04 * getPosition(curr_lat + latUnit, curr_lon);
+			sphereVert.position = sphereRadius * getPosition(curr_lat + latUnit, curr_lon);
 			sphereVert.normal = getPosition(curr_lat, curr_lon);
 			sphereVert.texCoord0 = sphereVert.texCoord0;
 
@@ -172,6 +172,7 @@ void Tetrahedron::makeSphere(glm::dvec3 center){
 	
 }
 
+// transMat really means a transform, given by ExperimentMgr
 void Tetrahedron::draw(int threadId, MinVR::AbstractCameraRef camera, MinVR::WindowRef window, std::string textureName, glm::dmat4 transMat){
 	
 	const int numCylinderIndices = (int)(cylinderMesh->getFilledIndexByteSize()/sizeof(int));
@@ -183,20 +184,34 @@ void Tetrahedron::draw(int threadId, MinVR::AbstractCameraRef camera, MinVR::Win
 
 	//glm::dvec3 eye_world = glm::dvec3(glm::column(glm::inverse(offAxisCamera->getLastAppliedViewMatrix()), 3));
 	//tetraShader->setUniform("eye_world", eye_world);
-	texMan->getTexture(threadId, textureName)->bind(6);
-	tetraShader->setUniform("textureSampler", 6);
+	
+	
 
+	///////////////////////////////
+	// Binding Textures			 //
+	///////////////////////////////
+	texMan->getTexture(threadId, textureName)->bind(6);
+	texMan->getTexture(threadId, "red")->bind(7);
+	texMan->getTexture(threadId, "green")->bind(8);
+	texMan->getTexture(threadId, "blue")->bind(9);
+	texMan->getTexture(threadId, "Koala")->bind(10);
+	texMan->getTexture(threadId, "forestGreen")->bind(11);
+
+	tetraShader->setUniform("textureSampler", 6);
 	////////////////////////
 	// static tetrahedron //
 	////////////////////////
 	glBindVertexArray(cylinderMesh->getVAOID());
-	// tetraPosition will be loaded in from a config file later
 	//glm::dmat4 tetraPosition = glm::translate(glm::dmat4(1.0),glm::dvec3(0.0, 0.0, 0.0));
-	camera->setObjectToWorldMatrix(transMat);
+	camera->setObjectToWorldMatrix(glm::dmat4(1.0)); // center it at origin
 	tetraShader->setUniform("model_mat", offAxisCamera->getLastAppliedModelMatrix());
+	tetraShader->setUniform("textureSampler", 6);
 	for(int c = 0; c < 6 ; c++) {
 		//std::cout << "The indexes for drawing: " << c * GPUcylinderOffset << ", " << (c+1) * GPUcylinderOffset << std::endl;
 		//std::cout << 0 << ", " << numCylinderIndices << std::endl;
+		if (c > 3) {
+			tetraShader->setUniform("textureSampler", 11);
+		}
 		glDrawArrays(GL_TRIANGLE_STRIP, c*GPUcylinderOffset, GPUcylinderOffset);
 	}
 
@@ -204,41 +219,67 @@ void Tetrahedron::draw(int threadId, MinVR::AbstractCameraRef camera, MinVR::Win
 	// transformable tetrahedron //
 	///////////////////////////////
 	camera->setObjectToWorldMatrix(cFrameMgr->getVirtualToRoomSpaceFrame());
-	tetraShader->setUniform("model_mat", offAxisCamera->getLastAppliedModelMatrix());
+	tetraShader->setUniform("model_mat", offAxisCamera->getLastAppliedModelMatrix()*transMat);
+	tetraShader->setUniform("textureSampler", 6);
 	for(int c = 0; c < 6 ; c++) {
 		//std::cout << "The indexes for drawing: " << c * GPUcylinderOffset << ", " << (c+1) * GPUcylinderOffset << std::endl;
 		//std::cout << 0 << ", " << numCylinderIndices << std::endl;
+		if (c > 3) {
+			tetraShader->setUniform("textureSampler", 11);
+		}
+		
 		glDrawArrays(GL_TRIANGLE_STRIP, c*GPUcylinderOffset, GPUcylinderOffset);
 	}
 
-
-	///////////////////////////////
-	// Draw Tetrahedron spheres  //
-	///////////////////////////////
+	///////////////////////////////////////////
+	// Draw Static      Tetrahedron spheres  //
+	///////////////////////////////////////////
 	glBindVertexArray(sphereMesh->getVAOID());
-	texMan->getTexture(threadId, "red")->bind(7);
-	tetraShader->setUniform("textureSampler", 7);
 
+	tetraShader->setUniform("textureSampler", 7);
 	glm::dmat4 sphereTransMat1 = glm::translate(glm::dmat4(1.0), pointA);
-	tetraShader->setUniform("model_mat", offAxisCamera->getLastAppliedModelMatrix()*sphereTransMat1);
+	tetraShader->setUniform("model_mat", sphereTransMat1);
 	glDrawArrays(GL_TRIANGLE_STRIP, 0, numSphereIndices);
 
-	texMan->getTexture(threadId, "green")->bind(7);
-	tetraShader->setUniform("textureSampler", 7);
+	tetraShader->setUniform("textureSampler", 8);
 	glm::dmat4 sphereTransMat2 = glm::translate(glm::dmat4(1.0), pointB);
-	tetraShader->setUniform("model_mat", offAxisCamera->getLastAppliedModelMatrix()*sphereTransMat2);
+	tetraShader->setUniform("model_mat", sphereTransMat2);
 	glDrawArrays(GL_TRIANGLE_STRIP, 0, numSphereIndices);
 
-	texMan->getTexture(threadId, "blue")->bind(7);
-	tetraShader->setUniform("textureSampler", 7);
+	
+	tetraShader->setUniform("textureSampler", 9);
 	glm::dmat4 sphereTransMat3 = glm::translate(glm::dmat4(1.0), pointC);
-	tetraShader->setUniform("model_mat", offAxisCamera->getLastAppliedModelMatrix()*sphereTransMat3);
+	tetraShader->setUniform("model_mat", sphereTransMat3);
 	glDrawArrays(GL_TRIANGLE_STRIP, 0, numSphereIndices);
 
-	texMan->getTexture(threadId, "Koala")->bind(7);
-	tetraShader->setUniform("textureSampler", 7);
+	
+	tetraShader->setUniform("textureSampler", 10);
 	glm::dmat4 sphereTransMat4 = glm::translate(glm::dmat4(1.0), pointD);
-	tetraShader->setUniform("model_mat", offAxisCamera->getLastAppliedModelMatrix()*sphereTransMat4);
+	tetraShader->setUniform("model_mat", sphereTransMat4);
+	glDrawArrays(GL_TRIANGLE_STRIP, 0, numSphereIndices);
+
+	///////////////////////////////////////////
+	// Draw Transformed Tetrahedron spheres  //
+	///////////////////////////////////////////
+	
+	
+	tetraShader->setUniform("textureSampler", 7);
+	tetraShader->setUniform("model_mat", offAxisCamera->getLastAppliedModelMatrix() * transMat * sphereTransMat1);
+	glDrawArrays(GL_TRIANGLE_STRIP, 0, numSphereIndices);
+
+	
+	tetraShader->setUniform("textureSampler", 8);
+	tetraShader->setUniform("model_mat", offAxisCamera->getLastAppliedModelMatrix()* transMat * sphereTransMat2);
+	glDrawArrays(GL_TRIANGLE_STRIP, 0, numSphereIndices);
+
+	
+	tetraShader->setUniform("textureSampler", 9);
+	tetraShader->setUniform("model_mat", offAxisCamera->getLastAppliedModelMatrix()* transMat * sphereTransMat3);
+	glDrawArrays(GL_TRIANGLE_STRIP, 0, numSphereIndices);
+
+	
+	tetraShader->setUniform("textureSampler", 10);
+	tetraShader->setUniform("model_mat", offAxisCamera->getLastAppliedModelMatrix()* transMat * sphereTransMat4);
 	glDrawArrays(GL_TRIANGLE_STRIP, 0, numSphereIndices);
 	
 	// 4 spheres
@@ -247,9 +288,6 @@ void Tetrahedron::draw(int threadId, MinVR::AbstractCameraRef camera, MinVR::Win
 	//	//tetraShader->setUniform("model_mat", offAxisCamera->getLastAppliedModelMatrix()*sphereTransMat1);
 	//	glDrawArrays(GL_TRIANGLES, 0, numSphereIndices);
 	//} 
-
-
-	
 }
 
 

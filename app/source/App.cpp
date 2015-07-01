@@ -28,13 +28,21 @@ void App::doUserInputAndPreDrawComputation(
 	}
 	
 	currentHCIMgr->currentHCI->update(events);
-	if (experimentMgr->checkFinish()) {
+	if (experimentMgr->checkFinish()) { // should this go before update events?
 		// Does the following:
 		// switch HCI
 		// update trial number
 		// update experiment number
 		// point to next matrices we need for experiment
 		experimentMgr->advance();
+		if (experimentMgr->HCIExperiment == 1) {
+			currentHCIMgr->currentHCI = newYTransHCI;
+		} else if (experimentMgr->HCIExperiment == 2) {
+			currentHCIMgr->currentHCI = newXZRotHCI;
+		} else if (experimentMgr->HCIExperiment == 3) {
+			currentHCIMgr->currentHCI = newAnchoredHCI;
+
+		}
 	} 
 }
 
@@ -50,7 +58,21 @@ void App::initializeContextSpecificVars(int threadId,
 	feedback.reset(new Feedback(window->getCamera(0), cFrameMgr, texMan));
 
 	currentHCIMgr.reset(new CurrentHCIMgr());
-	currentHCIMgr->currentHCI.reset(new TestHCI(window->getCamera(0), cFrameMgr, texMan, feedback));//create prompHCI then reset later
+	currentHCIMgr->currentHCI.reset(new TestHCI(window->getCamera(0), cFrameMgr, texMan, feedback));//create promptHCI then reset later
+	newYTransHCI.reset(new NewYTransExperimentHCI(window->getCamera(0), cFrameMgr, texMan, feedback));
+	newXZRotHCI.reset(new NewXZRotExperimentHCI(window->getCamera(0), cFrameMgr, texMan, feedback));
+	newAnchoredHCI.reset(new NewAnchoredExperimentHCI(window->getCamera(0), cFrameMgr, texMan, feedback));
+	/*oldYTransHCI.reset(new oldYTransExperimentHCI(window->getCamera(0), cFrameMgr, texMan, feedback));
+	oldXZRotHCI.reset(new oldXZRotExperimentHCI(window->getCamera(0), cFrameMgr, texMan, feedback));
+	oldAnchoredHCI.reset(new oldAnchoredExperimentHCI(window->getCamera(0), cFrameMgr, texMan, feedback));*/
+
+	newYTransHCI->initializeContextSpecificVars(threadId, window);
+	newXZRotHCI->initializeContextSpecificVars(threadId, window);
+	newAnchoredHCI->initializeContextSpecificVars(threadId, window);
+	/*oldYTransHCI->initializeContextSpecificVars(threadId, window);
+	oldXZRotHCI->initializeContextSpecificVars(threadId, window);
+	oldAnchoredHCI->initializeContextSpecificVars(threadId, window);*/
+
 	axis.reset(new Axis(window->getCamera(0), cFrameMgr, texMan));
 
 	experimentMgr.reset(new ExperimentMgr(currentHCIMgr, cFrameMgr, window->getCamera(0), texMan, feedback));
