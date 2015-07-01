@@ -69,7 +69,7 @@ void Tetrahedron::initGL() {
 	std::map<std::string, std::string> args, dummyArgs;
 	tetraShader.reset(new GLSLProgram());
 	tetraShader->compileShader(MinVR::DataFileUtils::findDataFile("phong.vert").c_str(), GLSLShader::VERTEX, dummyArgs);
-	tetraShader->compileShader(MinVR::DataFileUtils::findDataFile("phong.frag").c_str(), GLSLShader::FRAGMENT, args);
+	tetraShader->compileShader(MinVR::DataFileUtils::findDataFile("fong.frag").c_str(), GLSLShader::FRAGMENT, args);
 	tetraShader->link();
 
 }
@@ -107,13 +107,13 @@ void Tetrahedron::makeCylinder(glm::dvec3 pointA, glm::dvec3 pointB){
 
 
 	for(int i=0; i < 25; i++){
-		cylinderVert.position = pointA + normRvec*0.02*glm::cos(i*piTwelfths)+ normNvec*0.02*glm::sin(i*piTwelfths);
+		cylinderVert.position = pointB + normRvec*0.02*glm::cos(i*piTwelfths)+ normNvec*0.02*glm::sin(i*piTwelfths);
 		cylinderVert.normal = glm::normalize(normRvec*glm::cos(i*piTwelfths)+ normNvec*glm::sin(i*piTwelfths));
 		cylinderVert.texCoord0 = glm::dvec2(0.2, 0.4);
 		cylinderData.push_back(cylinderVert);
 		cylinderIndices.push_back(cylinderData.size()-1);
 
-		cylinderVert.position = pointB + normRvec*0.02*glm::cos(i*piTwelfths)+ normNvec*0.02*glm::sin(i*piTwelfths);
+		cylinderVert.position = pointA + normRvec*0.02*glm::cos(i*piTwelfths)+ normNvec*0.02*glm::sin(i*piTwelfths);
 		cylinderData.push_back(cylinderVert);
 		cylinderIndices.push_back(cylinderData.size()-1);
 	}

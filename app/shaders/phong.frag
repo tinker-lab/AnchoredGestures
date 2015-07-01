@@ -37,7 +37,7 @@ void main () {
 	// specular intensity
 	vec3 surface_to_viewer_world = normalize (eye_world - position_world);
 	vec3 half_way_world = normalize (surface_to_viewer_world + direction_to_light_world);
-	float dot_prod_specular = dot (half_way_world, normal_world);
+	float dot_prod_specular = max(dot (half_way_world, normal_world), 0.0);
 	float specular_factor = pow (dot_prod_specular, specular_exponent);
 	
 	vec3 Is = Ls * Ks * specular_factor; // final specular intensity
