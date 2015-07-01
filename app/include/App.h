@@ -28,6 +28,8 @@
 #include "app/include/Feedback.h"
 #include "app/include/ExperimentMgr.h"
 #include "app/include/CurrentHCIMgr.h"
+#include "ByteData.h"
+#include "ByteStream.h"
 
 class App : public MinVR::AbstractMVRApp {
 public:
@@ -44,6 +46,12 @@ private:
 	void initGL();
 	void initVBO(int threadId, MinVR::WindowRef window);
 	void initLights();
+	ByteData eventToByteData(MinVR::EventRef event);
+	MinVR::EventRef byteDataToEvent(ByteData data);
+	void replayEventStream(ByteStream stream);
+	void saveEventStream(const std::string &eventStreamFilename);
+	void loadEventStream(const std::string &eventStreamFilename);
+
 	std::shared_ptr<GPUMesh> cubeMesh;
 	std::shared_ptr<GPUMesh> tetraMesh;
 	std::shared_ptr<GPUMesh> axisMesh;
@@ -61,6 +69,9 @@ private:
 	std::shared_ptr<MinVR::CameraOffAxis> offAxisCamera;
 	FeedbackRef feedback;
 	ExperimentMgrRef experimentMgr;
+	std::vector<std::string>							_logIgnoreList;
+	std::vector<ByteData>								_eventsToSave;
+	bool												_replayingStream;
 };
 
 #endif /* APP_H_ */

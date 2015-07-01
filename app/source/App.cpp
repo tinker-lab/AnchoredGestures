@@ -5,6 +5,18 @@
 using namespace MinVR;
 
 App::App() : MinVR::AbstractMVRApp() {
+	
+	_replayingStream = false;
+	std::string ignoreString = ConfigVal("LoggingEventsToIgnore", "", false);
+	while (ignoreString.size()) {
+		std::string ignoreEvent;
+		if (MinVR::popNextToken(ignoreString, ignoreEvent, true)) {
+			_logIgnoreList.push_back(ignoreEvent);
+		}
+		else {
+			break;
+		}
+	}
 
 }
 
@@ -14,18 +26,314 @@ App::~App() {
 	}
 }
 
+void App::saveEventStream(const std::string &eventStreamFilename)
+{
+	if (_replayingStream) {
+		return;
+	}
+
+	long totalSize = sizeof(int);
+	for(int i=0; i < _eventsToSave.size(); i++){
+		totalSize += _eventsToSave[i].getSize();
+	}
+
+	ByteStream stream(totalSize);
+	long numEvents = _eventsToSave.size();
+	std::cout<<"Saving "<<numEvents<<" events"<<std::endl;
+	stream.writeInt(numEvents);
+
+	for(int i=0; i < _eventsToSave.size(); i++){
+		if (i < 3) {
+			std::cout<< byteDataToEvent(_eventsToSave[i])->toString()<<std::endl;
+		}
+		stream.writeByteData(_eventsToSave[i]);
+	}
+
+	FILE * pFile;
+	unsigned char* buffer = stream.getByteArray();
+	pFile = fopen (eventStreamFilename.c_str(), "wb");
+	fwrite (buffer , sizeof(unsigned char), stream.getSize(), pFile);
+	fclose (pFile);
+}
+
+void App::loadEventStream(const std::string &eventStreamFilename)
+{
+	FILE * pFile;
+	long lSize;
+	unsigned char * buffer;
+	size_t result;
+
+	pFile = fopen ( eventStreamFilename.c_str() , "rb" );
+	if (pFile==NULL) {
+		std::cout<<"Error: unable to open "<<eventStreamFilename<<std::endl;
+		return;
+	}
+
+	// obtain file size:
+	fseek (pFile , 0 , SEEK_END);
+	lSize = ftell (pFile);
+	rewind (pFile);
+
+	// allocate memory to contain the whole file:
+	buffer = new unsigned char[lSize];
+
+	// copy the file into the buffer:
+	result = fread (buffer, 1, lSize, pFile);
+	if (result != lSize) {
+		std::cout<<"Error: unable to read "<<eventStreamFilename<<std::endl;
+		return;
+	}
+	fclose (pFile);
+
+	ByteStream stream(buffer, lSize);
+	replayEventStream(stream);
+
+	delete [] buffer;
+}
+
+void App::replayEventStream(ByteStream stream)
+{
+	int numEvents = stream.readInt();
+
+	_replayingStream = true;
+
+	//Throw all of the current state away
+	_eventsToSave.clear();
+
+	std::vector<EventRef> queue;
+
+	std::cout<<"Replaying "<<numEvents<<" events."<<std::endl;
+	for(int i=0; i < numEvents; i++) {
+		ByteData data = stream.readByteData();
+		if (i < 3) {
+			std::cout<< byteDataToEvent(data)->toString()<<std::endl;
+		}
+		MinVR::EventRef event = byteDataToEvent(data);
+		if (event->getName() == "FinishedQueue") {
+			doUserInputAndPreDrawComputation(queue, 0.0);
+			queue.clear();
+		}
+		else {
+			queue.push_back(event);
+		}
+	}
+	doUserInputAndPreDrawComputation(queue, 0.0);
+
+	_replayingStream = false;
+}
+
+/** Each time you change the format of this, increase the
+    SERIALIZE_VERSION_NUMBER and respond accordingly in the
+    deserialize method.  In this method, you can safely get rid of the
+    old code because we don't want to create files in an old format.
+*/
+#define SERIALIZE_VERSION_NUMBER 0
+ByteData App::eventToByteData(MinVR::EventRef event)
+{
+	ByteStream stream;
+	stream.writeInt(SERIALIZE_VERSION_NUMBER);
+
+	std::string name = event->getName();
+	int id = event->getId();
+
+	int sizeInBytes = sizeof(int) + sizeof(int) + (sizeof(char)*name.size()+sizeof(int)) + sizeof(int); //version number, eventType, name size int, name, id
+
+	/*
+		Note: This does not keep track of the timestamps or window points
+	*/
+
+	switch(event->getType()) {
+		case MinVR::Event::EVENTTYPE_STANDARD:
+		{
+			stream.resize(sizeInBytes);
+			stream.writeInt(event->getType());
+			stream.writeString(name);
+			stream.writeInt(id);
+			break;
+		}
+		case MinVR::Event::EVENTTYPE_1D:
+		{
+			sizeInBytes+= sizeof(double);
+			stream.resize(sizeInBytes);
+			stream.writeInt(event->getType());
+			stream.writeString(name);
+			stream.writeInt(id);
+			stream.writeDouble(event->get1DData());
+			break;
+		}
+		case MinVR::Event::EVENTTYPE_2D:
+		{
+			sizeInBytes+= (sizeof(double) * 2);
+			stream.resize(sizeInBytes);
+			stream.writeInt(event->getType());
+			stream.writeString(name);
+			stream.writeInt(id);
+			glm::dvec2 data = event->get2DData();
+			stream.writeDouble(data.x);
+			stream.writeDouble(data.y);
+			break;
+		}
+		case MinVR::Event::EVENTTYPE_3D:
+		{
+			sizeInBytes+= (sizeof(double) * 3);
+			stream.resize(sizeInBytes);
+			stream.writeInt(event->getType());
+			stream.writeString(name);
+			stream.writeInt(id);
+			glm::dvec3 data = event->get3DData();
+			stream.writeDouble(data.x);
+			stream.writeDouble(data.y);
+			stream.writeDouble(data.z);
+			break;
+		}
+		case MinVR::Event::EVENTTYPE_4D:
+		{
+			sizeInBytes+= (sizeof(double) * 4);
+			stream.resize(sizeInBytes);
+			stream.writeInt(event->getType());
+			stream.writeString(name);
+			stream.writeInt(id);
+			glm::dvec4 data = event->get4DData();
+			stream.writeDouble(data.x);
+			stream.writeDouble(data.y);
+			stream.writeDouble(data.z);
+			stream.writeDouble(data.w);
+			break;
+		}
+		case MinVR::Event::EVENTTYPE_COORDINATEFRAME:
+		{
+			sizeInBytes+= (sizeof(double) * 16);
+			stream.resize(sizeInBytes);
+			stream.writeInt(event->getType());
+			stream.writeString(name);
+			stream.writeInt(id);
+			glm::dmat4 frame = event->getCoordinateFrameData();
+			double* data = glm::value_ptr<double>(frame);
+			//std::cout<<"Writing: ";
+			for(int i=0; i < 16; i++) {
+			//	std::cout<<*data<<" ";
+				stream.writeDouble(*data);
+				data++;
+			}
+			//std::cout<<std::endl;
+			break;
+		}
+		case MinVR::Event::EVENTTYPE_MSG:
+		{
+			std::string msg = event->getMsgData();
+			sizeInBytes+= (sizeof(char)*msg.size()+sizeof(int));
+			stream.resize(sizeInBytes);
+			stream.writeInt(event->getType());
+			stream.writeString(name);
+			stream.writeInt(id);
+			stream.writeString(msg);
+			break;
+		}
+	}
+	
+	return stream.toByteData();
+}
+
+/** Never delete the code from an old version from this method so we
+    can always stay backwards compatable.  Important, since this is in
+    binary, and we can't really reverse engineer the file format.
+*/
+MinVR::EventRef App::byteDataToEvent(ByteData data)
+{
+	ByteStream stream(data);
+	int version = stream.readInt();
+
+	if (version == 0) {
+		MinVR::Event::EventType type = static_cast<MinVR::Event::EventType>(stream.readInt());
+		std::string name = stream.readString();
+		int id = stream.readInt();
+
+		switch(type) {
+			case MinVR::Event::EVENTTYPE_STANDARD:
+			{
+				return MinVR::EventRef(new Event(name, nullptr, id));
+			}
+			case MinVR::Event::EVENTTYPE_1D:
+			{
+				double data = stream.readDouble();
+				return MinVR::EventRef(new Event(name, data, nullptr, id));
+			}
+			case MinVR::Event::EVENTTYPE_2D:
+			{
+				glm::dvec2 data(stream.readDouble(), stream.readDouble());
+				return MinVR::EventRef(new Event(name, data, nullptr, id));
+			}
+			case MinVR::Event::EVENTTYPE_3D:
+			{
+				glm::dvec3 data(stream.readDouble(), stream.readDouble(), stream.readDouble());
+				return MinVR::EventRef(new Event(name, data, nullptr, id));
+			}
+			case MinVR::Event::EVENTTYPE_4D:
+			{
+				glm::dvec4 data(stream.readDouble(), stream.readDouble(), stream.readDouble(), stream.readDouble());
+				return MinVR::EventRef(new Event(name, data, nullptr, id));
+			}
+			case MinVR::Event::EVENTTYPE_COORDINATEFRAME:
+			{
+				double data[16];
+				//std::cout<<"Reading: ";
+				for(int i=0; i < 16; i++) {
+						data[i] = stream.readDouble();
+				//		std::cout<<data[i]<<" ";
+				}
+				//std::cout<<std::endl;
+				return MinVR::EventRef(new Event(name, glm::make_mat4x4<double>(data), nullptr, id));
+			}
+			case MinVR::Event::EVENTTYPE_MSG:
+			{
+				std::string msg = stream.readString();
+				return MinVR::EventRef(new Event(name, msg, nullptr, id));
+			}
+			default:
+			{
+				std::cout<<"ERROR: found MinVR event type that is undefined"<<std::endl;
+				return MinVR::EventRef(new Event("ERROR"));
+			}
+		}
+	}
+	else {
+		std::cout<<"ERROR: Undefined bytedata version number"<<std::endl;
+		return MinVR::EventRef(new Event("ERROR"));
+	}
+}
+
+
 void App::doUserInputAndPreDrawComputation(
 	const std::vector<MinVR::EventRef>& events, double synchronizedTime) {
 	for(int i=0; i < events.size(); i++) {
 		if (events[i]->getName() == "kbd_ESC_down") {
 			exit(0);
 		}
-
-		if (events[i]->getName() == "kbd_SPACE_down") {
+		else if (events[i]->getName() == "kbd_SPACE_down") {
 			cFrameMgr->setRoomToVirtualSpaceFrame(glm::dmat4(1.0)); 
 		}
+		else if (events[i]->getName() == "kbd_S_down") {
+			std::string eventStreamFile = MinVR::ConfigVal("EventStreamFilePrefix", "EventStream", false);
+			boost::posix_time::time_facet* facet = new boost::posix_time::time_facet();
+			facet->format("%Y-%m-%d.%H.%M.%S");
+			std::stringstream stream;
+			stream.imbue(std::locale(stream.getloc(), facet));
+			stream << boost::posix_time::second_clock::local_time();
+			eventStreamFile += "-" + stream.str() + ".bin";
+			saveEventStream(eventStreamFile);
+		}
+		else if (events[i]->getName() == "kbd_R_down") {
+			std::string eventStreamFile = MinVR::ConfigVal("EventStreamToReplay", "EventStream", false);
+			loadEventStream(eventStreamFile);
+		}
 
+		//Save to the bytestream
+		if (std::find(_logIgnoreList.begin(), _logIgnoreList.end(), events[i]->getName()) == _logIgnoreList.end()) {
+			_eventsToSave.push_back(eventToByteData(events[i]));
+		}
 	}
+
+	_eventsToSave.push_back(eventToByteData(MinVR::EventRef(new Event("FinishedQueue"))));
 	
 	currentHCIMgr->currentHCI->update(events);
 	if (experimentMgr->checkFinish()) {

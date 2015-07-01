@@ -73,6 +73,8 @@ set (HEADERFILES
 		app/include/stb_truetype.h
 		app/include/LikertHCI.h
 		app/include/AABox.h
+		app/include/ByteData.h
+		app/include/ByteStream.h
 		app/include/CurrentHCIMgr.h)
 
 
