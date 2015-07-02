@@ -43,6 +43,8 @@ set (SOURCEFILES
 		app/source/NewXZRotExperimentHCI.cpp
 		app/source/NewYTransExperimentHCI.cpp
 		app/source/NewAnchoredExperimentHCI.cpp
+		app/source/LikertHCI.cpp
+		app/source/AABox.cpp
 		app/source/CurrentHCIMgr.cpp)
 
 set (HEADERFILES 
@@ -66,6 +68,13 @@ set (HEADERFILES
 		app/include/NewXZRotExperimentHCI.h
 		app/include/NewYTransExperimentHCI.h
 		app/include/NewAnchoredExperimentHCI.h
+		app/include/fontstash.h
+		app/include/glfontstash.h
+		app/include/stb_truetype.h
+		app/include/LikertHCI.h
+		app/include/AABox.h
+		app/include/ByteData.h
+		app/include/ByteStream.h
 		app/include/CurrentHCIMgr.h)
 
 
