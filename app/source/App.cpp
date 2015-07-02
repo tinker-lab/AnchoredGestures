@@ -41,7 +41,6 @@ void App::doUserInputAndPreDrawComputation(
 			currentHCIMgr->currentHCI = newXZRotHCI;
 		} else if (experimentMgr->HCIExperiment == 3) {
 			currentHCIMgr->currentHCI = newAnchoredHCI;
-
 		}
 	} 
 }
