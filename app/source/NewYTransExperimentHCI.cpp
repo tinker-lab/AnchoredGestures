@@ -76,6 +76,9 @@ void NewYTransExperimentHCI::update(const std::vector<MinVR::EventRef> &events){
 				registeredTouchData.erase(it);	   //erase value associate with that it
 				//std::cout << "UP" <<std::endl;
 			}
+			else {
+				std::cout<<"ERROR: Received touch up for a cursor not in the registered touch data!"<<std::endl;
+			}
 
 		} else if (boost::algorithm::starts_with(name, "TUIO_Cursor_down")) {
 			// always add a new one on DOWN
@@ -89,7 +92,7 @@ void NewYTransExperimentHCI::update(const std::vector<MinVR::EventRef> &events){
 			// update the map with the move event
 			// if the corresponding id was down, make it a move event
 			std::map<int, TouchDataRef>::iterator it = registeredTouchData.find(id); 
-			//std::cout << "Move " << events[i]->getId() <<std::endl;
+			//std::cout << "Move " << events[p]->getId() <<std::endl;
 
 			if (it != registeredTouchData.end()) { // if id is found
 				glm::dvec2 screenCoord (events[p]->get4DData());
@@ -99,7 +102,9 @@ void NewYTransExperimentHCI::update(const std::vector<MinVR::EventRef> &events){
 				it->second->setCurrentEvent(events[p]);
 				it->second->setCurrRoomPos(roomCoord);
 			}
-
+			else {
+				std::cout<<"ERROR: Received touch move for a cursor not in the registered touch data!"<<std::endl;
+			}
 		}
 		// end of TUIO events
 
@@ -233,9 +238,18 @@ void NewYTransExperimentHCI::update(const std::vector<MinVR::EventRef> &events){
 				glm::dmat4 yTransMat (glm::translate(glm::dmat4(1.0), -yTransBy));
 
 				cFrameMgr->setRoomToVirtualSpaceFrame(cFrameMgr->getRoomToVirtualSpaceFrame() * yTransMat);
+
+				std::cout<<"Translating by: "<<transBy<<std::endl;
+			}
+			else {
+				std::cout<<"Not translating because angle is too little"<<std::endl;
 			}
 		}
+		else {
+			std::cout<<"Not translating because there are more than 4 touches, but not 2 per hand. Left: "<<numTouchForHand1<<" Right: "<<numTouchForHand2<<std::endl;
+		}
 	}
+
 
 	
 

@@ -39,11 +39,13 @@ void ExperimentMgr::initializeContextSpecificVars(int threadId, MinVR::WindowRef
 	//////////////////////////
 	trialCount = 0; // 0 - 4
 	trialSet = 2; // 1 - 2, for updating HCIExperiment number
-	HCIExperiment = 1; // 1 - 3
+	HCIExperiment = 0; // 1 - 3
 	newAnchored = MinVR::ConfigVal("newAnchored", false, false); 
 	transformIndex = 1; // 1 - 5 but randomized
 
-
+	if(HCIExperiment == 0) {
+		currentHCIMgr->currentHCI.reset(new LikertHCI(window->getCamera(0), cFrameMgr, texMan, feedback));
+	}
 	if(HCIExperiment == 1) {
 		currentHCIMgr->currentHCI.reset(new NewYTransExperimentHCI(window->getCamera(0), cFrameMgr, texMan, feedback));
 	}
@@ -153,7 +155,10 @@ bool ExperimentMgr::checkFinish() {
 	
 	glm::dmat4 currHCItransform = cFrameMgr->getVirtualToRoomSpaceFrame();
 
-	if (HCIExperiment == 1) {
+	if (HCIExperiment == 0) {
+		transform = transMats[trialCount];
+	}
+	else if (HCIExperiment == 1) {
 		transform = transMats[trialCount];
 	} else if (HCIExperiment == 2) {
 		transform = rotMats[trialCount];
@@ -183,9 +188,9 @@ bool ExperimentMgr::checkFinish() {
 	glm::dvec3 transformableTetraPointD = glm::dvec3(currHCItransform * transform * glm::dvec4(tetra->pointD, 1.0));
 	glm::dvec3 staticTetraPointD = tetra->pointD;
 
-	/*std::cout << "Static point: " << glm::to_string(staticTetraPointA) << std::endl;
-	std::cout << "Transformable point: " << glm::to_string(transformableTetraPointA) << std::endl;
-	std::cout << "Distance: " << glm::distance(transformableTetraPointA, staticTetraPointA) << std::endl;*/
+	//std::cout << "Static point: " << glm::to_string(staticTetraPointA) << std::endl;
+	//std::cout << "Transformable point: " << glm::to_string(transformableTetraPointA) << std::endl;
+	//std::cout << "Distance: " << glm::distance(transformableTetraPointA, staticTetraPointA) << std::endl;
 
 	bool nearA = glm::distance(transformableTetraPointA, staticTetraPointA) < nearEnough;
 	bool nearB = glm::distance(transformableTetraPointB, staticTetraPointB) < nearEnough;
@@ -205,10 +210,13 @@ void ExperimentMgr::draw(int threadId, MinVR::AbstractCameraRef camera, MinVR::W
 	// use transforms stored in the std::vector
 	// apply them to whatever objects we're rendering, and draw them.
 
-	camera->setObjectToWorldMatrix(glm::translate(glm::dmat4(1.0f), glm::dvec3(-0.5, 0.0, 1.0)));
+	if (HCIExperiment != 0) {
 	
-	// draws both the static and the transformable tetrahedron
-	tetra->draw(threadId, camera, window, "Koala2", transform);
+		// draws both the static and the transformable tetrahedron
+		tetra->draw(threadId, camera, window, "Koala2", transform);
+	} else { // this is the likertHCI
+		currentHCIMgr->currentHCI->draw(threadId, camera, window);
+	}
 }
 
 

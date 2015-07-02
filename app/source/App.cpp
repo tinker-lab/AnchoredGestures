@@ -18,12 +18,22 @@ App::App() : MinVR::AbstractMVRApp() {
 		}
 	}
 
+	boost::posix_time::time_facet* facet = new boost::posix_time::time_facet();
+	facet->format("%Y-%m-%d.%H.%M.%S");
+	std::stringstream stream;
+	stream.imbue(std::locale(stream.getloc(), facet));
+	stream << boost::posix_time::second_clock::local_time();
+	std::string eventStreamFile = "EventsText-" + stream.str() + ".txt";
+	_eventsForText.open(eventStreamFile);
+
 }
 
 App::~App() {
 	for(std::map<int, GLuint>::iterator iterator = _vboId.begin(); iterator != _vboId.end(); iterator++) {
 		glDeleteBuffersARB(1, &iterator->second);
 	}
+
+	_eventsForText.close();
 }
 
 void App::saveEventStream(const std::string &eventStreamFilename)
@@ -43,9 +53,9 @@ void App::saveEventStream(const std::string &eventStreamFilename)
 	stream.writeInt(numEvents);
 
 	for(int i=0; i < _eventsToSave.size(); i++){
-		if (i < 3) {
-			std::cout<< byteDataToEvent(_eventsToSave[i])->toString()<<std::endl;
-		}
+		//if (i > _eventsToSave.size() - 100) {
+		//	std::cout<< byteDataToEvent(_eventsToSave[i])->toString()<<std::endl;
+		//}
 		stream.writeByteData(_eventsToSave[i]);
 	}
 
@@ -100,14 +110,17 @@ void App::replayEventStream(ByteStream stream)
 	//Throw all of the current state away
 	_eventsToSave.clear();
 
+	//_eventsForText << "---------------------- REPLAYING ------------------------"<<std::endl;
+
 	std::vector<EventRef> queue;
 
 	std::cout<<"Replaying "<<numEvents<<" events."<<std::endl;
 	for(int i=0; i < numEvents; i++) {
 		ByteData data = stream.readByteData();
-		if (i < 3) {
-			std::cout<< byteDataToEvent(data)->toString()<<std::endl;
-		}
+		//if (i > numEvents - 1000) {
+		//	std::cout<< byteDataToEvent(data)->toString()<<std::endl;
+		//	std::flush(std::cout);
+		//}
 		MinVR::EventRef event = byteDataToEvent(data);
 		if (event->getName() == "FinishedQueue") {
 			doUserInputAndPreDrawComputation(queue, 0.0);
@@ -169,8 +182,10 @@ ByteData App::eventToByteData(MinVR::EventRef event)
 			stream.writeString(name);
 			stream.writeInt(id);
 			glm::dvec2 data = event->get2DData();
-			stream.writeDouble(data.x);
-			stream.writeDouble(data.y);
+			double* dataPtr = glm::value_ptr<double>(data);
+			stream.writeDouble(*dataPtr);
+			dataPtr++;
+			stream.writeDouble(*dataPtr);
 			break;
 		}
 		case MinVR::Event::EVENTTYPE_3D:
@@ -181,9 +196,13 @@ ByteData App::eventToByteData(MinVR::EventRef event)
 			stream.writeString(name);
 			stream.writeInt(id);
 			glm::dvec3 data = event->get3DData();
-			stream.writeDouble(data.x);
-			stream.writeDouble(data.y);
-			stream.writeDouble(data.z);
+			double* dataPtr = glm::value_ptr<double>(data);
+			stream.writeDouble(*dataPtr);
+			dataPtr++;
+			stream.writeDouble(*dataPtr);
+			dataPtr++;
+			stream.writeDouble(*dataPtr);
+			dataPtr++;
 			break;
 		}
 		case MinVR::Event::EVENTTYPE_4D:
@@ -194,10 +213,14 @@ ByteData App::eventToByteData(MinVR::EventRef event)
 			stream.writeString(name);
 			stream.writeInt(id);
 			glm::dvec4 data = event->get4DData();
-			stream.writeDouble(data.x);
-			stream.writeDouble(data.y);
-			stream.writeDouble(data.z);
-			stream.writeDouble(data.w);
+			double* dataPtr = glm::value_ptr<double>(data);
+			stream.writeDouble(*dataPtr);
+			dataPtr++;
+			stream.writeDouble(*dataPtr);
+			dataPtr++;
+			stream.writeDouble(*dataPtr);
+			dataPtr++;
+			stream.writeDouble(*dataPtr);
 			break;
 		}
 		case MinVR::Event::EVENTTYPE_COORDINATEFRAME:
@@ -260,18 +283,27 @@ MinVR::EventRef App::byteDataToEvent(ByteData data)
 			}
 			case MinVR::Event::EVENTTYPE_2D:
 			{
-				glm::dvec2 data(stream.readDouble(), stream.readDouble());
-				return MinVR::EventRef(new Event(name, data, nullptr, id));
+				double data[2];
+				data[0] = stream.readDouble();
+				data[1] = stream.readDouble();
+				return MinVR::EventRef(new Event(name, glm::make_vec2<double>(data), nullptr, id));
 			}
 			case MinVR::Event::EVENTTYPE_3D:
 			{
-				glm::dvec3 data(stream.readDouble(), stream.readDouble(), stream.readDouble());
-				return MinVR::EventRef(new Event(name, data, nullptr, id));
+				double data[3];
+				data[0] = stream.readDouble();
+				data[1] = stream.readDouble();
+				data[2] = stream.readDouble();
+				return MinVR::EventRef(new Event(name, glm::make_vec3<double>(data), nullptr, id));
 			}
 			case MinVR::Event::EVENTTYPE_4D:
 			{
-				glm::dvec4 data(stream.readDouble(), stream.readDouble(), stream.readDouble(), stream.readDouble());
-				return MinVR::EventRef(new Event(name, data, nullptr, id));
+				double data[4];
+				data[0] = stream.readDouble();
+				data[1] = stream.readDouble();
+				data[2] = stream.readDouble();
+				data[3] = stream.readDouble();
+				return MinVR::EventRef(new Event(name, glm::make_vec4<double>(data), nullptr, id));
 			}
 			case MinVR::Event::EVENTTYPE_COORDINATEFRAME:
 			{
@@ -303,8 +335,12 @@ MinVR::EventRef App::byteDataToEvent(ByteData data)
 }
 
 
-void App::doUserInputAndPreDrawComputation(
-	const std::vector<MinVR::EventRef>& events, double synchronizedTime) {
+void App::doUserInputAndPreDrawComputation(const std::vector<MinVR::EventRef>& events, double synchronizedTime) {
+
+	//if (_replayingStream && synchronizedTime != 0.0) {
+	//	std::cout<<"Replaying "<<events.size()<<" events" <<std::endl;
+	//}
+
 	for(int i=0; i < events.size(); i++) {
 		if (events[i]->getName() == "kbd_ESC_down") {
 			exit(0);
@@ -312,7 +348,7 @@ void App::doUserInputAndPreDrawComputation(
 		else if (events[i]->getName() == "kbd_SPACE_down") {
 			cFrameMgr->setRoomToVirtualSpaceFrame(glm::dmat4(1.0)); 
 		}
-		else if (events[i]->getName() == "kbd_S_down") {
+		else if (events[i]->getName() == "kbd_S_down" && !_replayingStream) {
 			std::string eventStreamFile = MinVR::ConfigVal("EventStreamFilePrefix", "EventStream", false);
 			boost::posix_time::time_facet* facet = new boost::posix_time::time_facet();
 			facet->format("%Y-%m-%d.%H.%M.%S");
@@ -331,9 +367,14 @@ void App::doUserInputAndPreDrawComputation(
 		if (std::find(_logIgnoreList.begin(), _logIgnoreList.end(), events[i]->getName()) == _logIgnoreList.end()) {
 			_eventsToSave.push_back(eventToByteData(events[i]));
 		}
+
+		//_eventsForText << events[i]->toString() << std::endl;
+
 	}
 
-	_eventsToSave.push_back(eventToByteData(MinVR::EventRef(new Event("FinishedQueue"))));
+	MinVR::EventRef finishEvent(new Event("FinishedQueue"));
+	_eventsToSave.push_back(eventToByteData(finishEvent));
+	//_eventsForText << finishEvent->toString() << std::endl;
 	
 	currentHCIMgr->currentHCI->update(events);
 	if (experimentMgr->checkFinish()) { // should this go before update events?

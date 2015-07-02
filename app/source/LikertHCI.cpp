@@ -15,6 +15,33 @@ LikertHCI::LikertHCI(MinVR::AbstractCameraRef camera, CFrameMgrRef cFrameMgr, Te
 	_questions = MinVR::splitStringIntoArray(MinVR::ConfigVal("LikertQuestions", ""));
 	_answers = MinVR::splitStringIntoArray(MinVR::ConfigVal("LikertAnswers", ""));
 
+	//Make all answers the same number of characters
+	int maxSize = 0;
+	for(int i=0; i < _answers.size(); i++) {
+		if (_answers[i].size() > maxSize) {
+			maxSize = _answers[i].size();
+		}
+	}
+
+	for(int i=0; i < _answers.size(); i++) {
+		int size = _answers[i].size();
+		if (size < maxSize) {
+			int lettersToAdd = maxSize - size;
+			int prepend = glm::floor(lettersToAdd/2.0);
+			std::string prependString = "";
+			for(int j = 0; j < prepend; j++) {
+				prependString += " ";
+			}
+			_answers[i]=prependString + _answers[i];
+
+			std:string postString = "";
+			for(int j=0; j < lettersToAdd-prepend; j++) {
+				postString += " ";
+			}
+			_answers[i] += postString;
+		}
+	}
+
 	_currentQuestion = 0;
 
 	int numThreads = 1;
@@ -27,6 +54,14 @@ LikertHCI::LikertHCI(MinVR::AbstractCameraRef camera, CFrameMgrRef cFrameMgr, Te
 		_questionTextures[i].resize(_questions.size());
 		_answerTextures[i].resize(_answers.size());
 	}
+
+	boost::posix_time::time_facet* facet = new boost::posix_time::time_facet();
+	facet->format("%Y-%m-%d.%H.%M.%S");
+	std::stringstream stream;
+	stream.imbue(std::locale(stream.getloc(), facet));
+	stream << boost::posix_time::second_clock::local_time();
+	std::string eventStreamFile = "QuestionAnswers-" + stream.str() + ".txt";
+	_answerRecorder.open(eventStreamFile);
 }
 
 LikertHCI::~LikertHCI()
@@ -44,6 +79,8 @@ void LikertHCI::initializeContextSpecificVars(int threadId,MinVR::WindowRef wind
 	_shader->link();
 
 	initializeText(threadId);
+
+	std::cout << "Likert initialization" << std::endl;
 }
 
 void LikertHCI::initializeText(int threadId)
@@ -56,7 +93,7 @@ void LikertHCI::initializeText(int threadId)
 		BOOST_ASSERT_MSG(false, "Could not create stash.");
 	}
 
-	fontNormal = fonsAddFont(fs, "sans", MinVR::ConfigVal("RegularFontFile", "app/fonts/DroidSerif-Regular.ttf", false).c_str());
+	fontNormal = fonsAddFont(fs, "sans", MinVR::ConfigVal("RegularFontFile", "app/fonts/DroidSansMono.ttf", false).c_str());
 	if (fontNormal == FONS_INVALID) {
 		BOOST_ASSERT_MSG(false, "Could not add font normal.\n");
 	}
@@ -202,15 +239,21 @@ void LikertHCI::initializeText(int threadId)
 		depthTexture.reset();
 	}
 
-	double padding = 0.125;
-	glm::dvec3 start(offAxisCamera->getBottomLeft().x+padding, 0.0, 0.5);
-	glm::dvec3 spacing( (glm::length(offAxisCamera->getBottomRight() - offAxisCamera->getBottomLeft()) - padding*(_answers.size()+1)) / _answers.size(), 0.0, 0.0);
+
+	_padding = 0.25;
+	_availableWidth = glm::length(offAxisCamera->getBottomRight() - offAxisCamera->getBottomLeft()) - (2*_padding);
+	_individualSize = _availableWidth/ (_answers.size());
+
+	glm::dvec3 start(offAxisCamera->getBottomLeft().x + _padding + _individualSize/2.0, 0.0, 0.5);
+	glm::dvec3 spacing(_individualSize, 0.0, 0.0);
 	double answerHeight = MinVR::ConfigVal("LikertAnswerHeight", 0.25, false);
+
+	fonsSetSize(fs, 40.0f);
 
 	//Answers
 	for(int i=0; i < _answers.size(); i++) {
 
-		float width = fonsTextBounds(fs, _questions[i].c_str(), NULL, NULL);
+		float width = fonsTextBounds(fs, _answers[i].c_str(), NULL, NULL);
 		sx = width + (2.0f*border);
 
 		std::shared_ptr<Texture> depthTexture = Texture::createEmpty("depthTex", sx, sy, 1, 1, false, GL_TEXTURE_2D, GL_DEPTH_COMPONENT32F);
@@ -260,7 +303,7 @@ void LikertHCI::initializeText(int threadId)
 		glm::dvec3 centerPt = start+ (double)i*spacing;
 		glm::dvec3 low(-halfWidth, -0.001, -halfHeight);
 		glm::dvec3 high(halfWidth, 0.001, halfHeight);
-		AABox bounds(low, high);
+		AABox bounds(start + (double)i*spacing + low, start + (double)i*spacing +high);
 		_answerBounds.push_back(bounds);
 
 		glViewport(0,0, sx, sy);
@@ -342,15 +385,20 @@ void LikertHCI::initializeText(int threadId)
 }
 
 void LikertHCI::update(const std::vector<MinVR::EventRef> &events)
-{
+{	fopen("ans.txt", "w", stdout);
 	for(int i=0; i < events.size(); i++) {
-		if (boost::algorithm::starts_with(events[i]->getName(), "TUIO_Cursor_up")) {
+		if (boost::algorithm::starts_with(events[i]->getName(), "TUIO_Cursor_down")) {
 			glm::dvec3 roomCoord = convertScreenToRoomCoordinates(events[i]->get2DData());
-
+			std::cout<< "User Touched at "<<glm::to_string(roomCoord)<<std::endl;
 			for(int j=0; j < _answerBounds.size(); j++) {
+				std::cout<<"Checking Box "<<j<<" Low: "<<glm::to_string(_answerBounds[j].low())<<" High: "<<glm::to_string(_answerBounds[j].high())<<std::endl;
 				if (_answerBounds[j].contains(roomCoord)) {
-					std::cout<<"User selected: "<<_answers[j]<<std::endl;
 					//TODO: do something besides print the result
+					// we sill save to a text file
+					
+					std::cout<< _answers[j] <<std::endl;
+					
+					
 
 					_currentQuestion++;
 					if (_currentQuestion > _questions.size()-1) {
@@ -361,6 +409,8 @@ void LikertHCI::update(const std::vector<MinVR::EventRef> &events)
 			}
 		}
 	}
+	//std::cout << "LikertHCI" << std::endl;
+	fclose(stdout);
 }
 
 glm::dvec3 LikertHCI::convertScreenToRoomCoordinates(glm::dvec2 screenCoords) {
@@ -377,7 +427,7 @@ void LikertHCI::draw(int threadId, MinVR::AbstractCameraRef camera, MinVR::Windo
 	_shader->setUniform("projection_mat", offAxisCam->getLastAppliedProjectionMatrix());
 	_shader->setUniform("view_mat", offAxisCam->getLastAppliedViewMatrix());
 	_shader->setUniform("model_mat", offAxisCamera->getLastAppliedModelMatrix());
-	_shader->setUniform("normal_matrix", (glm::dmat3(offAxisCamera->getLastAppliedModelMatrix())));
+	//_shader->setUniform("normal_matrix", (glm::dmat3(offAxisCamera->getLastAppliedModelMatrix())));
 	
 	_shader->setUniform("textureSampler",0);
 
@@ -390,9 +440,8 @@ void LikertHCI::draw(int threadId, MinVR::AbstractCameraRef camera, MinVR::Windo
 
 	drawText(threadId, true, _currentQuestion, offAxisCam, glm::dvec3(0.0, 0.0, -0.5), normal, right, questionTextHeight);
 
-	double padding = 0.125;
-	glm::dvec3 start(offAxisCam->getBottomLeft().x+padding, 0.0, 0.5);
-	glm::dvec3 spacing( (glm::length(offAxisCam->getBottomRight() - offAxisCam->getBottomLeft()) - padding*(_answers.size()+1)) / _answers.size(), 0.0, 0.0);
+	glm::dvec3 start(offAxisCam->getBottomLeft().x + _padding + _individualSize/2.0, 0.0, 0.5);
+	glm::dvec3 spacing(_individualSize, 0.0, 0.0);
 
 	for(int i=0; i < _answers.size(); i++) {
 		drawText(threadId, false, i, offAxisCam, start + (double)i * spacing, normal, right, answerTextHeight);
@@ -446,7 +495,7 @@ void LikertHCI::drawText(int threadId, bool isQuestion, int indexNum, MinVR::Cam
 	glCullFace(GL_BACK);
 
 	if(isQuestion) {
-		texMan->getTexture(threadId, "QuestionText_"+_questions[indexNum])->bind(0);
+		texMan->getTexture(threadId, "QuestionsText_"+_questions[indexNum])->bind(0);
 	}
 	else {
 		texMan->getTexture(threadId, "AnswerText_"+_answers[indexNum])->bind(0);

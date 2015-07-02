@@ -51,6 +51,11 @@ private:
 	std::vector<AABox> _answerBounds;
 
 	int _currentQuestion;
+
+	double _padding;
+	double _availableWidth;
+	double _individualSize;
+	std::ofstream _answerRecorder;
 };
 
 #endif

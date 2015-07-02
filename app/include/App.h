@@ -78,6 +78,8 @@ private:
 	std::vector<std::string>							_logIgnoreList;
 	std::vector<ByteData>								_eventsToSave;
 	bool												_replayingStream;
+
+	std::ofstream										_eventsForText;
 };
 
 #endif /* APP_H_ */
