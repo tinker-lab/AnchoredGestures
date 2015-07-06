@@ -13,6 +13,8 @@
 #define AXIS_CHANGE_THRESHOLD 0.34906585 //20 deg
 #define ANGLE_AXIS_CHANGE_THRESHOLD 0.0034906585
 
+using namespace std;
+
 OrigXZRotExperimentHCI::OrigXZRotExperimentHCI(MinVR::AbstractCameraRef camera, CFrameMgrRef cFrameMgr, TextureMgrRef texMan, FeedbackRef feedback) : AbstractHCI(cFrameMgr, feedback)
 {
 	offAxisCamera = std::dynamic_pointer_cast<MinVR::CameraOffAxis>(camera);
@@ -27,6 +29,10 @@ OrigXZRotExperimentHCI::OrigXZRotExperimentHCI(MinVR::AbstractCameraRef camera, 
 }
 
 OrigXZRotExperimentHCI::~OrigXZRotExperimentHCI()
+{
+}
+
+void OrigXZRotExperimentHCI::initializeContextSpecificVars(int threadId,MinVR::WindowRef window)
 {
 }
 
@@ -93,6 +99,7 @@ bool OrigXZRotExperimentHCI::offerTouchDown(MinVR::EventRef event)
 	}
 	
 	if (!_touch1IsValid) {
+		_touch1IsValid = true;
 		_touch1 = info;
 		determineTouchToHandCoorespondence(_touch1);
 		if (_touch2IsValid) {
@@ -109,6 +116,7 @@ bool OrigXZRotExperimentHCI::offerTouchDown(MinVR::EventRef event)
 		return true;
 	}
 	else if (!_touch2IsValid) {
+		_touch2IsValid = true;
 		_touch2 = info;
 		determineTouchToHandCoorespondence(_touch2);
 		if(_touch1IsValid) {
@@ -289,7 +297,7 @@ void OrigXZRotExperimentHCI::updateTrackers(const glm::dmat4 &rightTrackerFrame,
 		// Use the distances between touch points and the tracker to identify which hand they belong to.
 		if(_touch1->getBelongTo() == TouchData::LEFT_HAND && _touch2->getBelongTo() == TouchData::LEFT_HAND) {
 			// both point are on the left hand
-			//cout << " === both points on LEFT hand"<<endl;
+			cout << " === both points on LEFT hand"<<endl;
 			glm::dvec3 oldVec = glm::normalize(glm::dvec3(glm::column(_previousLeftTrackerFrame, 3)) - _touch1->getCurrRoomPos());
 			glm::dvec3 curVec = glm::normalize(glm::dvec3(glm::column(_currentLeftTrackerFrame, 3)) - _touch1->getCurrRoomPos());
 			glm::dvec3 axis = glm::normalize(glm::cross(curVec, oldVec));
@@ -304,7 +312,7 @@ void OrigXZRotExperimentHCI::updateTrackers(const glm::dmat4 &rightTrackerFrame,
 			double projection = glm::dot(glm::normalize(axis), axisOnTable);
 			angle = projection*angle;
 			_lastRotationAxis = axisOnTable;
-			_lastRightAxis = glm::dvec3(0,0,0);
+			_lastRightAxis = glm::dvec3(1,0,0);
 			_lastLeftAxis = glm::normalize(axis);
 			//_feedbackWidget->setRotationIndicatorDirection(_lastRotationAxis.cross(Vector3(0,1,0)));
 
@@ -325,7 +333,7 @@ void OrigXZRotExperimentHCI::updateTrackers(const glm::dmat4 &rightTrackerFrame,
 		}
 		else if(_touch1->getBelongTo() == TouchData::RIGHT_HAND && _touch2->getBelongTo() == TouchData::RIGHT_HAND) {
 			// both points are on right hand
-			//cout << "+++ both points on RIGHT hand"<<endl;
+			cout << "+++ both points on RIGHT hand"<<endl;
 			glm::dvec3 oldVec = glm::normalize(glm::dvec3(glm::column(_previousRightTrackerFrame, 3)) - _touch1->getCurrRoomPos());
 			glm::dvec3 curVec = glm::normalize(glm::dvec3(glm::column(_currentRightTrackerFrame, 3)) - _touch1->getCurrRoomPos());
 			glm::dvec3 axis = glm::normalize(glm::cross(curVec, oldVec));
@@ -342,7 +350,7 @@ void OrigXZRotExperimentHCI::updateTrackers(const glm::dmat4 &rightTrackerFrame,
 			angle = projection*angle;
 			
 			_lastRotationAxis = axisOnTable;
-			_lastLeftAxis = glm::dvec3(0,0,0);
+			_lastLeftAxis = glm::dvec3(1,0,0);
 			_lastRightAxis = glm::normalize(axis);
 			//_feedbackWidget->setRotationIndicatorDirection(_lastRotationAxis.cross(Vector3(0,1,0)));
 

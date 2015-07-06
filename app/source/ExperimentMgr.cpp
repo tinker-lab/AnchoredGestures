@@ -42,7 +42,7 @@ void ExperimentMgr::initializeContextSpecificVars(int threadId, MinVR::WindowRef
 	//////////////////////////
 	trialCount = 0; // 0 - 4
 	trialSet = 2; // 1 - 2, for updating HCIExperiment number
-	HCIExperiment = 1; // 0 - 3
+	HCIExperiment = 4; // 0 - 6
 	newAnchored = MinVR::ConfigVal("newAnchored", false, false); 
 	transformIndex = 1; // 1 - 5 but randomized
 
@@ -57,6 +57,15 @@ void ExperimentMgr::initializeContextSpecificVars(int threadId, MinVR::WindowRef
 	}
 	if(HCIExperiment == 3) {
 		currentHCIMgr->currentHCI.reset(new NewAnchoredExperimentHCI(window->getCamera(0), cFrameMgr, texMan, feedback));
+	}
+	if(HCIExperiment == 4) {
+		currentHCIMgr->currentHCI.reset(new OrigYTransExperimentHCI(window->getCamera(0), cFrameMgr, texMan, feedback));
+	}
+	if(HCIExperiment == 5) {
+		currentHCIMgr->currentHCI.reset(new OrigXZRotExperimentHCI(window->getCamera(0), cFrameMgr, texMan, feedback));
+	}
+	if(HCIExperiment == 6) {
+		currentHCIMgr->currentHCI.reset(new OrigAnchoredHCI(window->getCamera(0), cFrameMgr, texMan, feedback));
 	}
 	
 	currentHCIMgr->currentHCI->initializeContextSpecificVars(threadId, window);
@@ -133,7 +142,7 @@ void ExperimentMgr::advance () {
 		HCIExperiment++; // might not always want to just increment
 	}
 
-	if (HCIExperiment == 4) {
+	if (HCIExperiment == 6) {
 		std::cout << "Finished :D" << std::endl;
 	}
 
@@ -167,6 +176,13 @@ bool ExperimentMgr::checkFinish() {
 	} else if (HCIExperiment == 2) {
 		transform = rotMats[trialCount];
 	} else if (HCIExperiment == 3) {
+		transform = combinedMats[trialCount];
+	}
+	else if (HCIExperiment == 4) {
+		transform = transMats[trialCount];
+	} else if (HCIExperiment == 5) {
+		transform = rotMats[trialCount];
+	} else if (HCIExperiment == 6) {
 		transform = combinedMats[trialCount];
 	}
 	
@@ -206,13 +222,13 @@ bool ExperimentMgr::checkFinish() {
 	if (nearA && nearB && nearC && nearD){ //if in the correct posisition
 		
 		inPosition = true;
-	
-		
+		showCompleteTrial = true;		
 	}
 	else{
 	
 		inPosition = false;
 		secondTimer = false;
+		showCompleteTrial = false;	
 	}
 
 	//std::cout<<"inPosition : "<<inPosition<<std::endl;
@@ -236,18 +252,20 @@ bool ExperimentMgr::checkFinish() {
 
 	
 	
-	std::cout<<"total time in zone :  " <<totalTimeInZone<<std::endl;
+	//std::cout<<"total time in zone :  " <<totalTimeInZone<<std::endl;
 
 	if (nearA && nearB && nearC && nearD &&  totalTimeInZone > 1000.0 ) {
 		
-		showCompleteTrial = true;
+		// set to false for next trial
+		showCompleteTrial = false;
+		return true;
 
 		//currentHCIMgr->currentHCI->feedback->displayText = "between";
-		if(currentHCIMgr->currentHCI->getNumberTouches() == 0  &&  totalTimeInZone > 4000.0 ){
+		/*if(currentHCIMgr->currentHCI->getNumberTouches() == 0  &&  totalTimeInZone > 4000.0 ){
 			showCompleteTrial = false;
 			return true; 
-		}
-		
+		}*/
+
 	}
 	
 	return false;
@@ -268,7 +286,7 @@ void ExperimentMgr::draw(int threadId, MinVR::AbstractCameraRef camera, MinVR::W
 		// draws both the static and the transformable tetrahedron
 		tetra->draw(threadId, camera, window, "Koala2", transform, "red",  "green", "blue", "Koala", "forestGreen");
 	} 
-	else if(showCompleteTrial == true){
+	else if(HCIExperiment != 0 && showCompleteTrial == true){
 	
 		tetra->draw(threadId, camera, window, "forestGreen", transform, "forestGreen",  "forestGreen", "forestGreen", "forestGreen", "forestGreen");
 	} 

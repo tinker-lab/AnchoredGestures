@@ -4,7 +4,8 @@ Tetrahedron::Tetrahedron(MinVR::AbstractCameraRef camera, CFrameMgrRef cFrameMgr
 	offAxisCamera = std::dynamic_pointer_cast<MinVR::CameraOffAxis>(camera);
 	this->texMan = texMan;
 	this->cFrameMgr = cFrameMgr;
-	this->sphereRadius = errorMargin;
+	this->sphereRadius = errorMargin - 0.01; // try - 0.02 maybe
+	this->guideCylinderRadius = errorMargin;
 
 }
 
@@ -12,7 +13,7 @@ Tetrahedron::~Tetrahedron() {
 }
 
 void Tetrahedron::initializeContextSpecificVars(int threadId) {
-	GPUcylinderOffset = 50; // had it at 25 before
+	GPUCylinderOffset = 50; // had it at 25 before
 	initVBO(threadId);
 	initGL();
 }
@@ -119,10 +120,6 @@ void Tetrahedron::makeCylinder(glm::dvec3 pointA, glm::dvec3 pointB){
 		cylinderData.push_back(cylinderVert);
 		cylinderIndices.push_back(cylinderData.size()-1);
 	}
-
-
-	
-
 }
 
 void Tetrahedron::makeSphere(glm::dvec3 center){
@@ -198,6 +195,7 @@ void Tetrahedron::draw(int threadId, MinVR::AbstractCameraRef camera, MinVR::Win
 	texMan->getTexture(threadId, color5)->bind(11);
 
 	tetraShader->setUniform("textureSampler", 6);
+
 	////////////////////////
 	// static tetrahedron //
 	////////////////////////
@@ -207,12 +205,12 @@ void Tetrahedron::draw(int threadId, MinVR::AbstractCameraRef camera, MinVR::Win
 	tetraShader->setUniform("model_mat", offAxisCamera->getLastAppliedModelMatrix());
 	tetraShader->setUniform("textureSampler", 6);
 	for(int c = 0; c < 6 ; c++) {
-		//std::cout << "The indexes for drawing: " << c * GPUcylinderOffset << ", " << (c+1) * GPUcylinderOffset << std::endl;
+		//std::cout << "The indexes for drawing: " << c * GPUCylinderOffset << ", " << (c+1) * GPUCylinderOffset << std::endl;
 		//std::cout << 0 << ", " << numCylinderIndices << std::endl;
 		if (c > 3) {
 			tetraShader->setUniform("textureSampler", 11);
 		}
-		glDrawArrays(GL_TRIANGLE_STRIP, c*GPUcylinderOffset, GPUcylinderOffset);
+		glDrawArrays(GL_TRIANGLE_STRIP, c*GPUCylinderOffset, GPUCylinderOffset);
 	}
 
 	///////////////////////////////
@@ -222,14 +220,68 @@ void Tetrahedron::draw(int threadId, MinVR::AbstractCameraRef camera, MinVR::Win
 	tetraShader->setUniform("model_mat", offAxisCamera->getLastAppliedModelMatrix()*transMat);
 	tetraShader->setUniform("textureSampler", 6);
 	for(int c = 0; c < 6 ; c++) {
-		//std::cout << "The indexes for drawing: " << c * GPUcylinderOffset << ", " << (c+1) * GPUcylinderOffset << std::endl;
+		//std::cout << "The indexes for drawing: " << c * GPUCylinderOffset << ", " << (c+1) * GPUCylinderOffset << std::endl;
 		//std::cout << 0 << ", " << numCylinderIndices << std::endl;
 		if (c > 3) {
 			tetraShader->setUniform("textureSampler", 11);
 		}
 		
-		glDrawArrays(GL_TRIANGLE_STRIP, c*GPUcylinderOffset, GPUcylinderOffset);
+		glDrawArrays(GL_TRIANGLE_STRIP, c*GPUCylinderOffset, GPUCylinderOffset);
 	}
+
+	///////////////////////////////////////////
+	// Draw Alignment Guide Cylinders        // //animates with transformable tetrahedron
+	///////////////////////////////////////////
+
+	// these are variables needed for these cylinders and the spheres below
+	glm::dmat4 sphereTransMat1 = glm::translate(glm::dmat4(1.0), pointA);
+	glm::dmat4 sphereTransMat2 = glm::translate(glm::dmat4(1.0), pointB);
+	glm::dmat4 sphereTransMat3 = glm::translate(glm::dmat4(1.0), pointC);
+	glm::dmat4 sphereTransMat4 = glm::translate(glm::dmat4(1.0), pointD);
+
+	//cylinder VBO is still bound.
+
+	glm::dmat4 cylinderAlignX = glm::rotate(glm::dmat4(1.0), 0.0, glm::dvec3(1.0, 0.0, 0.0));
+	glm::dmat4 cylinderAlignY = glm::rotate(glm::dmat4(1.0), 90.0, glm::dvec3(0.0, 1.0, 0.0));
+	glm::dmat4 cylinderAlignZ = glm::rotate(glm::dmat4(1.0), 90.0, glm::dvec3(0.0, 0.0, 1.0));
+
+
+	// change numSphereIndices 
+	// cylinders for point A
+	tetraShader->setUniform("textureSampler", 7);
+	tetraShader->setUniform("model_mat", sphereTransMat1);
+	glDrawArrays(GL_TRIANGLE_STRIP, 0, GPUCylinderOffset); // x
+	//tetraShader->setUniform("model_mat", offAxisCamera->getLastAppliedModelMatrix() * transMat * sphereTransMat1 * cylinderAlignY);
+	//glDrawArrays(GL_TRIANGLE_STRIP, 0, GPUCylinderOffset); // y
+	//tetraShader->setUniform("model_mat", offAxisCamera->getLastAppliedModelMatrix() * transMat * sphereTransMat1 * cylinderAlignZ);
+	//glDrawArrays(GL_TRIANGLE_STRIP, 0, GPUCylinderOffset); // z
+
+	//// cylinders for point B
+	//tetraShader->setUniform("textureSampler", 8);
+	//tetraShader->setUniform("model_mat", offAxisCamera->getLastAppliedModelMatrix() * transMat * sphereTransMat2 * cylinderAlignX);
+	//glDrawArrays(GL_TRIANGLE_STRIP, 0, GPUCylinderOffset); // x
+	//tetraShader->setUniform("model_mat", offAxisCamera->getLastAppliedModelMatrix() * transMat * sphereTransMat2 * cylinderAlignY);
+	//glDrawArrays(GL_TRIANGLE_STRIP, 0, GPUCylinderOffset); // y
+	//tetraShader->setUniform("model_mat", offAxisCamera->getLastAppliedModelMatrix() * transMat * sphereTransMat2 * cylinderAlignZ);
+	//glDrawArrays(GL_TRIANGLE_STRIP, 0, GPUCylinderOffset); // z
+
+	//// cylinders for point C
+	//tetraShader->setUniform("textureSampler", 9);
+	//tetraShader->setUniform("model_mat", offAxisCamera->getLastAppliedModelMatrix() * transMat * sphereTransMat3 * cylinderAlignX);
+	//glDrawArrays(GL_TRIANGLE_STRIP, 0, GPUCylinderOffset); // x
+	//tetraShader->setUniform("model_mat", offAxisCamera->getLastAppliedModelMatrix() * transMat * sphereTransMat3 * cylinderAlignY);
+	//glDrawArrays(GL_TRIANGLE_STRIP, 0, GPUCylinderOffset); // y
+	//tetraShader->setUniform("model_mat", offAxisCamera->getLastAppliedModelMatrix() * transMat * sphereTransMat3 * cylinderAlignZ);
+	//glDrawArrays(GL_TRIANGLE_STRIP, 0, GPUCylinderOffset); // z
+
+	//// cylinders for point D
+	//tetraShader->setUniform("textureSampler", 10);
+	//tetraShader->setUniform("model_mat", offAxisCamera->getLastAppliedModelMatrix() * transMat * sphereTransMat4 * cylinderAlignX);
+	//glDrawArrays(GL_TRIANGLE_STRIP, 0, GPUCylinderOffset); // x
+	//tetraShader->setUniform("model_mat", offAxisCamera->getLastAppliedModelMatrix() * transMat * sphereTransMat4 * cylinderAlignY);
+	//glDrawArrays(GL_TRIANGLE_STRIP, 0, GPUCylinderOffset); // y
+	//tetraShader->setUniform("model_mat", offAxisCamera->getLastAppliedModelMatrix() * transMat * sphereTransMat4 * cylinderAlignZ);
+	//glDrawArrays(GL_TRIANGLE_STRIP, 0, GPUCylinderOffset); // z
 
 	///////////////////////////////////////////
 	// Draw Static      Tetrahedron spheres  //
@@ -237,32 +289,26 @@ void Tetrahedron::draw(int threadId, MinVR::AbstractCameraRef camera, MinVR::Win
 	glBindVertexArray(sphereMesh->getVAOID());
 
 	tetraShader->setUniform("textureSampler", 7);
-	glm::dmat4 sphereTransMat1 = glm::translate(glm::dmat4(1.0), pointA);
 	tetraShader->setUniform("model_mat", sphereTransMat1);
 	glDrawArrays(GL_TRIANGLE_STRIP, 0, numSphereIndices);
 
 	tetraShader->setUniform("textureSampler", 8);
-	glm::dmat4 sphereTransMat2 = glm::translate(glm::dmat4(1.0), pointB);
 	tetraShader->setUniform("model_mat", sphereTransMat2);
 	glDrawArrays(GL_TRIANGLE_STRIP, 0, numSphereIndices);
 
 	
 	tetraShader->setUniform("textureSampler", 9);
-	glm::dmat4 sphereTransMat3 = glm::translate(glm::dmat4(1.0), pointC);
 	tetraShader->setUniform("model_mat", sphereTransMat3);
 	glDrawArrays(GL_TRIANGLE_STRIP, 0, numSphereIndices);
 
 	
 	tetraShader->setUniform("textureSampler", 10);
-	glm::dmat4 sphereTransMat4 = glm::translate(glm::dmat4(1.0), pointD);
 	tetraShader->setUniform("model_mat", sphereTransMat4);
 	glDrawArrays(GL_TRIANGLE_STRIP, 0, numSphereIndices);
 
 	///////////////////////////////////////////
 	// Draw Transformed Tetrahedron spheres  //
 	///////////////////////////////////////////
-	
-	
 	tetraShader->setUniform("textureSampler", 7);
 	tetraShader->setUniform("model_mat", offAxisCamera->getLastAppliedModelMatrix() * transMat * sphereTransMat1);
 	glDrawArrays(GL_TRIANGLE_STRIP, 0, numSphereIndices);
@@ -281,6 +327,8 @@ void Tetrahedron::draw(int threadId, MinVR::AbstractCameraRef camera, MinVR::Win
 	tetraShader->setUniform("textureSampler", 10);
 	tetraShader->setUniform("model_mat", offAxisCamera->getLastAppliedModelMatrix()* transMat * sphereTransMat4);
 	glDrawArrays(GL_TRIANGLE_STRIP, 0, numSphereIndices);
+
+	
 	
 	// 4 spheres
 	//for (int t = 0; t < 4; t++) {

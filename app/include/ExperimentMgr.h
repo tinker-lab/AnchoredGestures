@@ -26,6 +26,9 @@
 #include <MVRCore/ConfigVal.H>
 #include <MVRCore/Time.h>
 #include "app/include/LikertHCI.h"
+#include "OrigAnchoredHCI.h"
+#include "OrigXZRotExperimentHCI.h"
+#include "OrigYTransExperimentHCI.h"
 
 typedef std::shared_ptr<class ExperimentMgr> ExperimentMgrRef;
 static const double nearEnough = 0.03;

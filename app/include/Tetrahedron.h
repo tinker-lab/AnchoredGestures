@@ -47,16 +47,20 @@ private:
 	
 	GPUMeshRef cylinderMesh; // holds six cylinders
 	GPUMeshRef sphereMesh; //only one sphere
-	int GPUcylinderOffset;
+	int GPUCylinderOffset;
 	TextureMgrRef texMan; 
 	CFrameMgrRef cFrameMgr;
 	std::shared_ptr<GLSLProgram> tetraShader;
-	std::vector<int> cylinderIndices;
+
 	std::vector<GPUMesh::Vertex> cylinderData;
+	std::vector<int> cylinderIndices;
 	std::vector<GPUMesh::Vertex> sphereData;
 	std::vector<int> sphereIndices;
+	std::vector<GPUMesh::Vertex> guideCylinderData;
+	std::vector<int> guideCylinderIndices;
 
 	double sphereRadius;
+	double guideCylinderRadius;
 
 	
 

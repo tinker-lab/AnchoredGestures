@@ -27,6 +27,7 @@ public:
 	virtual ~OrigYTransExperimentHCI();
 	void update(const std::vector<MinVR::EventRef> &events);
     void draw(int threadId, MinVR::AbstractCameraRef camera, MinVR::WindowRef window);
+	virtual void initializeContextSpecificVars(int threadId,MinVR::WindowRef window);
 
 private:
 
