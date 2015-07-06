@@ -40,6 +40,7 @@ public:
 	void draw(int threadId, MinVR::AbstractCameraRef camera, MinVR::WindowRef window);
 	void resetTimer();
 	
+	
 	int HCIExperiment;
 
 private:
@@ -52,9 +53,14 @@ private:
 	FeedbackRef feedback;
 	int trialCount; // 0 to 4
 	bool newAnchored;
+	bool inPosition;
+	bool secondTimer;
+	bool showCompleteTrial;
 	int trialSet;
-	
+	MinVR::TimeStamp startInZone;
+	double totalTimeInZone;
 	MinVR::TimeStamp startTime;
+	MinVR::TimeStamp t2;
 	glm::dmat4 transform;
 	CFrameMgrRef cFrameMgr;
 	std::shared_ptr<MinVR::CameraOffAxis> offAxisCamera;

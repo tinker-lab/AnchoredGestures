@@ -173,7 +173,7 @@ void Tetrahedron::makeSphere(glm::dvec3 center){
 }
 
 // transMat really means a transform, given by ExperimentMgr
-void Tetrahedron::draw(int threadId, MinVR::AbstractCameraRef camera, MinVR::WindowRef window, std::string textureName, glm::dmat4 transMat){
+void Tetrahedron::draw(int threadId, MinVR::AbstractCameraRef camera, MinVR::WindowRef window, std::string textureName, glm::dmat4 transMat, std::string color1, std::string color2, std::string color3, std::string color4, std::string color5){
 	
 	const int numCylinderIndices = (int)(cylinderMesh->getFilledIndexByteSize()/sizeof(int));
 	const int numSphereIndices = (int)(sphereMesh->getFilledIndexByteSize()/sizeof(int));
@@ -191,11 +191,11 @@ void Tetrahedron::draw(int threadId, MinVR::AbstractCameraRef camera, MinVR::Win
 	// Binding Textures			 //
 	///////////////////////////////
 	texMan->getTexture(threadId, textureName)->bind(6);
-	texMan->getTexture(threadId, "red")->bind(7);
-	texMan->getTexture(threadId, "green")->bind(8);
-	texMan->getTexture(threadId, "blue")->bind(9);
-	texMan->getTexture(threadId, "Koala")->bind(10);
-	texMan->getTexture(threadId, "forestGreen")->bind(11);
+	texMan->getTexture(threadId, color1)->bind(7);
+	texMan->getTexture(threadId, color2)->bind(8);
+	texMan->getTexture(threadId, color3)->bind(9);
+	texMan->getTexture(threadId, color4)->bind(10);
+	texMan->getTexture(threadId, color5)->bind(11);
 
 	tetraShader->setUniform("textureSampler", 6);
 	////////////////////////

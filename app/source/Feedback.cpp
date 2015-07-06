@@ -24,6 +24,8 @@ void Feedback::initializeContextSpecificVars(int threadId,MinVR::WindowRef windo
 	}
 }
 
+
+
 void Feedback::initVBOB (int threadId, MinVR::WindowRef window, std::string textureStr, GPUMeshRef &mesh) {
 
 	std::tr1::shared_ptr<Texture> texture = texMan->getTexture(threadId, textureStr);
@@ -65,12 +67,17 @@ void Feedback::initVBOB (int threadId, MinVR::WindowRef window, std::string text
 
 
 	mesh.reset(new GPUMesh(GL_STATIC_DRAW, sizeof(GPUMesh::Vertex)*quadData.size(), sizeof(int)*quadIndices.size(),0,quadData,sizeof(int)*quadIndices.size(), &quadIndices[0]));
+
+	
+
 }
+
 
 void Feedback::initVBO(int threadId, MinVR::WindowRef window) {
 
 	//initVBOB(threadId, window, "rotating", quadMesh); //
 	initVBOB(threadId, window, "touch-smaller", touchMesh);
+	initVBOB(threadId, window, "between", betweenMesh);
 	//initVBOB(threadId, window, "centOfRot"); //
 	//initVBOB(threadId, window, "vector");
 
@@ -207,6 +214,7 @@ void Feedback::draw(int threadId, MinVR::AbstractCameraRef camera, MinVR::Window
 
 	const int numQuadIndices = (int)(quadMesh->getFilledIndexByteSize()/sizeof(int));
 	const int numTouchIndices = (int)(touchMesh->getFilledIndexByteSize()/sizeof(int));
+	const int numBetweenIndices = (int)(touchMesh->getFilledIndexByteSize()/sizeof(int));
 
 	// if we are in some mode, displayText should be fine
 	// displayText is modified through HCIs
@@ -229,6 +237,24 @@ void Feedback::draw(int threadId, MinVR::AbstractCameraRef camera, MinVR::Window
 
 		
 	}
+
+	if (displayText == "between"){
+	
+		texMan->getTexture(threadId, displayText)->bind(1);
+		shader->setUniform("textureSampler", 1);
+
+		glm::dvec4 quadTranslate(0.0, 1.0, 0.0, 1.0);
+
+		// draw text here, remember to mess with the shader with the alpha value
+		glm::dmat4 quadAtCorner = glm::dmat4(1.0);
+		quadAtCorner[3] = quadTranslate;
+		camera->setObjectToWorldMatrix(quadAtCorner);
+		shader->setUniform("model_mat", offAxisCamera->getLastAppliedModelMatrix());
+		glBindVertexArray(betweenMesh->getVAOID());
+		glDrawArrays(GL_TRIANGLE_STRIP, 0, numBetweenIndices);
+	
+	} 
+
 
 	// draw the touch texture
 	// somehow need the room position of the touch

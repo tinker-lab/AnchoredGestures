@@ -372,7 +372,7 @@ void App::doUserInputAndPreDrawComputation(const std::vector<MinVR::EventRef>& e
 
 	}
 
-	MinVR::EventRef finishEvent(new Event("FinishedQueue"));
+	MinVR::EventRef finishEvent(new Event("FinishedQueue", glfwGetTime()));
 	_eventsToSave.push_back(eventToByteData(finishEvent));
 	//_eventsForText << finishEvent->toString() << std::endl;
 	
@@ -383,6 +383,7 @@ void App::doUserInputAndPreDrawComputation(const std::vector<MinVR::EventRef>& e
 		// update trial number
 		// update experiment number
 		// point to next matrices we need for experiment
+		
 		experimentMgr->advance();
 		if (experimentMgr->HCIExperiment == 1) {
 			currentHCIMgr->currentHCI = newYTransHCI;

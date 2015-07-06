@@ -30,6 +30,9 @@ ExperimentMgr::~ExperimentMgr() {
 
 void ExperimentMgr::initializeContextSpecificVars(int threadId, MinVR::WindowRef window){
 
+	showCompleteTrial = false;
+	secondTimer = false;
+	inPosition = false;
 	// ExperimentMgr doesn't need texture manager, but tetrahedron does.
 	tetra.reset(new Tetrahedron(window->getCamera(0), cFrameMgr, texMan, nearEnough));
 	tetra->initializeContextSpecificVars(threadId);
@@ -39,7 +42,7 @@ void ExperimentMgr::initializeContextSpecificVars(int threadId, MinVR::WindowRef
 	//////////////////////////
 	trialCount = 0; // 0 - 4
 	trialSet = 2; // 1 - 2, for updating HCIExperiment number
-	HCIExperiment = 0; // 1 - 3
+	HCIExperiment = 1; // 0 - 3
 	newAnchored = MinVR::ConfigVal("newAnchored", false, false); 
 	transformIndex = 1; // 1 - 5 but randomized
 
@@ -142,6 +145,7 @@ void ExperimentMgr::advance () {
 }
 
 
+
 void ExperimentMgr::resetTimer(){
 
 }
@@ -192,29 +196,83 @@ bool ExperimentMgr::checkFinish() {
 	//std::cout << "Transformable point: " << glm::to_string(transformableTetraPointA) << std::endl;
 	//std::cout << "Distance: " << glm::distance(transformableTetraPointA, staticTetraPointA) << std::endl;
 
+	
 	bool nearA = glm::distance(transformableTetraPointA, staticTetraPointA) < nearEnough;
 	bool nearB = glm::distance(transformableTetraPointB, staticTetraPointB) < nearEnough;
 	bool nearC = glm::distance(transformableTetraPointC, staticTetraPointC) < nearEnough;
 	bool nearD = glm::distance(transformableTetraPointD, staticTetraPointD) < nearEnough;
+	bool prevInPosition = inPosition;
 
-	if (nearA && nearB && nearC && nearD) {
-		std::cout<<"ayyyyyyyy gurlll"<<std::endl;
-		return true; 
+	if (nearA && nearB && nearC && nearD){ //if in the correct posisition
+		
+		inPosition = true;
+	
+		
+	}
+	else{
+	
+		inPosition = false;
+		secondTimer = false;
+	}
+
+	//std::cout<<"inPosition : "<<inPosition<<std::endl;
+	//std::cout<<"prevInPosition : "<<prevInPosition<<std::endl;
+
+	if(inPosition == true /*to guard the situation when go out of time stamp */ && inPosition != prevInPosition /*make sure only start the time stamp initially*/){
+		startInZone = getCurrentTime();
+		secondTimer = true;
+
+		
+	}
+
+	
+
+	if(secondTimer){
+		
+		t2 = getCurrentTime();
+		totalTimeInZone = (getDuration(t2, startInZone)).total_milliseconds();
+	
+	}
+
+	
+	
+	std::cout<<"total time in zone :  " <<totalTimeInZone<<std::endl;
+
+	if (nearA && nearB && nearC && nearD &&  totalTimeInZone > 1000.0 ) {
+		
+		showCompleteTrial = true;
+
+		//currentHCIMgr->currentHCI->feedback->displayText = "between";
+		if(currentHCIMgr->currentHCI->getNumberTouches() == 0  &&  totalTimeInZone > 4000.0 ){
+			showCompleteTrial = false;
+			return true; 
+		}
+		
 	}
 	
 	return false;
 
+	//MinVR::TimeStamp timeStamp = getCurrentTime();
+	//MinVR::TimeStamp t2 = getCurrentTime();
+	//double diff = (getDuration(timeStamp, t2)).total_milliseconds();
+
 }
+
 
 void ExperimentMgr::draw(int threadId, MinVR::AbstractCameraRef camera, MinVR::WindowRef window) {
 	// use transforms stored in the std::vector
 	// apply them to whatever objects we're rendering, and draw them.
 
-	if (HCIExperiment != 0) {
+	if (HCIExperiment != 0 && showCompleteTrial == false) {
 	
 		// draws both the static and the transformable tetrahedron
-		tetra->draw(threadId, camera, window, "Koala2", transform);
-	} else { // this is the likertHCI
+		tetra->draw(threadId, camera, window, "Koala2", transform, "red",  "green", "blue", "Koala", "forestGreen");
+	} 
+	else if(showCompleteTrial == true){
+	
+		tetra->draw(threadId, camera, window, "forestGreen", transform, "forestGreen",  "forestGreen", "forestGreen", "forestGreen", "forestGreen");
+	} 
+	else { // this is the likertHCI
 		currentHCIMgr->currentHCI->draw(threadId, camera, window);
 	}
 }

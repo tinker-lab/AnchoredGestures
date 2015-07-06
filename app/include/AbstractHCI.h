@@ -22,10 +22,12 @@ public:
 	virtual void initializeContextSpecificVars(int threadId,MinVR::WindowRef window) = 0;
 	virtual void initVBO(int threadId);
 	virtual void initGL();
+	virtual int getNumberTouches();
+	FeedbackRef feedback;
+
 
 protected:
 	CFrameMgrRef cFrameMgr;
-	FeedbackRef feedback;
 	
 };
 

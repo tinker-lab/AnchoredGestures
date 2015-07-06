@@ -385,7 +385,7 @@ void LikertHCI::initializeText(int threadId)
 }
 
 void LikertHCI::update(const std::vector<MinVR::EventRef> &events)
-{	fopen("ans.txt", "w", stdout);
+{	//fopen("ans.txt", "w", stdout);
 	for(int i=0; i < events.size(); i++) {
 		if (boost::algorithm::starts_with(events[i]->getName(), "TUIO_Cursor_down")) {
 			glm::dvec3 roomCoord = convertScreenToRoomCoordinates(events[i]->get2DData());
@@ -410,7 +410,7 @@ void LikertHCI::update(const std::vector<MinVR::EventRef> &events)
 		}
 	}
 	//std::cout << "LikertHCI" << std::endl;
-	fclose(stdout);
+	//fclose(stdout);
 }
 
 glm::dvec3 LikertHCI::convertScreenToRoomCoordinates(glm::dvec2 screenCoords) {
