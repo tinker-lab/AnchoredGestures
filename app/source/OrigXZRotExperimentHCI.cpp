@@ -1,5 +1,5 @@
 
-#include "OrigAnchoredHCI.h"
+#include "OrigXZRotExperimentHCI.h"
 
 #define FINGER_MOVEMENT_THRESHOLD 0.005
 #define AXIS_DIFFERENCE_THRESHOLD  1.22
@@ -13,7 +13,7 @@
 #define AXIS_CHANGE_THRESHOLD 0.34906585 //20 deg
 #define ANGLE_AXIS_CHANGE_THRESHOLD 0.0034906585
 
-OrigAnchoredHCI::OrigAnchoredHCI(MinVR::AbstractCameraRef camera, CFrameMgrRef cFrameMgr, TextureMgrRef texMan, FeedbackRef feedback) : AbstractHCI(cFrameMgr, feedback)
+OrigXZRotExperimentHCI::OrigXZRotExperimentHCI(MinVR::AbstractCameraRef camera, CFrameMgrRef cFrameMgr, TextureMgrRef texMan, FeedbackRef feedback) : AbstractHCI(cFrameMgr, feedback)
 {
 	offAxisCamera = std::dynamic_pointer_cast<MinVR::CameraOffAxis>(camera);
 	this->texMan = texMan;
@@ -26,11 +26,11 @@ OrigAnchoredHCI::OrigAnchoredHCI(MinVR::AbstractCameraRef camera, CFrameMgrRef c
 		
 }
 
-OrigAnchoredHCI::~OrigAnchoredHCI()
+OrigXZRotExperimentHCI::~OrigXZRotExperimentHCI()
 {
 }
 
-void OrigAnchoredHCI::update(const std::vector<MinVR::EventRef> &events)
+void OrigXZRotExperimentHCI::update(const std::vector<MinVR::EventRef> &events)
 {
 	glm::dmat4 rightTracker, leftTracker;
     bool updateRightTracker = false;
@@ -70,11 +70,11 @@ void OrigAnchoredHCI::update(const std::vector<MinVR::EventRef> &events)
 	feedback->registeredTouchData = registeredTouchData;
 }
 
-void OrigAnchoredHCI::draw(int threadId, MinVR::AbstractCameraRef camera, MinVR::WindowRef window)
+void OrigXZRotExperimentHCI::draw(int threadId, MinVR::AbstractCameraRef camera, MinVR::WindowRef window)
 {
 }
 
-bool OrigAnchoredHCI::offerTouchDown(MinVR::EventRef event)
+bool OrigXZRotExperimentHCI::offerTouchDown(MinVR::EventRef event)
 {
 	glm::dvec3 roomCoord = convertScreenToRoomCoordinates(event->get2DData());
 	TouchDataRef info(new TouchData(event, roomCoord));
@@ -128,7 +128,7 @@ bool OrigAnchoredHCI::offerTouchDown(MinVR::EventRef event)
 	return false;
 }
 
-bool OrigAnchoredHCI::offerTouchUp(int id)
+bool OrigXZRotExperimentHCI::offerTouchUp(int id)
 {
 	if (_touch1IsValid && _touch1->getCurrentEvent()->getId() == id) {
 		_touch1IsValid = false;
@@ -161,7 +161,7 @@ bool OrigAnchoredHCI::offerTouchUp(int id)
 	return false;	
 }
 
-void OrigAnchoredHCI::offerTouchMove(MinVR::EventRef event)
+void OrigXZRotExperimentHCI::offerTouchMove(MinVR::EventRef event)
 {
 	bool axisChanged = false;
 	if (_touch1IsValid && event->getId() == _touch1->getCurrentEvent()->getId()) {
@@ -173,21 +173,6 @@ void OrigAnchoredHCI::offerTouchMove(MinVR::EventRef event)
 		move.timeStamp = boost::posix_time::microsec_clock::local_time();
 		_touch1Moves.push_back(move);
 		
-		if(_touch2IsValid) {
-			axisChanged = true;
-			alignXform(_touch1->getPrevRoomPos(), _touch2->getCurrRoomPos(), _touch1->getCurrRoomPos());
-			feedback->displayText = "rotating-scaling";
-		}
-		else {
-			// just translate
-			glm::dmat4 trans = glm::column(glm::dmat4(1.0), 3, glm::dvec4((_touch1->getPrevRoomPos() - _touch1->getCurrRoomPos()), 1.0));
-			glm::dmat4 newFrame = cFrameMgr->getRoomToVirtualSpaceFrame() * trans;
-			feedback->displayText = "translating";
-			if (!testForCrazyManipulation(trans)) { //!testForManipulationOutsideOfBounds(newFrame)
-				cFrameMgr->setRoomToVirtualSpaceFrame(newFrame);
-				//_totalTranslationLength+=trans.translation.length();
-			}
-		}
 	}
 	else if (_touch2IsValid && event->getId() == _touch2->getCurrentEvent()->getId()) {
 		_touch2->setCurrRoomPos(convertScreenToRoomCoordinates(glm::dvec2(event->get4DData())));
@@ -197,21 +182,7 @@ void OrigAnchoredHCI::offerTouchMove(MinVR::EventRef event)
 		move.distance = glm::length(_touch2->getCurrRoomPos() - _touch2->getPrevRoomPos());
 		move.timeStamp = boost::posix_time::microsec_clock::local_time();
 		_touch2Moves.push_back(move);
-		if(_touch1IsValid) {
-			axisChanged = true;
-			alignXform(_touch2->getPrevRoomPos(), _touch1->getCurrRoomPos(), _touch2->getCurrRoomPos());
-			feedback->displayText = "rotating-scaling";
-		}
-		else {
-			// just translate
-			glm::dmat4 trans = glm::column(glm::dmat4(1.0), 3, glm::dvec4((_touch2->getPrevRoomPos() - _touch2->getCurrRoomPos()), 1.0));
-			glm::dmat4 newFrame = cFrameMgr->getRoomToVirtualSpaceFrame() * trans;
-			feedback->displayText = "translating";
-			if (!testForCrazyManipulation(trans)) { //!testForManipulationOutsideOfBounds(newFrame)&&
-				cFrameMgr->setRoomToVirtualSpaceFrame(newFrame);
-				//_totalTranslationLength+=trans.translation.length();
-			}
-		}
+		
 	}
 	if (axisChanged) {
 		if (MinVR::ConfigVal("CenterAlwaysAtOrigin", false, false)){
@@ -237,36 +208,7 @@ void OrigAnchoredHCI::offerTouchMove(MinVR::EventRef event)
 	}
 }
 
-void OrigAnchoredHCI::alignXform(glm::dvec3 src1, glm::dvec3 src2, glm::dvec3 dst1)
-{
-	double scale = glm::length(src2 - dst1) / glm::length(src2 - src1);
-	
-	glm::dmat4 scalemat(scale);
-	scalemat[3][3] = 1.0;
-	
-	glm::dmat4 targetXform = glm::translate(glm::dmat4(1.0), dst1) * scalemat  * glm::translate(glm::dmat4(1.0), -dst1);
-	
-	glm::dvec3 initial = glm::normalize(src1-src2);
-	glm::dvec3 final = glm::normalize(dst1-src2);
-	double angle = glm::acos(glm::clamp(glm::dot(initial, final), -1.0, 1.0));
-	if (glm::dot(glm::dvec3(0,1,0), glm::cross(initial, final)) < 0) {
-		angle = -angle;
-	}
-	glm::dmat4 rot = glm::rotate(glm::dmat4(1.0), glm::degrees(angle), glm::dvec3(0.0, 1.0, 0.0));
-	
-	glm::dmat4 rotationFrame = glm::translate(glm::dmat4(1.0), src2) * rot * glm::translate(glm::dmat4(1.0), -src2);
-	glm::dmat4 xform  = glm::inverse(targetXform)*rotationFrame;
-
-	glm::dmat4 newFrame = cFrameMgr->getRoomToVirtualSpaceFrame()*glm::inverse(xform);
-	if (!testForCrazyManipulation(xform)) { //!testForManipulationOutsideOfBounds(newFrame) //TODO: we used to make sure you couldn't move the objects outside the bounds. Do we still want that?
-		cFrameMgr->setRoomToVirtualSpaceFrame(newFrame);
-		//_feedbackWidget->rotateGlobe(rotationFrame);
-		//_totalRotationAngle+= abs(angle);
-		//_eventMgr->queueEvent(new Event("scale_action", targetXform));
-	}
-}
-
-double OrigAnchoredHCI::getTotalMovement(std::vector<movement> moves)
+double OrigXZRotExperimentHCI::getTotalMovement(std::vector<movement> moves)
 {
 	// First we remove all the movements that happened later than the movement window
 	boost::posix_time::ptime curTime, timeDiffTime;
@@ -295,7 +237,7 @@ double OrigAnchoredHCI::getTotalMovement(std::vector<movement> moves)
 	return totalDistance;
 }
 
-bool OrigAnchoredHCI::testForCrazyManipulation(const glm::dmat4& xFrame)
+bool OrigXZRotExperimentHCI::testForCrazyManipulation(const glm::dmat4& xFrame)
 {
 	float angle;
 	glm::dvec3 axis;
@@ -308,13 +250,13 @@ bool OrigAnchoredHCI::testForCrazyManipulation(const glm::dmat4& xFrame)
 	return false;
 }
 
-glm::dvec3 OrigAnchoredHCI::convertScreenToRoomCoordinates(glm::dvec2 screenCoords) {
+glm::dvec3 OrigXZRotExperimentHCI::convertScreenToRoomCoordinates(glm::dvec2 screenCoords) {
 	glm::dvec3 xVec = offAxisCamera->getTopRight() - offAxisCamera->getTopLeft();
 	glm::dvec3 yVec = offAxisCamera->getBottomRight() - offAxisCamera->getTopRight();
 	return offAxisCamera->getTopLeft() + (screenCoords.x * xVec) + (screenCoords.y * yVec);
 }
 
-void OrigAnchoredHCI::determineTouchToHandCoorespondence(TouchDataRef touch) {
+void OrigXZRotExperimentHCI::determineTouchToHandCoorespondence(TouchDataRef touch) {
 	// Use the distances between touch points and the tracker to identify which hand they belong to.
 	float distToLeft = glm::length(glm::dvec3(glm::column(_currentLeftTrackerFrame, 3)) - touch->getCurrRoomPos());
 	float distToRight = glm::length(glm::dvec3(glm::column(_currentRightTrackerFrame, 3)) - touch->getCurrRoomPos());
@@ -326,7 +268,7 @@ void OrigAnchoredHCI::determineTouchToHandCoorespondence(TouchDataRef touch) {
 	}
 }
 
-void OrigAnchoredHCI::updateTrackers(const glm::dmat4 &rightTrackerFrame, const glm::dmat4 &leftTrackerFrame)
+void OrigXZRotExperimentHCI::updateTrackers(const glm::dmat4 &rightTrackerFrame, const glm::dmat4 &leftTrackerFrame)
 {
 	_previousRightTrackerFrame = _currentRightTrackerFrame;
 	_previousLeftTrackerFrame = _currentLeftTrackerFrame;
@@ -522,25 +464,6 @@ void OrigAnchoredHCI::updateTrackers(const glm::dmat4 &rightTrackerFrame, const 
 
 				_rotating = true;
 			}
-			else if (angleBtwAxes > YTRANS_ANGLE_DIFFERENCE_THRESHOLD && angleWithFingerAxis > FINGER_AXIS_ANGLE_LOW_THRESH && angleWithFingerAxis < FINGER_AXIS_ANGLE_HIGH_THRESH) {
-				// Translate y
-				double gain = 2.0;
-				double distance = rotationAngle/ (M_PI/2.0);
-				// Determine whether we are translating up or down based on the distance change between the hands
-				if (glm::length(glm::dvec3(glm::column(_currentLeftTrackerFrame, 3)) - glm::dvec3(glm::column(_currentRightTrackerFrame, 3))) >= glm::length(glm::dvec3(glm::column(_previousLeftTrackerFrame, 3)) - glm::dvec3(glm::column(_previousRightTrackerFrame, 3)))) {
-					distance = -distance;
-				}
-				//cout << "Translating y: "<<distance<<endl;
-				feedback->displayText = "translating"; 
-				glm::dvec3 translationVec(0.0, distance, 0.0);
-				glm::dmat4 translation = glm::translate(glm::dmat4(1.0), translationVec);
-				glm::dmat4 newFrame = cFrameMgr->getRoomToVirtualSpaceFrame() * translation;
-				if (!testForCrazyManipulation(translation)) {//!testForManipulationOutsideOfBounds(newFrame)&&
-					//_feedbackWidget->setYTranslation(translation);
-					//_totalTranslationLength+=abs(distance);
-					cFrameMgr->setRoomToVirtualSpaceFrame(newFrame);
-				}
-			} 
 			else {
 				_currRotationFrame = glm::dmat4(1.0);
 				feedback->displayText = "";
