@@ -1,6 +1,6 @@
 
-#ifndef ORIGANCHOREDHCI_H
-#define ORIGANCHOREDHCI_H
+#ifndef OrigYTransExperimentHCI_H
+#define OrigYTransExperimentHCI_H
 
 #include "AbstractHCI.h"
 #include "MVRCore/AbstractCamera.H"
@@ -21,10 +21,10 @@
 #include <iterator>
 #include "app/include/Feedback.h"
 
-class OrigAnchoredHCI : public AbstractHCI {
+class OrigYTransExperimentHCI : public AbstractHCI {
 public:
-	OrigAnchoredHCI(MinVR::AbstractCameraRef camera, CFrameMgrRef cFrameMgr, TextureMgrRef textMan, FeedbackRef feedback);
-	virtual ~OrigAnchoredHCI();
+	OrigYTransExperimentHCI(MinVR::AbstractCameraRef camera, CFrameMgrRef cFrameMgr, TextureMgrRef textMan, FeedbackRef feedback);
+	virtual ~OrigYTransExperimentHCI();
 	void update(const std::vector<MinVR::EventRef> &events);
     void draw(int threadId, MinVR::AbstractCameraRef camera, MinVR::WindowRef window);
 
@@ -40,7 +40,6 @@ private:
 	bool offerTouchUp(int id);
 	void offerTouchMove(MinVR::EventRef event);
 	void updateTrackers(const glm::dmat4 &rightTrackerFrame, const glm::dmat4 &leftTrackerFrame);
-	void alignXform(glm::dvec3 src1, glm::dvec3 src2, glm::dvec3 dst1);
 	glm::dvec3 convertScreenToRoomCoordinates(glm::dvec2 screenCoords);
 	void determineTouchToHandCoorespondence(TouchDataRef touch);
 	bool testForCrazyManipulation(const glm::dmat4& xFrame);

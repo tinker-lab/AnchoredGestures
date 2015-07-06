@@ -45,6 +45,8 @@ set (SOURCEFILES
 		app/source/NewAnchoredExperimentHCI.cpp
 		app/source/LikertHCI.cpp
 		app/source/AABox.cpp
+		app/source/OrigYTransExperimentHCI.cpp
+		app/source/OrigXZRotExperimentHCI.cpp
 		app/source/CurrentHCIMgr.cpp)
 
 set (HEADERFILES 
@@ -75,6 +77,8 @@ set (HEADERFILES
 		app/include/AABox.h
 		app/include/ByteData.h
 		app/include/ByteStream.h
+		app/include/OrigYTransExperimentHCI.h
+		app/include/OrigXZRotExperimentHCI.h
 		app/include/CurrentHCIMgr.h)
 
 
