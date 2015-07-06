@@ -45,3 +45,6 @@ Session.vim
 # Other
 log.txt
 EventsText*
+EventStream*
+UserAnswers.txt
+output.txt
