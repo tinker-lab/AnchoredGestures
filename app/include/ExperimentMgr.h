@@ -43,7 +43,8 @@ public:
 	void draw(int threadId, MinVR::AbstractCameraRef camera, MinVR::WindowRef window);
 	void resetTimer();
 	
-	
+	MinVR::TimeStamp trialStart;
+	MinVR::TimeStamp trialEnd;
 	int HCIExperiment;
 
 private:
@@ -73,7 +74,6 @@ private:
 	int likertCount;
 	int numTrials;
 	int numPracticeTrials;
-
 	
 };
 

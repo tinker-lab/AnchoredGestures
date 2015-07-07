@@ -9,6 +9,8 @@
 #include "glfontstash.h"
 
 LikertHCI::LikertHCI(MinVR::AbstractCameraRef camera, CFrameMgrRef cFrameMgr, TextureMgrRef texMan, FeedbackRef feedback) : AbstractHCI(cFrameMgr, feedback) {
+
+	done = false;
 	offAxisCamera = std::dynamic_pointer_cast<MinVR::CameraOffAxis>(camera);
 	this->texMan = texMan;
 
@@ -72,7 +74,7 @@ LikertHCI::~LikertHCI()
 
 void LikertHCI::initializeContextSpecificVars(int threadId,MinVR::WindowRef window)
 {
-	done = false;
+	
 	//load in shaders
 	std::map<std::string, std::string> args, dummyArgs;
 	_shader.reset(new GLSLProgram());
@@ -391,18 +393,18 @@ void LikertHCI::initializeText(int threadId)
 void LikertHCI::update(const std::vector<MinVR::EventRef> &events)
 {	
 	std::cout << "Begin likert update" << std::endl;
+
 	for(int i=0; i < events.size(); i++) {
-		std::cout << "likert for loop, i = " << i << std::endl;
 		if (boost::algorithm::starts_with(events[i]->getName(), "TUIO_Cursor_down")) {
 			glm::dvec3 roomCoord = convertScreenToRoomCoordinates(events[i]->get2DData());
-			std::cout<< "User Touched at "<<glm::to_string(roomCoord)<<std::endl;
+			//std::cout<< "User Touched at "<<glm::to_string(roomCoord)<<std::endl;
 			for(int j=0; j < _answerBounds.size(); j++) {
-				std::cout<<"Checking Box "<<j<<" Low: "<<glm::to_string(_answerBounds[j].low())<<" High: "<<glm::to_string(_answerBounds[j].high())<<std::endl;
+				//std::cout<<"Checking Box "<<j<<" Low: "<<glm::to_string(_answerBounds[j].low())<<" High: "<<glm::to_string(_answerBounds[j].high())<<std::endl;
 				if (_answerBounds[j].contains(roomCoord)) {
 					_answerRecorder << _currentQuestion<<", "<<j<<std::endl; 
 					
 					std::cout<< _answers[j] <<std::endl;
-					
+
 					_currentQuestion++;
 					if (_currentQuestion > _questions.size()-1) {
 						_currentQuestion = 0;
@@ -412,7 +414,6 @@ void LikertHCI::update(const std::vector<MinVR::EventRef> &events)
 				}
 			}
 		}
-		std::cout << "End of for loop iteration " << std::endl;
 	}
 }
 
