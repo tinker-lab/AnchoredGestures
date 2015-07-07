@@ -157,8 +157,6 @@ void NewXZRotExperimentHCI::update(const std::vector<MinVR::EventRef> &events){
 			}
 		}
 	} // end touch enumeration
-	
-	std::cout<<"GOT TO HERE"<<std::endl;
 	 //from TUIO move
 	
 

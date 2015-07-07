@@ -26,6 +26,9 @@
 #include <MVRCore/ConfigVal.H>
 #include <MVRCore/Time.h>
 #include "app/include/LikertHCI.h"
+#include "OrigAnchoredHCI.h"
+#include "OrigXZRotExperimentHCI.h"
+#include "OrigYTransExperimentHCI.h"
 
 typedef std::shared_ptr<class ExperimentMgr> ExperimentMgrRef;
 static const double nearEnough = 0.03;
@@ -34,11 +37,12 @@ class ExperimentMgr {
 public:
 	ExperimentMgr(CurrentHCIMgrRef currentHCIMgr, CFrameMgrRef cFrameMgr, MinVR::AbstractCameraRef camera, TextureMgrRef texMan, FeedbackRef feedback); //maybe need ampersand
 	virtual ~ExperimentMgr();
-	void advance ();
+	void advance (bool newOld);
 	void initializeContextSpecificVars(int threadId, MinVR::WindowRef window);
 	bool checkFinish();
 	void draw(int threadId, MinVR::AbstractCameraRef camera, MinVR::WindowRef window);
 	void resetTimer();
+	
 	
 	int HCIExperiment;
 
@@ -52,15 +56,22 @@ private:
 	FeedbackRef feedback;
 	int trialCount; // 0 to 4
 	bool newAnchored;
+	bool inPosition;
+	bool secondTimer;
+	bool showCompleteTrial;
 	int trialSet;
-	
+	MinVR::TimeStamp startInZone;
+	double totalTimeInZone;
 	MinVR::TimeStamp startTime;
+	MinVR::TimeStamp t2;
 	glm::dmat4 transform;
 	CFrameMgrRef cFrameMgr;
 	std::shared_ptr<MinVR::CameraOffAxis> offAxisCamera;
 	std::vector<glm::dmat4> transMats;
 	std::vector<glm::dmat4> rotMats;
 	std::vector<glm::dmat4> combinedMats;
+	int likertCount;	
+
 	
 };
 

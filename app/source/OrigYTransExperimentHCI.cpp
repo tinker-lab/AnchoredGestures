@@ -30,6 +30,10 @@ OrigYTransExperimentHCI::~OrigYTransExperimentHCI()
 {
 }
 
+void OrigYTransExperimentHCI::initializeContextSpecificVars(int threadId,MinVR::WindowRef window)
+{
+}
+
 void OrigYTransExperimentHCI::update(const std::vector<MinVR::EventRef> &events)
 {
 	glm::dmat4 rightTracker, leftTracker;
@@ -93,6 +97,7 @@ bool OrigYTransExperimentHCI::offerTouchDown(MinVR::EventRef event)
 	}
 	
 	if (!_touch1IsValid) {
+		_touch1IsValid = true;
 		_touch1 = info;
 		determineTouchToHandCoorespondence(_touch1);
 		if (_touch2IsValid) {
@@ -109,6 +114,7 @@ bool OrigYTransExperimentHCI::offerTouchDown(MinVR::EventRef event)
 		return true;
 	}
 	else if (!_touch2IsValid) {
+		_touch2IsValid = true;
 		_touch2 = info;
 		determineTouchToHandCoorespondence(_touch2);
 		if(_touch1IsValid) {
@@ -156,6 +162,9 @@ bool OrigYTransExperimentHCI::offerTouchUp(int id)
 	if (it != registeredTouchData.end()) { // if id is found
 		registeredTouchData.erase(it);	   //erase value associate with that it
 		//std::cout << "UP" <<std::endl;
+	}
+	else {
+		std::cout<<"Could not find id="<<id<<" in registeredTouchData"<<std::endl;
 	}
 
 	return false;	

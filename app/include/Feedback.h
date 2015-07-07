@@ -34,6 +34,7 @@ public:
 	std::map<int, TouchDataRef> registeredTouchData;
 	glm::dvec3 centOfRot;
 	void initVBOB(int threadId, MinVR::WindowRef window, std::string textureStr, GPUMeshRef &mesh);
+	
 
 private:
 	std::map<int, GLuint> _vboId;
@@ -41,6 +42,7 @@ private:
 	std::shared_ptr<GLSLProgram> shader;
 	std::shared_ptr<GPUMesh> quadMesh;
 	GPUMeshRef touchMesh;
+	GPUMeshRef betweenMesh;
 	GPUMeshRef bgMesh;
 	TextureMgrRef texMan; 
 	std::shared_ptr<CFrameMgr> cFrameMgr;

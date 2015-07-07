@@ -22,3 +22,8 @@ void AbstractHCI::initVBO(int threadId){
 void AbstractHCI::initGL(){
 
 }
+
+int AbstractHCI::getNumberTouches(){
+
+	return 0;
+}

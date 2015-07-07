@@ -13,6 +13,8 @@
 #define AXIS_CHANGE_THRESHOLD 0.34906585 //20 deg
 #define ANGLE_AXIS_CHANGE_THRESHOLD 0.0034906585
 
+using namespace std;
+
 OrigAnchoredHCI::OrigAnchoredHCI(MinVR::AbstractCameraRef camera, CFrameMgrRef cFrameMgr, TextureMgrRef texMan, FeedbackRef feedback) : AbstractHCI(cFrameMgr, feedback)
 {
 	offAxisCamera = std::dynamic_pointer_cast<MinVR::CameraOffAxis>(camera);
@@ -27,6 +29,11 @@ OrigAnchoredHCI::OrigAnchoredHCI(MinVR::AbstractCameraRef camera, CFrameMgrRef c
 }
 
 OrigAnchoredHCI::~OrigAnchoredHCI()
+{
+}
+
+
+void OrigAnchoredHCI::initializeContextSpecificVars(int threadId,MinVR::WindowRef window)
 {
 }
 
@@ -93,6 +100,7 @@ bool OrigAnchoredHCI::offerTouchDown(MinVR::EventRef event)
 	}
 	
 	if (!_touch1IsValid) {
+		_touch1IsValid = true;
 		_touch1 = info;
 		determineTouchToHandCoorespondence(_touch1);
 		if (_touch2IsValid) {
@@ -105,10 +113,11 @@ bool OrigAnchoredHCI::offerTouchDown(MinVR::EventRef event)
 			feedback->centOfRot = _centerAxis;
 			//_feedbackWidget->setFingerIndicatorPositions(_touch1.pos, _touch2.pos);
 		}
-		//cout << "Touch1 down"<<endl;
+		cout << "Touch1 down"<<endl;
 		return true;
 	}
 	else if (!_touch2IsValid) {
+		_touch2IsValid = true;
 		_touch2 = info;
 		determineTouchToHandCoorespondence(_touch2);
 		if(_touch1IsValid) {
@@ -121,7 +130,7 @@ bool OrigAnchoredHCI::offerTouchDown(MinVR::EventRef event)
 			feedback->centOfRot = _centerAxis;
 			//_feedbackWidget->setFingerIndicatorPositions(_touch1.pos, _touch2.pos);
 		}
-		//cout << "Touch2 down"<<endl;
+		cout << "Touch2 down"<<endl;
 		return true;
 	}
 
@@ -137,7 +146,7 @@ bool OrigAnchoredHCI::offerTouchUp(int id)
 		//_touch1Moves.clear();
 		_leftAxisHistory.clear();
 		_rightAxisHistory.clear();
-		//cout << "Touch1 up"<<endl;
+		cout << "Touch1 up"<<endl;
 		return true;
 	}
 	else if (_touch2IsValid && _touch2->getCurrentEvent()->getId() == id) {
@@ -147,7 +156,7 @@ bool OrigAnchoredHCI::offerTouchUp(int id)
 		//_touch2Moves.clear();
 		_leftAxisHistory.clear();
 		_rightAxisHistory.clear();
-		//cout << "Touch2 up"<<endl;
+		cout << "Touch2 up"<<endl;
 		return true;
 	}
 
@@ -157,7 +166,9 @@ bool OrigAnchoredHCI::offerTouchUp(int id)
 		registeredTouchData.erase(it);	   //erase value associate with that it
 		//std::cout << "UP" <<std::endl;
 	}
-
+	else {
+		std::cout<<"Could not find id="<<id<<" in registeredTouchData"<<std::endl;
+	}
 	return false;	
 }
 
@@ -347,7 +358,7 @@ void OrigAnchoredHCI::updateTrackers(const glm::dmat4 &rightTrackerFrame, const 
 		// Use the distances between touch points and the tracker to identify which hand they belong to.
 		if(_touch1->getBelongTo() == TouchData::LEFT_HAND && _touch2->getBelongTo() == TouchData::LEFT_HAND) {
 			// both point are on the left hand
-			//cout << " === both points on LEFT hand"<<endl;
+			cout << " === both points on LEFT hand"<<endl;
 			glm::dvec3 oldVec = glm::normalize(glm::dvec3(glm::column(_previousLeftTrackerFrame, 3)) - _touch1->getCurrRoomPos());
 			glm::dvec3 curVec = glm::normalize(glm::dvec3(glm::column(_currentLeftTrackerFrame, 3)) - _touch1->getCurrRoomPos());
 			glm::dvec3 axis = glm::normalize(glm::cross(curVec, oldVec));
@@ -362,7 +373,7 @@ void OrigAnchoredHCI::updateTrackers(const glm::dmat4 &rightTrackerFrame, const 
 			double projection = glm::dot(glm::normalize(axis), axisOnTable);
 			angle = projection*angle;
 			_lastRotationAxis = axisOnTable;
-			_lastRightAxis = glm::dvec3(0,0,0);
+			_lastRightAxis = glm::dvec3(1,0,0);
 			_lastLeftAxis = glm::normalize(axis);
 			//_feedbackWidget->setRotationIndicatorDirection(_lastRotationAxis.cross(Vector3(0,1,0)));
 
@@ -383,7 +394,7 @@ void OrigAnchoredHCI::updateTrackers(const glm::dmat4 &rightTrackerFrame, const 
 		}
 		else if(_touch1->getBelongTo() == TouchData::RIGHT_HAND && _touch2->getBelongTo() == TouchData::RIGHT_HAND) {
 			// both points are on right hand
-			//cout << "+++ both points on RIGHT hand"<<endl;
+			cout << "+++ both points on RIGHT hand"<<endl;
 			glm::dvec3 oldVec = glm::normalize(glm::dvec3(glm::column(_previousRightTrackerFrame, 3)) - _touch1->getCurrRoomPos());
 			glm::dvec3 curVec = glm::normalize(glm::dvec3(glm::column(_currentRightTrackerFrame, 3)) - _touch1->getCurrRoomPos());
 			glm::dvec3 axis = glm::normalize(glm::cross(curVec, oldVec));
@@ -400,7 +411,7 @@ void OrigAnchoredHCI::updateTrackers(const glm::dmat4 &rightTrackerFrame, const 
 			angle = projection*angle;
 			
 			_lastRotationAxis = axisOnTable;
-			_lastLeftAxis = glm::dvec3(0,0,0);
+			_lastLeftAxis = glm::dvec3(1,0,0);
 			_lastRightAxis = glm::normalize(axis);
 			//_feedbackWidget->setRotationIndicatorDirection(_lastRotationAxis.cross(Vector3(0,1,0)));
 
@@ -460,6 +471,10 @@ void OrigAnchoredHCI::updateTrackers(const glm::dmat4 &rightTrackerFrame, const 
 			leftAxisOnTable = glm::dvec3(leftAxis.x, 0.0, leftAxis.z);
 			rightAxisOnTable = glm::normalize(rightAxisOnTable);
 			leftAxisOnTable = glm::normalize(leftAxisOnTable);
+
+			if (glm::epsilonEqual(rightAxisOnTable, glm::dvec3(0.0), 0.001) == glm::detail::tvec3<bool>(true) || glm::epsilonEqual(leftAxisOnTable, glm::dvec3(0.0), 0.001) == glm::detail::tvec3<bool>(true) ) {
+				return;
+			}
 		
 			glm::dvec3 rotationAxis = glm::normalize((rightAxisOnTable + leftAxisOnTable)/2.0);
 			double angleWithLastRotAxis = glm::acos(glm::clamp(glm::dot(rotationAxis, _lastRotationAxis), -1.0, 1.0));
@@ -486,6 +501,7 @@ void OrigAnchoredHCI::updateTrackers(const glm::dmat4 &rightTrackerFrame, const 
 			}
 			*/
 			
+			//cout << "About to set _lastLeftAxis: "<<glm::to_string(leftAxisOnTable)<<endl;
 			_lastLeftAxis = leftAxisOnTable;
 			_lastRightAxis = rightAxisOnTable;
 			

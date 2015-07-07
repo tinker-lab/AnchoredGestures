@@ -29,7 +29,16 @@ ExperimentMgr::~ExperimentMgr() {
 
 
 void ExperimentMgr::initializeContextSpecificVars(int threadId, MinVR::WindowRef window){
-
+	
+	
+	
+	likertCount = 0;
+	
+	
+	//numberQuestions = MinVR::ConfigVal("NumberQuestions", 1, false); 
+	showCompleteTrial = false;
+	secondTimer = false;
+	inPosition = false;
 	// ExperimentMgr doesn't need texture manager, but tetrahedron does.
 	tetra.reset(new Tetrahedron(window->getCamera(0), cFrameMgr, texMan, nearEnough));
 	tetra->initializeContextSpecificVars(threadId);
@@ -38,8 +47,8 @@ void ExperimentMgr::initializeContextSpecificVars(int threadId, MinVR::WindowRef
 	// Experiment Variables //
 	//////////////////////////
 	trialCount = 0; // 0 - 4
-	trialSet = 2; // 1 - 2, for updating HCIExperiment number
-	HCIExperiment = 0; // 1 - 3
+	trialSet = 1; // 1 - 2, for updating HCIExperiment number
+	HCIExperiment = 0; // 0 - 6
 	newAnchored = MinVR::ConfigVal("newAnchored", false, false); 
 	transformIndex = 1; // 1 - 5 but randomized
 
@@ -54,6 +63,15 @@ void ExperimentMgr::initializeContextSpecificVars(int threadId, MinVR::WindowRef
 	}
 	if(HCIExperiment == 3) {
 		currentHCIMgr->currentHCI.reset(new NewAnchoredExperimentHCI(window->getCamera(0), cFrameMgr, texMan, feedback));
+	}
+	if(HCIExperiment == 4) {
+		currentHCIMgr->currentHCI.reset(new OrigYTransExperimentHCI(window->getCamera(0), cFrameMgr, texMan, feedback));
+	}
+	if(HCIExperiment == 5) {
+		currentHCIMgr->currentHCI.reset(new OrigXZRotExperimentHCI(window->getCamera(0), cFrameMgr, texMan, feedback));
+	}
+	if(HCIExperiment == 6) {
+		currentHCIMgr->currentHCI.reset(new OrigAnchoredHCI(window->getCamera(0), cFrameMgr, texMan, feedback));
 	}
 	
 	currentHCIMgr->currentHCI->initializeContextSpecificVars(threadId, window);
@@ -117,29 +135,80 @@ void ExperimentMgr::initializeContextSpecificVars(int threadId, MinVR::WindowRef
 // update trial number
 // update experiment number
 // point to next matrices we need for experiment
-void ExperimentMgr::advance () {
-	trialCount += 1;
-	if(trialCount == 5){
-		trialCount = 0;
-		trialSet += 1;
-		newAnchored = !newAnchored;
-	}
+void ExperimentMgr::advance (bool newOld) {
 
-	if (trialSet == 3) {
-		trialSet = 1;
-		HCIExperiment++; // might not always want to just increment
-	}
-
-	if (HCIExperiment == 4) {
+	if(newOld){
+		//trialSet = 1;
+	    //likertCount = 0;
+		if (trialSet == 4 ) {
 		std::cout << "Finished :D" << std::endl;
+		}
+		trialCount += 1;
+		if(trialCount == 5){ //finish a set of trials
+			trialCount = 0;		
+			likertCount += 1;
+			HCIExperiment = 0;
+			if((likertCount % 2) == 0){
+				trialSet += 1;
+			}
+			
+		}
+		else if(HCIExperiment == 0){ //in Likertmode
+			trialCount -= 1;
+			if((likertCount % 2) != 0){
+				HCIExperiment = likertCount+ 4 - trialSet ;
+			}
+			else{
+				//insert promp here in future
+				HCIExperiment = trialSet;
+			}
+		}  
 	}
+
+	else{ //oldNew case
+		
+		if (trialSet == 4 ) {
+		std::cout << "Finished :D" << std::endl;
+		}
+		
+		trialCount += 1;
+		if(trialCount == 5){ //finish a set of trials
+			trialCount = 0;		
+			likertCount += 1;
+			HCIExperiment = 0;
+			if((likertCount % 2) == 0){
+				trialSet += 1;
+			}
+			
+		}
+		else if(HCIExperiment == 0){ //in Likertmode
+			trialCount -= 1;
+			if((likertCount % 2) != 0){
+				HCIExperiment =  trialSet ;
+			}
+			else{
+				//insert promp here in future
+				HCIExperiment = likertCount+ 5 -trialSet;
+			}
+		}  
+	
+	}
+	
+	
+	
+	
+
+
+	
 
 	std::cout << "trial count: " << trialCount << std::endl;
 	std::cout << "trial set: " << trialSet << std::endl;
+	std::cout << "likertCount: " << likertCount << std::endl;
 	std::cout << "experiment number: " << HCIExperiment << std::endl;
-	std::cout << "Old or new: " << newAnchored << " hmm" << std::endl;
+
 	
 }
+
 
 
 void ExperimentMgr::resetTimer(){
@@ -151,18 +220,28 @@ void ExperimentMgr::resetTimer(){
 // since App calls currentHCI->update before this call
 bool ExperimentMgr::checkFinish() {
 
-	
-	
+
 	glm::dmat4 currHCItransform = cFrameMgr->getVirtualToRoomSpaceFrame();
 
 	if (HCIExperiment == 0) {
-		transform = transMats[trialCount];
+ 
+		LikertHCI* likert = dynamic_cast<LikertHCI*>((currentHCIMgr->currentHCI).get());
+		if (likert->done) {
+			return true;
+		};
 	}
 	else if (HCIExperiment == 1) {
 		transform = transMats[trialCount];
 	} else if (HCIExperiment == 2) {
 		transform = rotMats[trialCount];
 	} else if (HCIExperiment == 3) {
+		transform = combinedMats[trialCount];
+	}
+	else if (HCIExperiment == 4) {
+		transform = transMats[trialCount];
+	} else if (HCIExperiment == 5) {
+		transform = rotMats[trialCount];
+	} else if (HCIExperiment == 6) {
 		transform = combinedMats[trialCount];
 	}
 	
@@ -192,29 +271,85 @@ bool ExperimentMgr::checkFinish() {
 	//std::cout << "Transformable point: " << glm::to_string(transformableTetraPointA) << std::endl;
 	//std::cout << "Distance: " << glm::distance(transformableTetraPointA, staticTetraPointA) << std::endl;
 
+	
 	bool nearA = glm::distance(transformableTetraPointA, staticTetraPointA) < nearEnough;
 	bool nearB = glm::distance(transformableTetraPointB, staticTetraPointB) < nearEnough;
 	bool nearC = glm::distance(transformableTetraPointC, staticTetraPointC) < nearEnough;
 	bool nearD = glm::distance(transformableTetraPointD, staticTetraPointD) < nearEnough;
+	bool prevInPosition = inPosition;
 
-	if (nearA && nearB && nearC && nearD) {
-		std::cout<<"ayyyyyyyy gurlll"<<std::endl;
-		return true; 
+	if (nearA && nearB && nearC && nearD){ //if in the correct posisition
+		
+		inPosition = true;
+		showCompleteTrial = true;		
+	}
+	else{
+	
+		inPosition = false;
+		secondTimer = false;
+		showCompleteTrial = false;	
+	}
+
+	//std::cout<<"inPosition : "<<inPosition<<std::endl;
+	//std::cout<<"prevInPosition : "<<prevInPosition<<std::endl;
+
+	if(inPosition == true /*to guard the situation when go out of time stamp */ && inPosition != prevInPosition /*make sure only start the time stamp initially*/){
+		startInZone = getCurrentTime();
+		secondTimer = true;
+
+		
+	}
+
+	
+
+	if(secondTimer){
+		
+		t2 = getCurrentTime();
+		totalTimeInZone = (getDuration(t2, startInZone)).total_milliseconds();
+	
+	}
+
+	
+	
+	//std::cout<<"total time in zone :  " <<totalTimeInZone<<std::endl;
+
+	if (nearA && nearB && nearC && nearD &&  totalTimeInZone > 1000.0 ) {
+		
+		// set to false for next trial
+		showCompleteTrial = false;
+		return true;
+
+		//currentHCIMgr->currentHCI->feedback->displayText = "between";
+		/*if(currentHCIMgr->currentHCI->getNumberTouches() == 0  &&  totalTimeInZone > 4000.0 ){
+			showCompleteTrial = false;
+			return true; 
+		}*/
+
 	}
 	
 	return false;
 
+	//MinVR::TimeStamp timeStamp = getCurrentTime();
+	//MinVR::TimeStamp t2 = getCurrentTime();
+	//double diff = (getDuration(timeStamp, t2)).total_milliseconds();
+
 }
+
 
 void ExperimentMgr::draw(int threadId, MinVR::AbstractCameraRef camera, MinVR::WindowRef window) {
 	// use transforms stored in the std::vector
 	// apply them to whatever objects we're rendering, and draw them.
 
-	if (HCIExperiment != 0) {
+	if (HCIExperiment != 0 && showCompleteTrial == false) {
 	
 		// draws both the static and the transformable tetrahedron
-		tetra->draw(threadId, camera, window, "Koala2", transform);
-	} else { // this is the likertHCI
+		tetra->draw(threadId, camera, window, "Koala2", transform, "red",  "green", "blue", "Koala", "forestGreen");
+	} 
+	else if(HCIExperiment != 0 && showCompleteTrial == true){
+	
+		tetra->draw(threadId, camera, window, "forestGreen", transform, "forestGreen",  "forestGreen", "forestGreen", "forestGreen", "forestGreen");
+	} 
+	else { // this is the likertHCI
 		currentHCIMgr->currentHCI->draw(threadId, camera, window);
 	}
 }
