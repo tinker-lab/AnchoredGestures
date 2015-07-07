@@ -21,6 +21,8 @@
 #endif
 
 typedef std::shared_ptr<class Tetrahedron> TetrahedronRef;
+static const int numTetraEdges = 6;
+static const double guideCylinderRadius = 0.005;
 
 class Tetrahedron {
 public:
@@ -33,7 +35,7 @@ public:
 	glm::dvec3 Tetrahedron::getPosition(double latitude, double longitude); 
 
 	void draw(int threadId, MinVR::AbstractCameraRef camera, MinVR::WindowRef window, std::string textureName, glm::dmat4 transMat,std::string color1, std::string color2, std::string color3, std::string color4, std::string color5 );
-	void makeCylinder(glm::dvec3 pointA, glm::dvec3 pointB);
+    void makeCylinder(glm::dvec3 pointA, glm::dvec3 pointB, radius = 0.02);
 	void makeSphere(glm::dvec3 center);
 	// tetraVertices
 	glm::dvec3 pointA;
@@ -60,7 +62,7 @@ private:
 	std::vector<int> guideCylinderIndices;
 
 	double sphereRadius;
-	double guideCylinderRadius;
+    double guideCylinderLength;
 
 	
 
