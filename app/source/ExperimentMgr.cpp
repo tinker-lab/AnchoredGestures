@@ -137,6 +137,16 @@ void ExperimentMgr::initializeContextSpecificVars(int threadId, MinVR::WindowRef
 // point to next matrices we need for experiment
 void ExperimentMgr::advance (bool newOld) {
 
+	if(HCIExperiment != 0){
+		double diff = (getDuration(trialStart, trialEnd)).total_milliseconds();
+		std::cout<<"Total Time In Trial"<<diff<<std::endl;
+		std::cout<< "The start time was: " << trialStart << std::endl;
+		std::cout<< "The end time was  : " << trialEnd << std::endl;
+		trialStart = getCurrentTime();
+	}
+
+
+
 	if(newOld){
 		//trialSet = 1;
 	    //likertCount = 0;
@@ -227,6 +237,7 @@ bool ExperimentMgr::checkFinish() {
  
 		LikertHCI* likert = dynamic_cast<LikertHCI*>((currentHCIMgr->currentHCI).get());
 		if (likert->done) {
+			trialStart = getCurrentTime();
 			return true;
 		};
 	}
@@ -278,7 +289,7 @@ bool ExperimentMgr::checkFinish() {
 	bool nearD = glm::distance(transformableTetraPointD, staticTetraPointD) < nearEnough;
 	bool prevInPosition = inPosition;
 
-	if (nearA && nearB && nearC && nearD){ //if in the correct posisition
+	if (nearA && nearB && nearC && nearD && HCIExperiment != 0){ //if in the correct posisition
 		
 		inPosition = true;
 		showCompleteTrial = true;		
@@ -317,14 +328,8 @@ bool ExperimentMgr::checkFinish() {
 		
 		// set to false for next trial
 		showCompleteTrial = false;
+		trialEnd = getCurrentTime();
 		return true;
-
-		//currentHCIMgr->currentHCI->feedback->displayText = "between";
-		/*if(currentHCIMgr->currentHCI->getNumberTouches() == 0  &&  totalTimeInZone > 4000.0 ){
-			showCompleteTrial = false;
-			return true; 
-		}*/
-
 	}
 	
 	return false;

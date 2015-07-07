@@ -43,7 +43,8 @@ public:
 	void draw(int threadId, MinVR::AbstractCameraRef camera, MinVR::WindowRef window);
 	void resetTimer();
 	
-	
+	MinVR::TimeStamp trialStart;
+	MinVR::TimeStamp trialEnd;
 	int HCIExperiment;
 
 private:
@@ -71,6 +72,7 @@ private:
 	std::vector<glm::dmat4> rotMats;
 	std::vector<glm::dmat4> combinedMats;
 	int likertCount;	
+	
 
 	
 };

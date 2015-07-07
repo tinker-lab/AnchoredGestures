@@ -82,6 +82,8 @@ private:
 	bool												_replayingStream;
 
 	std::ofstream										_eventsForText;
+	MinVR::TimeStamp trialStart;
+	int trailTimeLimit;
 };
 
 #endif /* APP_H_ */

@@ -362,7 +362,25 @@ void App::doUserInputAndPreDrawComputation(const std::vector<MinVR::EventRef>& e
 			std::string eventStreamFile = MinVR::ConfigVal("EventStreamToReplay", "EventStream", false);
 			loadEventStream(eventStreamFile);
 		}
-
+		else if (events[i]->getName() == "kbd_N_down") {
+		
+			experimentMgr->advance(newOld);
+			if (experimentMgr->HCIExperiment == 0) {
+				currentHCIMgr->currentHCI = likertHCI;
+			} else if (experimentMgr->HCIExperiment == 1) {
+				currentHCIMgr->currentHCI = newYTransHCI;
+			} else if (experimentMgr->HCIExperiment == 2) {
+				currentHCIMgr->currentHCI = newXZRotHCI;
+			} else if (experimentMgr->HCIExperiment == 3) {
+				currentHCIMgr->currentHCI = newAnchoredHCI;
+			} else if (experimentMgr->HCIExperiment == 4) {
+				currentHCIMgr->currentHCI = origYTransHCI;
+			} else if (experimentMgr->HCIExperiment == 5) {
+				currentHCIMgr->currentHCI = origXZRotHCI;
+			} else if (experimentMgr->HCIExperiment == 6) {
+				currentHCIMgr->currentHCI = origAnchoredHCI;
+			}
+		}
 		//Save to the bytestream
 		if (std::find(_logIgnoreList.begin(), _logIgnoreList.end(), events[i]->getName()) == _logIgnoreList.end()) {
 			_eventsToSave.push_back(eventToByteData(events[i]));
@@ -376,16 +394,21 @@ void App::doUserInputAndPreDrawComputation(const std::vector<MinVR::EventRef>& e
 	_eventsToSave.push_back(eventToByteData(finishEvent));
 	//_eventsForText << finishEvent->toString() << std::endl;
 	
-	if (experimentMgr->HCIExperiment == 0) {
-		std::cout << "app printing experiment number: " << experimentMgr->HCIExperiment << std::endl;
-	}
+
 	currentHCIMgr->currentHCI->update(events);
-	if (experimentMgr->checkFinish()) { // should this go before update events?
-		// Does the following:
-		// switch HCI
-		// update trial number
-		// update experiment number
-		// point to next matrices we need for experiment
+	//local time stamp to check how long user taking
+	MinVR::TimeStamp check = getCurrentTime();
+	std::cout<<"trialStart: "<<experimentMgr->trialStart<<std::endl;
+	std::cout<<"check: "<<check<<std::endl;
+	double currentLengthOfTrial = (getDuration(check, experimentMgr->trialStart)).total_milliseconds();
+	std::cout<<"currentLengthOfTrial: "<<currentLengthOfTrial<<std::endl;
+	if(currentLengthOfTrial == 9.22337*10^15){
+		currentLengthOfTrial = trailTimeLimit - 1;
+		//std::cout<<"guarding"<<std::endl;
+	}
+
+
+	if (experimentMgr->checkFinish() || currentLengthOfTrial > trailTimeLimit) {
 		
 		experimentMgr->advance(newOld);
 		if (experimentMgr->HCIExperiment == 0) {
@@ -403,6 +426,8 @@ void App::doUserInputAndPreDrawComputation(const std::vector<MinVR::EventRef>& e
 		} else if (experimentMgr->HCIExperiment == 6) {
 			currentHCIMgr->currentHCI = origAnchoredHCI;
 		}
+
+
 	} 
 }
 
@@ -419,6 +444,8 @@ void App::initializeContextSpecificVars(int threadId,
 	////////////////////////////////////////////////////
 	///where we manually swith two overall experiments//
 	////////////////////////////////////////////////////
+
+	trailTimeLimit = 15000;
 
 	texMan.reset(new TextureMgr());
 	texMan->loadTexturesFromConfigVal(threadId, "LoadTextures");
