@@ -389,7 +389,9 @@ void LikertHCI::initializeText(int threadId)
 
 void LikertHCI::update(const std::vector<MinVR::EventRef> &events)
 {	//fopen("ans.txt", "w", stdout);
+	std::cout << "Begin likert update" << std::endl;
 	for(int i=0; i < events.size(); i++) {
+		std::cout << "likert for loop, i = " << i << std::endl;
 		if (boost::algorithm::starts_with(events[i]->getName(), "TUIO_Cursor_down")) {
 			glm::dvec3 roomCoord = convertScreenToRoomCoordinates(events[i]->get2DData());
 			std::cout<< "User Touched at "<<glm::to_string(roomCoord)<<std::endl;
@@ -412,6 +414,7 @@ void LikertHCI::update(const std::vector<MinVR::EventRef> &events)
 				}
 			}
 		}
+		std::cout << "End of for loop iteration " << std::endl;
 	}
 	//std::cout << "LikertHCI" << std::endl;
 	//fclose(stdout);

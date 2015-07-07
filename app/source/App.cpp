@@ -376,6 +376,9 @@ void App::doUserInputAndPreDrawComputation(const std::vector<MinVR::EventRef>& e
 	_eventsToSave.push_back(eventToByteData(finishEvent));
 	//_eventsForText << finishEvent->toString() << std::endl;
 	
+	if (experimentMgr->HCIExperiment == 0) {
+		std::cout << "app printing experiment number: " << experimentMgr->HCIExperiment << std::endl;
+	}
 	currentHCIMgr->currentHCI->update(events);
 	if (experimentMgr->checkFinish()) { // should this go before update events?
 		// Does the following:
@@ -385,12 +388,20 @@ void App::doUserInputAndPreDrawComputation(const std::vector<MinVR::EventRef>& e
 		// point to next matrices we need for experiment
 		
 		experimentMgr->advance(newOld);
-		if (experimentMgr->HCIExperiment == 1) {
+		if (experimentMgr->HCIExperiment == 0) {
+			currentHCIMgr->currentHCI = likertHCI;
+		} else if (experimentMgr->HCIExperiment == 1) {
 			currentHCIMgr->currentHCI = newYTransHCI;
 		} else if (experimentMgr->HCIExperiment == 2) {
 			currentHCIMgr->currentHCI = newXZRotHCI;
 		} else if (experimentMgr->HCIExperiment == 3) {
 			currentHCIMgr->currentHCI = newAnchoredHCI;
+		} else if (experimentMgr->HCIExperiment == 4) {
+			currentHCIMgr->currentHCI = origYTransHCI;
+		} else if (experimentMgr->HCIExperiment == 5) {
+			currentHCIMgr->currentHCI = origXZRotHCI;
+		} else if (experimentMgr->HCIExperiment == 6) {
+			currentHCIMgr->currentHCI = origAnchoredHCI;
 		}
 	} 
 }
@@ -424,17 +435,17 @@ void App::initializeContextSpecificVars(int threadId,
 	newYTransHCI.reset(new NewYTransExperimentHCI(window->getCamera(0), cFrameMgr, texMan, feedback));
 	newXZRotHCI.reset(new NewXZRotExperimentHCI(window->getCamera(0), cFrameMgr, texMan, feedback));
 	newAnchoredHCI.reset(new NewAnchoredExperimentHCI(window->getCamera(0), cFrameMgr, texMan, feedback));
-	/*oldYTransHCI.reset(new oldYTransExperimentHCI(window->getCamera(0), cFrameMgr, texMan, feedback));
-	oldXZRotHCI.reset(new oldXZRotExperimentHCI(window->getCamera(0), cFrameMgr, texMan, feedback));
-	oldAnchoredHCI.reset(new oldAnchoredExperimentHCI(window->getCamera(0), cFrameMgr, texMan, feedback));*/
+	origYTransHCI.reset(new OrigYTransExperimentHCI(window->getCamera(0), cFrameMgr, texMan, feedback));
+	origXZRotHCI.reset(new OrigXZRotExperimentHCI(window->getCamera(0), cFrameMgr, texMan, feedback));
+	origAnchoredHCI.reset(new OrigAnchoredHCI(window->getCamera(0), cFrameMgr, texMan, feedback));
 
 	likertHCI->initializeContextSpecificVars(threadId, window);
 	newYTransHCI->initializeContextSpecificVars(threadId, window);
 	newXZRotHCI->initializeContextSpecificVars(threadId, window);
 	newAnchoredHCI->initializeContextSpecificVars(threadId, window);
-	/*oldYTransHCI->initializeContextSpecificVars(threadId, window);
-	oldXZRotHCI->initializeContextSpecificVars(threadId, window);
-	oldAnchoredHCI->initializeContextSpecificVars(threadId, window);*/
+	origYTransHCI->initializeContextSpecificVars(threadId, window);
+	origXZRotHCI->initializeContextSpecificVars(threadId, window);
+	origAnchoredHCI->initializeContextSpecificVars(threadId, window);
 
 	axis.reset(new Axis(window->getCamera(0), cFrameMgr, texMan));
 

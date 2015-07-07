@@ -220,9 +220,7 @@ void ExperimentMgr::resetTimer(){
 // since App calls currentHCI->update before this call
 bool ExperimentMgr::checkFinish() {
 
-	//put in for testing
-	return true;
-	
+
 	glm::dmat4 currHCItransform = cFrameMgr->getVirtualToRoomSpaceFrame();
 
 	if (HCIExperiment == 0) {

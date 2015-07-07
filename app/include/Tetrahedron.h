@@ -35,7 +35,7 @@ public:
 	glm::dvec3 Tetrahedron::getPosition(double latitude, double longitude); 
 
 	void draw(int threadId, MinVR::AbstractCameraRef camera, MinVR::WindowRef window, std::string textureName, glm::dmat4 transMat,std::string color1, std::string color2, std::string color3, std::string color4, std::string color5 );
-    void makeCylinder(glm::dvec3 pointA, glm::dvec3 pointB, radius = 0.02);
+    void makeCylinder(glm::dvec3 pointA, glm::dvec3 pointB, double radius = 0.02);
 	void makeSphere(glm::dvec3 center);
 	// tetraVertices
 	glm::dvec3 pointA;

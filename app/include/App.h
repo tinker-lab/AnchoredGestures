@@ -74,9 +74,9 @@ private:
 	AbstractHCIRef newYTransHCI;
 	AbstractHCIRef newXZRotHCI;
 	AbstractHCIRef newAnchoredHCI;
-	AbstractHCIRef oldYTransHCI;
-	AbstractHCIRef oldXZRotHCI;
-	AbstractHCIRef oldAnchoredHCI;
+	AbstractHCIRef origYTransHCI;
+	AbstractHCIRef origXZRotHCI;
+	AbstractHCIRef origAnchoredHCI;
 	std::vector<std::string>							_logIgnoreList;
 	std::vector<ByteData>								_eventsToSave;
 	bool												_replayingStream;
