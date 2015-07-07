@@ -66,7 +66,8 @@ LikertHCI::LikertHCI(MinVR::AbstractCameraRef camera, CFrameMgrRef cFrameMgr, Te
 
 LikertHCI::~LikertHCI()
 {
-
+	std::flush(_answerRecorder);
+	_answerRecorder.close();
 }
 
 void LikertHCI::initializeContextSpecificVars(int threadId,MinVR::WindowRef window)
@@ -388,7 +389,7 @@ void LikertHCI::initializeText(int threadId)
 }
 
 void LikertHCI::update(const std::vector<MinVR::EventRef> &events)
-{	//fopen("ans.txt", "w", stdout);
+{	
 	std::cout << "Begin likert update" << std::endl;
 	for(int i=0; i < events.size(); i++) {
 		std::cout << "likert for loop, i = " << i << std::endl;
@@ -398,13 +399,10 @@ void LikertHCI::update(const std::vector<MinVR::EventRef> &events)
 			for(int j=0; j < _answerBounds.size(); j++) {
 				std::cout<<"Checking Box "<<j<<" Low: "<<glm::to_string(_answerBounds[j].low())<<" High: "<<glm::to_string(_answerBounds[j].high())<<std::endl;
 				if (_answerBounds[j].contains(roomCoord)) {
-					//TODO: do something besides print the result
-					// we sill save to a text file
+					_answerRecorder << _currentQuestion<<", "<<j<<std::endl; 
 					
 					std::cout<< _answers[j] <<std::endl;
 					
-					
-
 					_currentQuestion++;
 					if (_currentQuestion > _questions.size()-1) {
 						_currentQuestion = 0;
@@ -416,8 +414,6 @@ void LikertHCI::update(const std::vector<MinVR::EventRef> &events)
 		}
 		std::cout << "End of for loop iteration " << std::endl;
 	}
-	//std::cout << "LikertHCI" << std::endl;
-	//fclose(stdout);
 }
 
 

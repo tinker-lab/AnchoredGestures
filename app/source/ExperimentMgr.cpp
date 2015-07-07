@@ -29,11 +29,8 @@ ExperimentMgr::~ExperimentMgr() {
 
 
 void ExperimentMgr::initializeContextSpecificVars(int threadId, MinVR::WindowRef window){
-	
-	
-	
+
 	likertCount = 0;
-	
 	
 	//numberQuestions = MinVR::ConfigVal("NumberQuestions", 1, false); 
 	showCompleteTrial = false;
@@ -51,6 +48,8 @@ void ExperimentMgr::initializeContextSpecificVars(int threadId, MinVR::WindowRef
 	HCIExperiment = 0; // 0 - 6
 	newAnchored = MinVR::ConfigVal("newAnchored", false, false); 
 	transformIndex = 1; // 1 - 5 but randomized
+	numTrials = MinVR::ConfigVal("NumTrials", 5, false);
+	numPracticeTrials = MinVR::ConfigVal("NumPracticeTrials", 3, false);
 
 	if(HCIExperiment == 0) {
 		currentHCIMgr->currentHCI.reset(new LikertHCI(window->getCamera(0), cFrameMgr, texMan, feedback));
@@ -82,7 +81,10 @@ void ExperimentMgr::initializeContextSpecificVars(int threadId, MinVR::WindowRef
 	glm::dmat4 transMat2 = MinVR::ConfigVal("TransMat2", glm::dmat4(0.0), false); 
 	glm::dmat4 transMat3 = MinVR::ConfigVal("TransMat3", glm::dmat4(0.0), false); 
 	glm::dmat4 transMat4 = MinVR::ConfigVal("TransMat4", glm::dmat4(0.0), false); 
-	glm::dmat4 transMat5 = MinVR::ConfigVal("TransMat5", glm::dmat4(0.0), false); 
+	glm::dmat4 transMat5 = MinVR::ConfigVal("TransMat5", glm::dmat4(0.0), false);
+	glm::dmat4 transMat6 = MinVR::ConfigVal("TransMat6", glm::dmat4(0.0), false); 
+	glm::dmat4 transMat7 = MinVR::ConfigVal("TransMat7", glm::dmat4(0.0), false);
+	glm::dmat4 transMat8 = MinVR::ConfigVal("TransMat8", glm::dmat4(0.0), false);
 
 	// put transforms into a vector
 	transMats.push_back(transMat1);
@@ -90,13 +92,19 @@ void ExperimentMgr::initializeContextSpecificVars(int threadId, MinVR::WindowRef
 	transMats.push_back(transMat3);
 	transMats.push_back(transMat4);
 	transMats.push_back(transMat5);
+	transMats.push_back(transMat6);
+	transMats.push_back(transMat7);
+	transMats.push_back(transMat8);
 
 	//// get rotation transforms
 	glm::dmat4 rotMat1 = MinVR::ConfigVal("RotMat1", glm::dmat4(0.0), false); 
 	glm::dmat4 rotMat2 = MinVR::ConfigVal("RotMat2", glm::dmat4(0.0), false); 
 	glm::dmat4 rotMat3 = MinVR::ConfigVal("RotMat3", glm::dmat4(0.0), false); 
 	glm::dmat4 rotMat4 = MinVR::ConfigVal("RotMat4", glm::dmat4(0.0), false); 
-	glm::dmat4 rotMat5 = MinVR::ConfigVal("RotMat5", glm::dmat4(0.0), false); 
+	glm::dmat4 rotMat5 = MinVR::ConfigVal("RotMat5", glm::dmat4(0.0), false);
+	glm::dmat4 rotMat6 = MinVR::ConfigVal("RotMat6", glm::dmat4(0.0), false);
+	glm::dmat4 rotMat7 = MinVR::ConfigVal("RotMat7", glm::dmat4(0.0), false);
+	glm::dmat4 rotMat8 = MinVR::ConfigVal("RotMat8", glm::dmat4(0.0), false);
 
 	// put transforms into a vector
 	rotMats.push_back(rotMat1);
@@ -104,13 +112,19 @@ void ExperimentMgr::initializeContextSpecificVars(int threadId, MinVR::WindowRef
 	rotMats.push_back(rotMat3);
 	rotMats.push_back(rotMat4);
 	rotMats.push_back(rotMat5);
+	rotMats.push_back(rotMat6);
+	rotMats.push_back(rotMat7);
+	rotMats.push_back(rotMat8);
 
 	//// get combined transforms
 	glm::dmat4 combinedMat1 = MinVR::ConfigVal("CombinedMat1", glm::dmat4(0.0), false); 
 	glm::dmat4 combinedMat2 = MinVR::ConfigVal("CombinedMat2", glm::dmat4(0.0), false); 
 	glm::dmat4 combinedMat3 = MinVR::ConfigVal("CombinedMat3", glm::dmat4(0.0), false); 
 	glm::dmat4 combinedMat4 = MinVR::ConfigVal("CombinedMat4", glm::dmat4(0.0), false); 
-	glm::dmat4 combinedMat5 = MinVR::ConfigVal("CombinedMat5", glm::dmat4(0.0), false); 
+	glm::dmat4 combinedMat5 = MinVR::ConfigVal("CombinedMat5", glm::dmat4(0.0), false);
+	glm::dmat4 combinedMat6 = MinVR::ConfigVal("CombinedMat6", glm::dmat4(0.0), false); 
+	glm::dmat4 combinedMat7 = MinVR::ConfigVal("CombinedMat7", glm::dmat4(0.0), false); 
+	glm::dmat4 combinedMat8 = MinVR::ConfigVal("CombinedMat8", glm::dmat4(0.0), false); 
 
 	// put transforms into a vector
 	combinedMats.push_back(combinedMat1);
@@ -118,6 +132,9 @@ void ExperimentMgr::initializeContextSpecificVars(int threadId, MinVR::WindowRef
 	combinedMats.push_back(combinedMat3);
 	combinedMats.push_back(combinedMat4);
 	combinedMats.push_back(combinedMat5);
+	combinedMats.push_back(combinedMat6);
+	combinedMats.push_back(combinedMat7);
+	combinedMats.push_back(combinedMat8);
 
  // initialization depends on config file.
 	double d = MinVR::ConfigVal("Test", 0.5, false);
@@ -144,7 +161,7 @@ void ExperimentMgr::advance (bool newOld) {
 		std::cout << "Finished :D" << std::endl;
 		}
 		trialCount += 1;
-		if(trialCount == 5){ //finish a set of trials
+		if(trialCount == numTrials){ //finish a set of trials
 			trialCount = 0;		
 			likertCount += 1;
 			HCIExperiment = 0;
@@ -172,7 +189,7 @@ void ExperimentMgr::advance (bool newOld) {
 		}
 		
 		trialCount += 1;
-		if(trialCount == 5){ //finish a set of trials
+		if(trialCount == numTrials){ //finish a set of trials
 			trialCount = 0;		
 			likertCount += 1;
 			HCIExperiment = 0;
@@ -195,12 +212,13 @@ void ExperimentMgr::advance (bool newOld) {
 	}
 	
 	
+	if(HCIExperiment != 0 && trialCount < numPracticeTrials) {
+		feedback->displayPractice = true;
+	}
+	else {
+		feedback->displayPractice = false;
+	}
 	
-	
-
-
-	
-
 	std::cout << "trial count: " << trialCount << std::endl;
 	std::cout << "trial set: " << trialSet << std::endl;
 	std::cout << "likertCount: " << likertCount << std::endl;

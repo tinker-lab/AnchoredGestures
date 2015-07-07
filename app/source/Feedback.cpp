@@ -6,6 +6,7 @@ Feedback::Feedback(MinVR::AbstractCameraRef camera,CFrameMgrRef cFrameMgr,Textur
 	/*this->registeredTouchData = touchData;*/
 	offAxisCamera = std::dynamic_pointer_cast<MinVR::CameraOffAxis>(camera);
 	displayText = "";
+	displayPractice = false;
 	centOfRot = glm::dvec3(DBL_MAX, 0.0, 0.0); // some crappy initial value
 }
 
@@ -254,6 +255,21 @@ void Feedback::draw(int threadId, MinVR::AbstractCameraRef camera, MinVR::Window
 		glDrawArrays(GL_TRIANGLE_STRIP, 0, numBetweenIndices);
 	
 	} 
+
+	if (displayPractice) {
+		texMan->getTexture(threadId, "practice")->bind(1);
+		shader->setUniform("textureSampler", 1);
+
+		glm::dvec4 quadTranslate(1.5, 0.0, 0.0, 1.0);
+
+		// draw text here, remember to mess with the shader with the alpha value
+		glm::dmat4 quadAtCorner = glm::dmat4(1.0);
+		quadAtCorner[3] = quadTranslate;
+		camera->setObjectToWorldMatrix(quadAtCorner);
+		shader->setUniform("model_mat", offAxisCamera->getLastAppliedModelMatrix());
+		glBindVertexArray(quadMesh->getVAOID());
+		glDrawArrays(GL_TRIANGLE_STRIP, 0, numQuadIndices);
+	}
 
 
 	// draw the touch texture

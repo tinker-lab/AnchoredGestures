@@ -70,7 +70,9 @@ private:
 	std::vector<glm::dmat4> transMats;
 	std::vector<glm::dmat4> rotMats;
 	std::vector<glm::dmat4> combinedMats;
-	int likertCount;	
+	int likertCount;
+	int numTrials;
+	int numPracticeTrials;
 
 	
 };

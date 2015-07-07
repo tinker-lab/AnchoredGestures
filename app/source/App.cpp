@@ -36,6 +36,52 @@ App::~App() {
 	_eventsForText.close();
 }
 
+void App::generateTrials()
+{
+	using namespace MinVR;
+	srand (static_cast <unsigned> (time(0)));
+	std::ofstream trials("TrialGeneration.txt");
+	int numTrials = MinVR::ConfigVal("NumTrials", 8, false);
+	for(int i=0; i < numTrials; i++) {
+		double randVal = -0.25 + (double)rand()/(double)(RAND_MAX/ 0.5);//(-0.25, 0.25); // randomly move within 3 in.
+		glm::dmat4 transform = glm::translate(glm::dmat4(1.0), glm::dvec3(0.0, randVal, 0.0));
+		trials << "TransMat"<<i+1<<" "<<transform<<std::endl;
+	}
+	trials <<std::endl;
+
+	for(int i=0; i < numTrials; i++) {
+		glm::dvec2 circleVec = glm::circularRand(1.0);
+		glm::dvec3 axis = glm::normalize(glm::dvec3(circleVec.x, 0.0, circleVec.y));
+		double angle = -45 + (double)rand()/(double)(RAND_MAX/ 90); // -45 to 45
+		glm::dmat4 transform = glm::rotate(glm::dmat4(1.0), angle, axis);
+		trials<<"# Rotate: "<<axis<< " by "<<angle<<" degrees"<<std::endl;
+		trials << "RotMat"<<i+1<<" "<<transform<<std::endl;
+	}
+	trials <<std::endl;
+
+	for(int i=0; i < numTrials; i++) {
+		glm::dvec3 axis = glm::sphericalRand(1.0);
+		double angle = -45 + (double)rand()/(double)(RAND_MAX/ 90); // -45 to 45
+		glm::dmat4 transform = glm::rotate(glm::dmat4(1.0), angle, axis);
+		int doScale = rand()%2;
+		double scaleVal = 1.0;
+		if (doScale) {
+			scaleVal = 0.5 + (double)rand()/(double)(RAND_MAX); // 0.5 to 1.5
+			transform = glm::scale(transform, glm::dvec3(scaleVal));
+		}
+		double x = -0.25 + (double)rand()/(double)(RAND_MAX/ 0.5);//(-0.25, 0.25);
+		double y = -0.25 + (double)rand()/(double)(RAND_MAX/ 0.5);//(-0.25, 0.25);
+		double z = -0.25 + (double)rand()/(double)(RAND_MAX/ 0.5);//(-0.25, 0.25);
+		glm::dvec3 translation = glm::dvec3(x, y, z); // randomly move within 3 in.
+		transform = glm::translate(transform, translation);
+		trials<<"# Rotate: "<<axis<< " by "<<angle<<" degrees; Scale: "<<scaleVal<<" Translate: "<<translation<<std::endl;
+		trials << "CombinedMat"<<i+1<<" "<<transform<<std::endl;
+	}
+	trials <<std::endl;
+	std::flush(trials);
+	trials.close();
+}
+
 void App::saveEventStream(const std::string &eventStreamFilename)
 {
 	if (_replayingStream) {
@@ -347,6 +393,9 @@ void App::doUserInputAndPreDrawComputation(const std::vector<MinVR::EventRef>& e
 		}
 		else if (events[i]->getName() == "kbd_SPACE_down") {
 			cFrameMgr->setRoomToVirtualSpaceFrame(glm::dmat4(1.0)); 
+		}
+		else if (events[i]->getName() == "kbd_G_down") {
+			generateTrials();
 		}
 		else if (events[i]->getName() == "kbd_S_down" && !_replayingStream) {
 			std::string eventStreamFile = MinVR::ConfigVal("EventStreamFilePrefix", "EventStream", false);

@@ -5,12 +5,15 @@
 #include "MVRCore/AbstractMVRApp.H"
 #include "MVRCore/AbstractCamera.H"
 #include "MVRCore/AbstractWindow.H"
+#include "MVRCore/StringUtils.H"
 #define GLM_SWIZZLE
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_access.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
 #include <glm/gtx/string_cast.hpp>
+#include <glm/gtc/random.hpp>
+#include <glm/gtx/random.hpp>
 #include "MVRCore/Event.H"
 #include <GLFW/glfw3.h>
 #include <vector>
@@ -52,6 +55,7 @@ private:
 	void replayEventStream(ByteStream stream);
 	void saveEventStream(const std::string &eventStreamFilename);
 	void loadEventStream(const std::string &eventStreamFilename);
+	void generateTrials();
 
 	std::shared_ptr<GPUMesh> cubeMesh;
 	std::shared_ptr<GPUMesh> tetraMesh;

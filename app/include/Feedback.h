@@ -34,6 +34,7 @@ public:
 	std::map<int, TouchDataRef> registeredTouchData;
 	glm::dvec3 centOfRot;
 	void initVBOB(int threadId, MinVR::WindowRef window, std::string textureStr, GPUMeshRef &mesh);
+	bool displayPractice;
 	
 
 private:
