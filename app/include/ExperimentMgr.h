@@ -37,7 +37,7 @@ class ExperimentMgr {
 public:
 	ExperimentMgr(CurrentHCIMgrRef currentHCIMgr, CFrameMgrRef cFrameMgr, MinVR::AbstractCameraRef camera, TextureMgrRef texMan, FeedbackRef feedback); //maybe need ampersand
 	virtual ~ExperimentMgr();
-	void advance ();
+	void advance (bool newOld);
 	void initializeContextSpecificVars(int threadId, MinVR::WindowRef window);
 	bool checkFinish();
 	void draw(int threadId, MinVR::AbstractCameraRef camera, MinVR::WindowRef window);
@@ -70,6 +70,8 @@ private:
 	std::vector<glm::dmat4> transMats;
 	std::vector<glm::dmat4> rotMats;
 	std::vector<glm::dmat4> combinedMats;
+	int likertCount;	
+
 	
 };
 

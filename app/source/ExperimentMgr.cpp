@@ -29,7 +29,13 @@ ExperimentMgr::~ExperimentMgr() {
 
 
 void ExperimentMgr::initializeContextSpecificVars(int threadId, MinVR::WindowRef window){
-
+	
+	
+	
+	likertCount = 0;
+	
+	
+	//numberQuestions = MinVR::ConfigVal("NumberQuestions", 1, false); 
 	showCompleteTrial = false;
 	secondTimer = false;
 	inPosition = false;
@@ -41,8 +47,8 @@ void ExperimentMgr::initializeContextSpecificVars(int threadId, MinVR::WindowRef
 	// Experiment Variables //
 	//////////////////////////
 	trialCount = 0; // 0 - 4
-	trialSet = 2; // 1 - 2, for updating HCIExperiment number
-	HCIExperiment = 4; // 0 - 6
+	trialSet = 1; // 1 - 2, for updating HCIExperiment number
+	HCIExperiment = 0; // 0 - 6
 	newAnchored = MinVR::ConfigVal("newAnchored", false, false); 
 	transformIndex = 1; // 1 - 5 but randomized
 
@@ -129,27 +135,77 @@ void ExperimentMgr::initializeContextSpecificVars(int threadId, MinVR::WindowRef
 // update trial number
 // update experiment number
 // point to next matrices we need for experiment
-void ExperimentMgr::advance () {
-	trialCount += 1;
-	if(trialCount == 5){
-		trialCount = 0;
-		trialSet += 1;
-		newAnchored = !newAnchored;
-	}
+void ExperimentMgr::advance (bool newOld) {
 
-	if (trialSet == 3) {
-		trialSet = 1;
-		HCIExperiment++; // might not always want to just increment
-	}
-
-	if (HCIExperiment == 6) {
+	if(newOld){
+		//trialSet = 1;
+	    //likertCount = 0;
+		if (trialSet == 4 ) {
 		std::cout << "Finished :D" << std::endl;
+		}
+		trialCount += 1;
+		if(trialCount == 5){ //finish a set of trials
+			trialCount = 0;		
+			likertCount += 1;
+			HCIExperiment = 0;
+			if((likertCount % 2) == 0){
+				trialSet += 1;
+			}
+			
+		}
+		else if(HCIExperiment == 0){ //in Likertmode
+			trialCount -= 1;
+			if((likertCount % 2) != 0){
+				HCIExperiment = likertCount+ 4 - trialSet ;
+			}
+			else{
+				//insert promp here in future
+				HCIExperiment = trialSet;
+			}
+		}  
 	}
+
+	else{ //oldNew case
+		
+		if (trialSet == 4 ) {
+		std::cout << "Finished :D" << std::endl;
+		}
+		
+		trialCount += 1;
+		if(trialCount == 5){ //finish a set of trials
+			trialCount = 0;		
+			likertCount += 1;
+			HCIExperiment = 0;
+			if((likertCount % 2) == 0){
+				trialSet += 1;
+			}
+			
+		}
+		else if(HCIExperiment == 0){ //in Likertmode
+			trialCount -= 1;
+			if((likertCount % 2) != 0){
+				HCIExperiment =  trialSet ;
+			}
+			else{
+				//insert promp here in future
+				HCIExperiment = likertCount+ 5 -trialSet;
+			}
+		}  
+	
+	}
+	
+	
+	
+	
+
+
+	
 
 	std::cout << "trial count: " << trialCount << std::endl;
 	std::cout << "trial set: " << trialSet << std::endl;
+	std::cout << "likertCount: " << likertCount << std::endl;
 	std::cout << "experiment number: " << HCIExperiment << std::endl;
-	std::cout << "Old or new: " << newAnchored << " hmm" << std::endl;
+
 	
 }
 
@@ -164,12 +220,17 @@ void ExperimentMgr::resetTimer(){
 // since App calls currentHCI->update before this call
 bool ExperimentMgr::checkFinish() {
 
-	
+	//put in for testing
+	return true;
 	
 	glm::dmat4 currHCItransform = cFrameMgr->getVirtualToRoomSpaceFrame();
 
 	if (HCIExperiment == 0) {
-		transform = transMats[trialCount];
+ 
+		LikertHCI* likert = dynamic_cast<LikertHCI*>((currentHCIMgr->currentHCI).get());
+		if (likert->done) {
+			return true;
+		};
 	}
 	else if (HCIExperiment == 1) {
 		transform = transMats[trialCount];

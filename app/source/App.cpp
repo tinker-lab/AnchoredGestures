@@ -384,7 +384,7 @@ void App::doUserInputAndPreDrawComputation(const std::vector<MinVR::EventRef>& e
 		// update experiment number
 		// point to next matrices we need for experiment
 		
-		experimentMgr->advance();
+		experimentMgr->advance(newOld);
 		if (experimentMgr->HCIExperiment == 1) {
 			currentHCIMgr->currentHCI = newYTransHCI;
 		} else if (experimentMgr->HCIExperiment == 2) {
@@ -398,6 +398,17 @@ void App::doUserInputAndPreDrawComputation(const std::vector<MinVR::EventRef>& e
 void App::initializeContextSpecificVars(int threadId,
 		MinVR::WindowRef window) {
 
+
+	
+	
+	////////////////////////////////////////////////////
+	///where we manually swith two overall experiments//
+	////////////////////////////////////////////////////
+	newOld = true;	
+	////////////////////////////////////////////////////
+	///where we manually swith two overall experiments//
+	////////////////////////////////////////////////////
+
 	texMan.reset(new TextureMgr());
 	texMan->loadTexturesFromConfigVal(threadId, "LoadTextures");
 
@@ -408,6 +419,8 @@ void App::initializeContextSpecificVars(int threadId,
 
 	currentHCIMgr.reset(new CurrentHCIMgr());
 	currentHCIMgr->currentHCI.reset(new TestHCI(window->getCamera(0), cFrameMgr, texMan, feedback));//create promptHCI then reset later
+
+	likertHCI.reset(new LikertHCI(window->getCamera(0), cFrameMgr, texMan, feedback));
 	newYTransHCI.reset(new NewYTransExperimentHCI(window->getCamera(0), cFrameMgr, texMan, feedback));
 	newXZRotHCI.reset(new NewXZRotExperimentHCI(window->getCamera(0), cFrameMgr, texMan, feedback));
 	newAnchoredHCI.reset(new NewAnchoredExperimentHCI(window->getCamera(0), cFrameMgr, texMan, feedback));
@@ -415,6 +428,7 @@ void App::initializeContextSpecificVars(int threadId,
 	oldXZRotHCI.reset(new oldXZRotExperimentHCI(window->getCamera(0), cFrameMgr, texMan, feedback));
 	oldAnchoredHCI.reset(new oldAnchoredExperimentHCI(window->getCamera(0), cFrameMgr, texMan, feedback));*/
 
+	likertHCI->initializeContextSpecificVars(threadId, window);
 	newYTransHCI->initializeContextSpecificVars(threadId, window);
 	newXZRotHCI->initializeContextSpecificVars(threadId, window);
 	newAnchoredHCI->initializeContextSpecificVars(threadId, window);

@@ -23,6 +23,8 @@
 #include "AABox.h"
 
 
+typedef std::shared_ptr<class LikertHCI> LikertHCIRef;
+
 class LikertHCI : public AbstractHCI {
 
 public:
@@ -31,6 +33,7 @@ public:
 	void update(const std::vector<MinVR::EventRef> &events);
     void draw(int threadId, MinVR::AbstractCameraRef camera, MinVR::WindowRef window);
 	void initializeContextSpecificVars(int threadId,MinVR::WindowRef window);
+	bool done;
 
 private:
 	void initializeText(int threadId);
@@ -40,7 +43,7 @@ private:
 	std::shared_ptr<MinVR::CameraOffAxis> offAxisCamera;
 	TextureMgrRef texMan;
 	std::shared_ptr<GLSLProgram> _shader;
-
+	int _currentQuestion;
 	std::vector<std::string> _questions;
 	std::vector<std::string> _answers;
 
@@ -50,7 +53,6 @@ private:
 	std::vector<std::vector<glm::dvec2> > _answerSizes;
 	std::vector<AABox> _answerBounds;
 
-	int _currentQuestion;
 
 	double _padding;
 	double _availableWidth;

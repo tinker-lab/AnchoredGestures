@@ -20,6 +20,7 @@
 #include "app/include/TuioHCI.h"
 #include "app/include/TestHCI.h"
 #include "app/include/AbstractHCI.h"
+#include "app/include/LikertHCI.h"
 #include "app/include/TextureMgr.h"
 #include "app/include/TouchData.h"
 #include <glm/gtc/matrix_inverse.hpp>
@@ -61,7 +62,7 @@ private:
 	std::shared_ptr<GLSLProgram> shader;
 	std::shared_ptr<GLSLProgram> bgShader;
 	std::map<int, GLuint> _vboId;
-
+	bool newOld;
 	CurrentHCIMgrRef currentHCIMgr;
 	std::shared_ptr<CFrameMgr> cFrameMgr;
 	TextureMgrRef texMan; 
@@ -69,6 +70,7 @@ private:
 	std::shared_ptr<MinVR::CameraOffAxis> offAxisCamera;
 	FeedbackRef feedback;
 	ExperimentMgrRef experimentMgr;
+	AbstractHCIRef likertHCI;
 	AbstractHCIRef newYTransHCI;
 	AbstractHCIRef newXZRotHCI;
 	AbstractHCIRef newAnchoredHCI;

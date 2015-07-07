@@ -16,7 +16,7 @@
 #include "app/include/TextureMgr.h"
 #include "app/include/TouchData.h"
 #include <glm/gtx/string_cast.hpp>
-#include <boost/algorithm/string/predicate.hpp>"
+#include <boost/algorithm/string/predicate.hpp>
 #include <MVRCore/Time.h>
 #include <iterator>
 #include "app/include/Feedback.h"

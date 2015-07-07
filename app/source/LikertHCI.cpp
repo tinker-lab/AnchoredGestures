@@ -71,6 +71,7 @@ LikertHCI::~LikertHCI()
 
 void LikertHCI::initializeContextSpecificVars(int threadId,MinVR::WindowRef window)
 {
+	done = false;
 	//load in shaders
 	std::map<std::string, std::string> args, dummyArgs;
 	_shader.reset(new GLSLProgram());
@@ -85,6 +86,8 @@ void LikertHCI::initializeContextSpecificVars(int threadId,MinVR::WindowRef wind
 
 void LikertHCI::initializeText(int threadId)
 {
+
+	
 	int fontNormal = FONS_INVALID;
 	struct FONScontext* fs = nullptr;
 
@@ -403,6 +406,7 @@ void LikertHCI::update(const std::vector<MinVR::EventRef> &events)
 					_currentQuestion++;
 					if (_currentQuestion > _questions.size()-1) {
 						_currentQuestion = 0;
+						done = true;
 					}
 					break;
 				}
@@ -412,6 +416,9 @@ void LikertHCI::update(const std::vector<MinVR::EventRef> &events)
 	//std::cout << "LikertHCI" << std::endl;
 	//fclose(stdout);
 }
+
+
+
 
 glm::dvec3 LikertHCI::convertScreenToRoomCoordinates(glm::dvec2 screenCoords) {
 	glm::dvec3 xVec = offAxisCamera->getTopRight() - offAxisCamera->getTopLeft();
