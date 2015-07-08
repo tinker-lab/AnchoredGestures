@@ -46,7 +46,8 @@ LikertHCI::LikertHCI(MinVR::AbstractCameraRef camera, CFrameMgrRef cFrameMgr, Te
 
     showPleaseWait = true;
     //_currentQuestion = 0;
-    _currentQuestion = _questions.size()-1; // start at the last question
+	std::cout<<"HEYYYYYYYYYYYY SET CURRENTQUESTION TO 2"<<std::endl;
+    _currentQuestion = _questions.size(); // start at the last question
 
 
 	int numThreads = 1;
@@ -395,14 +396,19 @@ void LikertHCI::initializeText(int threadId)
 
 void LikertHCI::update(const std::vector<MinVR::EventRef> &events)
 {	
-	std::cout << "Begin likert update" << std::endl;
+	//std::cout << "Begin likert update" << std::endl;
+	std::cout<<"currentQuestions: "<<_currentQuestion<<std::endl;
 
 	for(int i=0; i < events.size(); i++) {
 
         if (events[i]->getName() == "kbd_D_down" && (_currentQuestion > _questions.size() - 1)) {
             _currentQuestion = 0;
+			std::cout<<"currentQuestions: "<<_currentQuestion<<std::endl;
+
             showPleaseWait = false;
             done = true;
+			std::cout<<"done and set current QUESTION TO 2"<<done<<std::endl;
+			break;
         }
 
 		if (boost::algorithm::starts_with(events[i]->getName(), "TUIO_Cursor_down")) {
@@ -467,7 +473,7 @@ void LikertHCI::draw(int threadId, MinVR::AbstractCameraRef camera, MinVR::Windo
         }
     } else { // draw the prompt
 
-        drawText(threadId, true, _currentQuestion, offAxisCam, glm::dvec3(0.0, 0.0, -0.5), normal, right, questionTextHeight);
+       // drawText(threadId, true, _currentQuestion, offAxisCam, glm::dvec3(0.0, 0.0, -0.5), normal, right, questionTextHeight);
 
     }
 

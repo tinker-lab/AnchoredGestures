@@ -447,11 +447,11 @@ void App::doUserInputAndPreDrawComputation(const std::vector<MinVR::EventRef>& e
 	currentHCIMgr->currentHCI->update(events);
 	//local time stamp to check how long user taking
 	MinVR::TimeStamp check = getCurrentTime();
-	std::cout<<"trialtimelimit"<<trailTimeLimit<<std::endl;
-	std::cout<<"trialStart: "<<experimentMgr->trialStart<<std::endl;
-	std::cout<<"check: "<<check<<std::endl;
+	//std::cout<<"trialtimelimit"<<trailTimeLimit<<std::endl;
+	//std::cout<<"trialStart: "<<experimentMgr->trialStart<<std::endl;
+	//std::cout<<"check: "<<check<<std::endl;
 	double currentLengthOfTrial = (getDuration(check, experimentMgr->trialStart)).total_milliseconds();
-	std::cout<<"currentLengthOfTrial: "<<currentLengthOfTrial<<std::endl;
+	//std::cout<<"currentLengthOfTrial: "<<currentLengthOfTrial<<std::endl;
 
 
 	if(experimentMgr->HCIExperiment != 0){
