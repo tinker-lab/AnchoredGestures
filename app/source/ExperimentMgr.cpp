@@ -359,6 +359,12 @@ bool ExperimentMgr::checkFinish() {
 }
 
 
+float ExperimentMgr::getError(float A, float B, float C, float D){
+
+	return (A+B+C+D)/4;
+}
+
+
 void ExperimentMgr::draw(int threadId, MinVR::AbstractCameraRef camera, MinVR::WindowRef window) {
 	// use transforms stored in the std::vector
 	// apply them to whatever objects we're rendering, and draw them.

@@ -44,7 +44,10 @@ LikertHCI::LikertHCI(MinVR::AbstractCameraRef camera, CFrameMgrRef cFrameMgr, Te
 		}
 	}
 
-	_currentQuestion = 0;
+    showPleaseWait = true;
+    //_currentQuestion = 0;
+    _currentQuestion = _questions.size()-1; // start at the last question
+
 
 	int numThreads = 1;
 
@@ -395,6 +398,13 @@ void LikertHCI::update(const std::vector<MinVR::EventRef> &events)
 	std::cout << "Begin likert update" << std::endl;
 
 	for(int i=0; i < events.size(); i++) {
+
+        if (events[i]->getName() == "kbd_D_down" && (_currentQuestion > _questions.size() - 1)) {
+            _currentQuestion = 0;
+            showPleaseWait = false;
+            done = true;
+        }
+
 		if (boost::algorithm::starts_with(events[i]->getName(), "TUIO_Cursor_down")) {
 			glm::dvec3 roomCoord = convertScreenToRoomCoordinates(events[i]->get2DData());
 			//std::cout<< "User Touched at "<<glm::to_string(roomCoord)<<std::endl;
@@ -407,8 +417,9 @@ void LikertHCI::update(const std::vector<MinVR::EventRef> &events)
 
 					_currentQuestion++;
 					if (_currentQuestion > _questions.size()-1) {
-						_currentQuestion = 0;
-						done = true;
+                        //_currentQuestion = 0;
+                        //done = true;
+                        showPleaseWait = true;
 					}
 					break;
 				}
@@ -438,21 +449,29 @@ void LikertHCI::draw(int threadId, MinVR::AbstractCameraRef camera, MinVR::Windo
 	
 	_shader->setUniform("textureSampler",0);
 
-	double questionTextHeight = MinVR::ConfigVal("LikertQuestionHeight", 0.25, false);
-	double answerTextHeight = MinVR::ConfigVal("LikertAnswerHeight", 0.25, false);
+    if (!showPleaseWait) {
+        double questionTextHeight = MinVR::ConfigVal("LikertQuestionHeight", 0.25, false);
+        double answerTextHeight = MinVR::ConfigVal("LikertAnswerHeight", 0.25, false);
 
-	//question on the upper part of the screen
-	glm::dvec3 normal(0.0, 1.0, 0.0);
-	glm::dvec3 right(1.0, 0.0, 0.0);
+        //question on the upper part of the screen
+        glm::dvec3 normal(0.0, 1.0, 0.0);
+        glm::dvec3 right(1.0, 0.0, 0.0);
 
-	drawText(threadId, true, _currentQuestion, offAxisCam, glm::dvec3(0.0, 0.0, -0.5), normal, right, questionTextHeight);
+        drawText(threadId, true, _currentQuestion, offAxisCam, glm::dvec3(0.0, 0.0, -0.5), normal, right, questionTextHeight);
 
-	glm::dvec3 start(offAxisCam->getBottomLeft().x + _padding + _individualSize/2.0, 0.0, 0.5);
-	glm::dvec3 spacing(_individualSize, 0.0, 0.0);
+        glm::dvec3 start(offAxisCam->getBottomLeft().x + _padding + _individualSize/2.0, 0.0, 0.5);
+        glm::dvec3 spacing(_individualSize, 0.0, 0.0);
 
-	for(int i=0; i < _answers.size(); i++) {
-		drawText(threadId, false, i, offAxisCam, start + (double)i * spacing, normal, right, answerTextHeight);
-	}
+        for(int i=0; i < _answers.size(); i++) {
+            drawText(threadId, false, i, offAxisCam, start + (double)i * spacing, normal, right, answerTextHeight);
+        }
+    } else { // draw the prompt
+
+        drawText(threadId, true, _currentQuestion, offAxisCam, glm::dvec3(0.0, 0.0, -0.5), normal, right, questionTextHeight);
+
+    }
+
+
 }
 
 void LikertHCI::drawText(int threadId, bool isQuestion, int indexNum, MinVR::CameraOffAxis* offAxisCamera, glm::dvec3 centerPt, glm::dvec3 normal, glm::dvec3 right, double textHeight)

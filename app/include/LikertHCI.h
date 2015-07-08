@@ -34,6 +34,7 @@ public:
     void draw(int threadId, MinVR::AbstractCameraRef camera, MinVR::WindowRef window);
 	void initializeContextSpecificVars(int threadId,MinVR::WindowRef window);
 	bool done;
+    bool showPleaseWait;
 
 private:
 	void initializeText(int threadId);
