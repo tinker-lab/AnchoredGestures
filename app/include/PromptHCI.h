@@ -1,5 +1,5 @@
-#ifndef LIKERTHCI_H_
-#define LIKERTHCI_H_
+#ifndef PROMPTHCI_H_
+#define PROMPTHCI_H_
 
 #include "GL/glew.h"
 #include <GLFW/glfw3.h>
@@ -23,18 +23,18 @@
 #include "AABox.h"
 
 
-typedef std::shared_ptr<class LikertHCI> LikertHCIRef;
+typedef std::shared_ptr<class PromptHCI> PromptHCIRef;
 
-class LikertHCI : public AbstractHCI {
+class PromptHCI : public AbstractHCI {
 
 public:
-	LikertHCI(MinVR::AbstractCameraRef camera, CFrameMgrRef cFrameMgr, TextureMgrRef textMan, FeedbackRef feedback);
-	virtual ~LikertHCI();
+	PromptHCI(MinVR::AbstractCameraRef camera, CFrameMgrRef cFrameMgr, TextureMgrRef textMan, FeedbackRef feedback);
+	virtual ~PromptHCI();
 	void update(const std::vector<MinVR::EventRef> &events);
     void draw(int threadId, MinVR::AbstractCameraRef camera, MinVR::WindowRef window);
 	void initializeContextSpecificVars(int threadId, MinVR::WindowRef window);
 	bool done;
-
+   
 private:
 	void initializeText(int threadId, MinVR::WindowRef window);
 	void initializeText(int threadId, struct FONScontext* fs, int fontNormal, float border, std::shared_ptr<GLSLProgram> shader, float textSize, const std::vector<std::string> &texts, std::string texKey, std::vector<std::vector<std::shared_ptr<Texture> > > &textures, std::vector<std::vector<glm::dvec2> > &sizes);
@@ -44,22 +44,12 @@ private:
 	std::shared_ptr<MinVR::CameraOffAxis> offAxisCamera;
 	TextureMgrRef texMan;
 	std::shared_ptr<GLSLProgram> _shader;
-	int _currentQuestion;
-	std::vector<std::string> _questions;
-	std::vector<std::string> _answers;
+	int _currentPrompt;
+	std::vector<std::string> _prompts;
 
-	std::vector<std::vector<std::shared_ptr<Texture> > > _questionTextures;
-	std::vector<std::vector<std::shared_ptr<Texture> > > _answerTextures;
-	std::vector<std::vector<glm::dvec2> > _questionSizes;
-	std::vector<std::vector<glm::dvec2> > _answerSizes;
-	std::vector<AABox> _answerBounds;
+	std::vector<std::vector<std::shared_ptr<Texture> > > _promptTextures;
+	std::vector<std::vector<glm::dvec2> > _promptSizes;
 
-
-	double _padding;
-	double _availableWidth;
-	double _individualSize;
-	double _answerTextHeight;
-	std::ofstream _answerRecorder;
 };
 
 #endif
