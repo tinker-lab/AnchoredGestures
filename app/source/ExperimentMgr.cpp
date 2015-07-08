@@ -152,6 +152,9 @@ void ExperimentMgr::initializeContextSpecificVars(int threadId, MinVR::WindowRef
 	std::vector<std::string> strings = MinVR::splitStringIntoArray(MinVR::ConfigVal("TestMulti", "", false));
 }
 
+int ExperimentMgr::getExperimentNumber() {
+	return trialSet;
+}
 
 // each trial is a tetra's orientation specified by a dmat4, in a config file
 // and a restart in time
@@ -257,9 +260,11 @@ void ExperimentMgr::advance (bool newOld) {
 }
 
 
-
-void ExperimentMgr::resetTimer(){
-
+void ExperimentMgr::userGivedUp(){
+	std::cout<<"User just can't just Can't "<<std::endl;
+	currentLengthOfTrial = (getDuration(getCurrentTime(), trialStart)).total_milliseconds();
+	std::cout<<"Trial Time: "<<currentLengthOfTrial<<std::endl;
+	_answerRecorder << currentLengthOfTrial << ", " << -1 << ", " << 1 << std::endl;
 }
 
 
@@ -268,7 +273,7 @@ void ExperimentMgr::resetTimer(){
 bool ExperimentMgr::checkFinish() {
 
 	//Automatically advance to the next trial if they took too long
-	double currentLengthOfTrial = (getDuration(getCurrentTime(), trialStart)).total_milliseconds();
+	currentLengthOfTrial = (getDuration(getCurrentTime(), trialStart)).total_milliseconds();
 	std::cout<<"Trial Time: "<<currentLengthOfTrial<<std::endl;
 	if (HCIExperiment != 0 && currentLengthOfTrial > trialTimeLimit) {
 		_answerRecorder << currentLengthOfTrial << ", " << -1 << ", " << 1 << std::endl;

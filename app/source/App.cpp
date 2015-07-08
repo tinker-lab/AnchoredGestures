@@ -413,6 +413,7 @@ void App::doUserInputAndPreDrawComputation(const std::vector<MinVR::EventRef>& e
 		}
 		else if (events[i]->getName() == "kbd_N_down") {
 		
+			experimentMgr->userGivedUp();
 			experimentMgr->advance(newOld);
 			if (experimentMgr->HCIExperiment == 0) {
 				currentHCIMgr->currentHCI = likertHCI;
@@ -465,6 +466,20 @@ void App::doUserInputAndPreDrawComputation(const std::vector<MinVR::EventRef>& e
 			currentHCIMgr->currentHCI = origAnchoredHCI;
 		}
 
+	}
+
+	// We are only doing 3 experiments, so end when 4
+	if (experimentMgr->getExperimentNumber() == 4) {
+		std::string eventStreamFile = MinVR::ConfigVal("EventStreamFilePrefix", "EventStream", false);
+		boost::posix_time::time_facet* facet = new boost::posix_time::time_facet();
+		facet->format("%Y-%m-%d.%H.%M.%S");
+		std::stringstream stream;
+		stream.imbue(std::locale(stream.getloc(), facet));
+		stream << boost::posix_time::second_clock::local_time();
+		eventStreamFile += "-" + stream.str() + ".bin";
+		saveEventStream(eventStreamFile);
+
+		exit(0);
 	}
 }
 

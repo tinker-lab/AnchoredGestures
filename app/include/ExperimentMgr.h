@@ -41,11 +41,12 @@ public:
 	void initializeContextSpecificVars(int threadId, MinVR::WindowRef window);
 	bool checkFinish();
 	void draw(int threadId, MinVR::AbstractCameraRef camera, MinVR::WindowRef window);
-	void resetTimer();
 	double getError(double A, double B, double C, double D);
 	MinVR::TimeStamp trialStart;
 	MinVR::TimeStamp trialEnd;
 	int HCIExperiment;
+	void userGivedUp();
+	int getExperimentNumber();
 
 private:
 	void initGL();
@@ -77,6 +78,7 @@ private:
 	double Error;
 	std::ofstream _answerRecorder;
 	int trialTimeLimit;
+	double currentLengthOfTrial;
 };
 
 #endif /* EXPERIMENTMGR_H_ */
