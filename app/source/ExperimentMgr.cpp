@@ -19,14 +19,24 @@ ExperimentMgr::ExperimentMgr(CurrentHCIMgrRef currentHCIMgr, CFrameMgrRef mgr, M
 	this->feedback = feedback;
 	offAxisCamera = std::dynamic_pointer_cast<MinVR::CameraOffAxis>(camera);
 	startTime = getCurrentTime();
+	trialTimeLimit = MinVR::ConfigVal("TrialTimeLimit", 50000, false); 
+
+	boost::posix_time::time_facet* facet = new boost::posix_time::time_facet();
+	facet->format("%Y-%m-%d.%H.%M.%S");
+	std::stringstream stream;
+	stream.imbue(std::locale(stream.getloc(), facet));
+	stream << boost::posix_time::second_clock::local_time();
+	std::string eventStreamFile = "Results-" + stream.str() + ".txt";
+	_answerRecorder.open(eventStreamFile);
+	_answerRecorder <<"Time, Error (ft), Failed Trial"<<std::endl;
 }	
 
 ExperimentMgr::~ExperimentMgr() {
-	
+	if (_answerRecorder.is_open()) {
+		std::flush(_answerRecorder);
+		_answerRecorder.close();
+	}
 }
-
-
-
 
 void ExperimentMgr::initializeContextSpecificVars(int threadId, MinVR::WindowRef window){
 
@@ -156,7 +166,7 @@ void ExperimentMgr::initializeContextSpecificVars(int threadId, MinVR::WindowRef
 void ExperimentMgr::advance (bool newOld) {
 
 	if(HCIExperiment != 0){
-		double diff = (getDuration(trialStart, trialEnd)).total_milliseconds();
+		double diff = (getDuration(trialEnd, trialStart)).total_milliseconds();
 		std::cout<<"Total Time In Trial"<<diff<<std::endl;
 		std::cout<< "The start time was: " << trialStart << std::endl;
 		std::cout<< "The end time was  : " << trialEnd << std::endl;
@@ -169,7 +179,11 @@ void ExperimentMgr::advance (bool newOld) {
 		//trialSet = 1;
 	    //likertCount = 0;
 		if (trialSet == 4 ) {
-		std::cout << "Finished :D" << std::endl;
+			std::cout << "Finished :D" << std::endl;
+			if (_answerRecorder.is_open()) {
+				std::flush(_answerRecorder);
+				_answerRecorder.close();
+			}
 		}
 		trialCount += 1;
 		if(trialCount == numTrials){ //finish a set of trials
@@ -196,7 +210,11 @@ void ExperimentMgr::advance (bool newOld) {
 	else{ //oldNew case
 		
 		if (trialSet == 4 ) {
-		std::cout << "Finished :D" << std::endl;
+			std::cout << "Finished :D" << std::endl;
+			if (_answerRecorder.is_open()) {
+				std::flush(_answerRecorder);
+				_answerRecorder.close();
+			}
 		}
 		
 		trialCount += 1;
@@ -249,6 +267,13 @@ void ExperimentMgr::resetTimer(){
 // since App calls currentHCI->update before this call
 bool ExperimentMgr::checkFinish() {
 
+	//Automatically advance to the next trial if they took too long
+	double currentLengthOfTrial = (getDuration(getCurrentTime(), trialStart)).total_milliseconds();
+	std::cout<<"Trial Time: "<<currentLengthOfTrial<<std::endl;
+	if (HCIExperiment != 0 && currentLengthOfTrial > trialTimeLimit) {
+		_answerRecorder << currentLengthOfTrial << ", " << -1 << ", " << 1 << std::endl;
+		return true;
+	}
 
 	glm::dmat4 currHCItransform = cFrameMgr->getVirtualToRoomSpaceFrame();
 
@@ -302,11 +327,14 @@ bool ExperimentMgr::checkFinish() {
 	//std::cout << "Transformable point: " << glm::to_string(transformableTetraPointA) << std::endl;
 	//std::cout << "Distance: " << glm::distance(transformableTetraPointA, staticTetraPointA) << std::endl;
 
-	
-	bool nearA = glm::distance(transformableTetraPointA, staticTetraPointA) < nearEnough;
-	bool nearB = glm::distance(transformableTetraPointB, staticTetraPointB) < nearEnough;
-	bool nearC = glm::distance(transformableTetraPointC, staticTetraPointC) < nearEnough;
-	bool nearD = glm::distance(transformableTetraPointD, staticTetraPointD) < nearEnough;
+	double aDist = glm::distance(transformableTetraPointA, staticTetraPointA);
+	double bDist = glm::distance(transformableTetraPointB, staticTetraPointB);
+	double cDist = glm::distance(transformableTetraPointC, staticTetraPointC);
+	double dDist = glm::distance(transformableTetraPointD, staticTetraPointD);
+	bool nearA = aDist < nearEnough;
+	bool nearB = bDist < nearEnough;
+	bool nearC = cDist < nearEnough;
+	bool nearD = dDist < nearEnough;
 	bool prevInPosition = inPosition;
 
 	if (nearA && nearB && nearC && nearD && HCIExperiment != 0){ //if in the correct posisition
@@ -350,21 +378,20 @@ bool ExperimentMgr::checkFinish() {
 		showCompleteTrial = false;
 		trialEnd = getCurrentTime();
 
+		double diff = (getDuration(trialEnd, trialStart)).total_milliseconds();
+		double error = getError(aDist, bDist, cDist, dDist);
+		_answerRecorder << diff << ", " << error << ", " << 0 << std::endl;
+
 		return true;
 	}
 	
 	return false;
-
-	//MinVR::TimeStamp timeStamp = getCurrentTime();
-	//MinVR::TimeStamp t2 = getCurrentTime();
-	//double diff = (getDuration(timeStamp, t2)).total_milliseconds();
-
 }
 
 
-float ExperimentMgr::getError(float A, float B, float C, float D){
+double ExperimentMgr::getError(double A, double B, double C, double D){
 
-	return (A+B+C+D)/4;
+	return (A+B+C+D)/4.0;
 }
 
 
