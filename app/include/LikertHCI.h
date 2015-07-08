@@ -38,7 +38,8 @@ public:
 
 private:
 	void initializeText(int threadId);
-	void drawText(int threadId, bool isQuestion, int indexNum, MinVR::CameraOffAxis* offAxisCamera, glm::dvec3 centerPt, glm::dvec3 normal, glm::dvec3 right, double textHeight);
+	void initializeText(int threadId, struct FONScontext* fs, int fontNormal, std::shared_ptr<GLSLProgram> shader, float textSize, std::vector<std::string> texts, std::string texKey, std::vector<std::vector<std::shared_ptr<Texture> > > &textures, std::vector<std::vector<glm::dvec2> > sizes);
+	void drawText(int threadId, std::string texKey, std::vector<std::string> texts, std::vector<std::vector<glm::dvec2> > sizes, int indexNum, MinVR::CameraOffAxis* offAxisCamera, glm::dvec3 centerPt, glm::dvec3 normal, glm::dvec3 right, double textHeight);
 	glm::dvec3 convertScreenToRoomCoordinates(glm::dvec2 screenCoords);
 
 	std::shared_ptr<MinVR::CameraOffAxis> offAxisCamera;
@@ -47,11 +48,14 @@ private:
 	int _currentQuestion;
 	std::vector<std::string> _questions;
 	std::vector<std::string> _answers;
+	std::vector<std::string> _prompts;
 
 	std::vector<std::vector<std::shared_ptr<Texture> > > _questionTextures;
 	std::vector<std::vector<std::shared_ptr<Texture> > > _answerTextures;
+	std::vector<std::vector<std::shared_ptr<Texture> > > _promptTextures;
 	std::vector<std::vector<glm::dvec2> > _questionSizes;
 	std::vector<std::vector<glm::dvec2> > _answerSizes;
+	std::vector<std::vector<glm::dvec2> > _promptSizes;
 	std::vector<AABox> _answerBounds;
 
 

@@ -16,6 +16,7 @@ LikertHCI::LikertHCI(MinVR::AbstractCameraRef camera, CFrameMgrRef cFrameMgr, Te
 
 	_questions = MinVR::splitStringIntoArray(MinVR::ConfigVal("LikertQuestions", ""));
 	_answers = MinVR::splitStringIntoArray(MinVR::ConfigVal("LikertAnswers", ""));
+	_prompts.push_back("Please wait for instructions");
 
 	//Make all answers the same number of characters
 	int maxSize = 0;
@@ -56,9 +57,12 @@ LikertHCI::LikertHCI(MinVR::AbstractCameraRef camera, CFrameMgrRef cFrameMgr, Te
 	_questionSizes.resize(numThreads);
 	_answerTextures.resize(numThreads);
 	_answerSizes.resize(numThreads);
+	_promptTextures.resize(numThreads);
+	_promptSizes.resize(numThreads);
 	for(int i=0; i < numThreads; i++) {
 		_questionTextures[i].resize(_questions.size());
 		_answerTextures[i].resize(_answers.size());
+		_promptTextures[i].resize(_prompts.size());
 	}
 
 	boost::posix_time::time_facet* facet = new boost::posix_time::time_facet();
@@ -107,19 +111,6 @@ void LikertHCI::initializeText(int threadId)
 	if (fontNormal == FONS_INVALID) {
 		BOOST_ASSERT_MSG(false, "Could not add font normal.\n");
 	}
-	
-	float sx, sy, lh = 0;
-	float border = 20;
-	unsigned int white = glfonsRGBA(255,255,255,255);
-	unsigned int gray = glfonsRGBA(81, 76, 76, 255);
-
-	fonsClearState(fs);
-	fonsSetSize(fs, 124.0f);
-	fonsSetFont(fs, fontNormal);
-	fonsSetColor(fs, white);
-	fonsSetAlign(fs, FONS_ALIGN_CENTER | FONS_ALIGN_MIDDLE);
-	fonsVertMetrics(fs, NULL, NULL, &lh);
-	sy = lh+(2.0*border);
 
 	glUseProgram(0);
 	glPushAttrib(GL_VIEWPORT_BIT | GL_ENABLE_BIT);
@@ -138,249 +129,16 @@ void LikertHCI::initializeText(int threadId)
 
 	glClearColor(1.0, 1.0, 1.0, 1.0);
 
-	for(int i=0; i < _questions.size(); i++) {
-
-		float width = fonsTextBounds(fs, _questions[i].c_str(), NULL, NULL);
-		sx = width + (2.0f*border);
-
-		std::shared_ptr<Texture> depthTexture = Texture::createEmpty("depthTex", sx, sy, 1, 1, false, GL_TEXTURE_2D, GL_DEPTH_COMPONENT32F);
-		depthTexture->setTexParameteri(GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-		depthTexture->setTexParameteri(GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-		depthTexture->setTexParameteri(GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-		depthTexture->setTexParameteri(GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-		glFramebufferTexture(GL_DRAW_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, depthTexture->getID(), 0);
-
-		_questionTextures[threadId][i] = Texture::createEmpty("colorTex", sx, sy, 1, 4, false, GL_TEXTURE_2D, GL_RGBA8);
-		_questionTextures[threadId][i]->setTexParameteri(GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-		_questionTextures[threadId][i]->setTexParameteri(GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-		_questionTextures[threadId][i]->setTexParameteri(GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-		_questionTextures[threadId][i]->setTexParameteri(GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-		_questionTextures[threadId][i]->setTexParameterf(GL_TEXTURE_MAX_ANISOTROPY_EXT, 16.0);
-		glFramebufferTexture(GL_DRAW_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, _questionTextures[threadId][i]->getID(), 0);
-			
-		GLenum status = glCheckFramebufferStatus(GL_DRAW_FRAMEBUFFER);
-		switch(status) {
-		case GL_FRAMEBUFFER_INCOMPLETE_ATTACHMENT:
-			assert(false);
-			break;
-		case GL_FRAMEBUFFER_INCOMPLETE_MISSING_ATTACHMENT:
-			assert(false);
-			break;
-		case GL_FRAMEBUFFER_INCOMPLETE_DRAW_BUFFER:
-			assert(false);
-			break;
-		case GL_FRAMEBUFFER_INCOMPLETE_READ_BUFFER:
-			assert(false);
-			break;
-		case GL_FRAMEBUFFER_UNSUPPORTED:
-			assert(false);
-			break;
-		case GL_FRAMEBUFFER_INCOMPLETE_MULTISAMPLE:
-			assert(false);
-			break;
-		default:
-			break;
-		}
-		assert(status == GL_FRAMEBUFFER_COMPLETE);
-
-		_questionSizes[threadId].push_back(glm::dvec2(sx, sy));
-
-		glViewport(0,0, sx, sy);
-		glClear(GL_COLOR_BUFFER_BIT);
-
-		shader->setUniform("projection_mat", glm::ortho(0., (double)sx, (double)sy, 0., -1., 1.));
-		shader->setUniform("view_mat", glm::dmat4(1.0));
-		shader->setUniform("model_mat", glm::dmat4(1.0));
-		shader->setUniform("has_lambertian_texture", false);
-
-		glDisable(GL_DEPTH_TEST);
-
-
-		// Draw the darker interior quad so we get a white border around the outside from the clear color
-		float rim = border/4.0f;
-
-		GLfloat vertices[]  = {rim, sy-rim,    sx-rim, sy-rim,  rim, rim,  sx-rim, rim};
-		GLfloat texCoords[] = { 0, 1,   1, 1,  1, 0,  0, 0 };
-		GLfloat colors[]  = { 0.32, 0.3, 0.3, 1.0,   0.32, 0.3, 0.3, 1.0,   0.32, 0.3, 0.3, 1.0,   0.32, 0.3, 0.3, 1.0};
-
-		// create the vao
-		GLuint vaoID = 0;
-		glGenVertexArrays(1, &vaoID);
-		glBindVertexArray(vaoID);
-
-		GLuint quadVBO = 0;
-		glGenBuffers(1, &quadVBO);
-		glBindBuffer(GL_ARRAY_BUFFER, quadVBO);
-		glBufferData(GL_ARRAY_BUFFER, sizeof(vertices)+sizeof(texCoords)+sizeof(colors), 0, GL_STREAM_DRAW);
-		glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(vertices), vertices);                             // copy vertices starting from 0 offest
-		glBufferSubData(GL_ARRAY_BUFFER, sizeof(vertices), sizeof(texCoords), texCoords);                // copy texCoords after vertices
-		glBufferSubData(GL_ARRAY_BUFFER, sizeof(vertices)+sizeof(texCoords), sizeof(colors), colors);  // copy colours after normals
-
-		// set up vertex attributes
-		glEnableVertexAttribArray(0);
-		glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 0, 0);
-		glEnableVertexAttribArray(1);
-		glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 0, (void*)sizeof(vertices));
-		glEnableVertexAttribArray(2);
-		glVertexAttribPointer(2, 4, GL_FLOAT, GL_FALSE, 0, (void*)(sizeof(vertices)+sizeof(texCoords)));
-
-		glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
-
-		glBindVertexArray(0);
-		glDeleteBuffers(1, &quadVBO);
-		glDeleteVertexArrays(1, &vaoID);
-
-		shader->setUniform("has_lambertian_texture", true);
-		glActiveTexture(GL_TEXTURE0);
-		shader->setUniform("lambertian_texture", 0);
-
-		glEnable(GL_BLEND);
-		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-
-		std::string text = boost::replace_all_copy(_questions[i], "_", " ");
-		fonsDrawText(fs, sx/2.0, sy/2.0, text.c_str(), NULL);
-
-		glDisable(GL_BLEND);
-
-		_questionTextures[threadId][i]->generateMipMaps();
-		std::string texKey = "QuestionsText_"+_questions[i];
-		texMan->setTextureEntry(threadId, texKey, _questionTextures[threadId][i]);
-
-		depthTexture.reset();
-	}
-
+	initializeText(threadId, fs, fontNormal, shader, 124.0f, _questions, "QuestionText_", _questionTextures, _questionSizes);
 
 	_padding = 0.25;
 	_availableWidth = glm::length(offAxisCamera->getBottomRight() - offAxisCamera->getBottomLeft()) - (2*_padding);
 	_individualSize = _availableWidth/ (_answers.size());
 
-	glm::dvec3 start(offAxisCamera->getBottomLeft().x + _padding + _individualSize/2.0, 0.0, 0.5);
-	glm::dvec3 spacing(_individualSize, 0.0, 0.0);
-	double answerHeight = MinVR::ConfigVal("LikertAnswerHeight", 0.25, false);
+	initializeText(threadId, fs, fontNormal, shader, 40.0f, _answers, "AnswerText_", _answerTextures, _answerSizes);
 
-	fonsSetSize(fs, 40.0f);
-
-	//Answers
-	for(int i=0; i < _answers.size(); i++) {
-
-		float width = fonsTextBounds(fs, _answers[i].c_str(), NULL, NULL);
-		sx = width + (2.0f*border);
-
-		std::shared_ptr<Texture> depthTexture = Texture::createEmpty("depthTex", sx, sy, 1, 1, false, GL_TEXTURE_2D, GL_DEPTH_COMPONENT32F);
-		depthTexture->setTexParameteri(GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-		depthTexture->setTexParameteri(GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-		depthTexture->setTexParameteri(GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-		depthTexture->setTexParameteri(GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-		glFramebufferTexture(GL_DRAW_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, depthTexture->getID(), 0);
-
-		_answerTextures[threadId][i] = Texture::createEmpty("colorTex", sx, sy, 1, 4, false, GL_TEXTURE_2D, GL_RGBA8);
-		_answerTextures[threadId][i]->setTexParameteri(GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-		_answerTextures[threadId][i]->setTexParameteri(GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-		_answerTextures[threadId][i]->setTexParameteri(GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-		_answerTextures[threadId][i]->setTexParameteri(GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-		_answerTextures[threadId][i]->setTexParameterf(GL_TEXTURE_MAX_ANISOTROPY_EXT, 16.0);
-		glFramebufferTexture(GL_DRAW_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, _answerTextures[threadId][i]->getID(), 0);
-			
-		GLenum status = glCheckFramebufferStatus(GL_DRAW_FRAMEBUFFER);
-		switch(status) {
-		case GL_FRAMEBUFFER_INCOMPLETE_ATTACHMENT:
-			assert(false);
-			break;
-		case GL_FRAMEBUFFER_INCOMPLETE_MISSING_ATTACHMENT:
-			assert(false);
-			break;
-		case GL_FRAMEBUFFER_INCOMPLETE_DRAW_BUFFER:
-			assert(false);
-			break;
-		case GL_FRAMEBUFFER_INCOMPLETE_READ_BUFFER:
-			assert(false);
-			break;
-		case GL_FRAMEBUFFER_UNSUPPORTED:
-			assert(false);
-			break;
-		case GL_FRAMEBUFFER_INCOMPLETE_MULTISAMPLE:
-			assert(false);
-			break;
-		default:
-			break;
-		}
-		assert(status == GL_FRAMEBUFFER_COMPLETE);
-
-		_answerSizes[threadId].push_back(glm::dvec2(sx, sy));
-
-		double halfWidth = answerHeight * sx / sy / 2.0f;
-		double halfHeight = answerHeight / 2.0f;
-		glm::dvec3 centerPt = start+ (double)i*spacing;
-		glm::dvec3 low(-halfWidth, -0.001, -halfHeight);
-		glm::dvec3 high(halfWidth, 0.001, halfHeight);
-		AABox bounds(start + (double)i*spacing + low, start + (double)i*spacing +high);
-		_answerBounds.push_back(bounds);
-
-		glViewport(0,0, sx, sy);
-		glClear(GL_COLOR_BUFFER_BIT);
-
-		shader->setUniform("projection_mat", glm::ortho(0., (double)sx, (double)sy, 0., -1., 1.));
-		shader->setUniform("view_mat", glm::dmat4(1.0));
-		shader->setUniform("model_mat", glm::dmat4(1.0));
-		shader->setUniform("has_lambertian_texture", false);
-
-		glDisable(GL_DEPTH_TEST);
-
-
-		// Draw the darker interior quad so we get a white border around the outside from the clear color
-		float rim = border/4.0f;
-
-		GLfloat vertices[]  = {rim, sy-rim,    sx-rim, sy-rim,  rim, rim,  sx-rim, rim};
-		GLfloat texCoords[] = { 0, 1,   1, 1,  1, 0,  0, 0 };
-		GLfloat colors[]  = { 0.32, 0.3, 0.3, 1.0,   0.32, 0.3, 0.3, 1.0,   0.32, 0.3, 0.3, 1.0,   0.32, 0.3, 0.3, 1.0};
-
-		// create the vao
-		GLuint vaoID = 0;
-		glGenVertexArrays(1, &vaoID);
-		glBindVertexArray(vaoID);
-
-		GLuint quadVBO = 0;
-		glGenBuffers(1, &quadVBO);
-		glBindBuffer(GL_ARRAY_BUFFER, quadVBO);
-		glBufferData(GL_ARRAY_BUFFER, sizeof(vertices)+sizeof(texCoords)+sizeof(colors), 0, GL_STREAM_DRAW);
-		glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(vertices), vertices);                             // copy vertices starting from 0 offest
-		glBufferSubData(GL_ARRAY_BUFFER, sizeof(vertices), sizeof(texCoords), texCoords);                // copy texCoords after vertices
-		glBufferSubData(GL_ARRAY_BUFFER, sizeof(vertices)+sizeof(texCoords), sizeof(colors), colors);  // copy colours after normals
-
-		// set up vertex attributes
-		glEnableVertexAttribArray(0);
-		glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 0, 0);
-		glEnableVertexAttribArray(1);
-		glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 0, (void*)sizeof(vertices));
-		glEnableVertexAttribArray(2);
-		glVertexAttribPointer(2, 4, GL_FLOAT, GL_FALSE, 0, (void*)(sizeof(vertices)+sizeof(texCoords)));
-
-		glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
-
-		glBindVertexArray(0);
-		glDeleteBuffers(1, &quadVBO);
-		glDeleteVertexArrays(1, &vaoID);
-
-		shader->setUniform("has_lambertian_texture", true);
-		glActiveTexture(GL_TEXTURE0);
-		shader->setUniform("lambertian_texture", 0);
-
-		glEnable(GL_BLEND);
-		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-
-		std::string text = boost::replace_all_copy(_answers[i], "_", " ");
-		fonsDrawText(fs, sx/2.0, sy/2.0, text.c_str(), NULL);
-
-		glDisable(GL_BLEND);
-
-		_answerTextures[threadId][i]->generateMipMaps();
-		std::string texKey = "AnswerText_"+_answers[i];
-		texMan->setTextureEntry(threadId, texKey, _answerTextures[threadId][i]);
-
-		depthTexture.reset();
-	}
-
-
+	initializeText(threadId, fs, fontNormal, shader, 124.0f, _prompts, "PromptText_", _promptTextures, _promptSizes);
+	
 	glfonsDelete(fs);
 	glUseProgram(0);
 	glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
@@ -392,6 +150,148 @@ void LikertHCI::initializeText(int threadId)
 	// restore the clear color
 	glm::dvec3 clearColor = MinVR::ConfigVal("ClearColor", glm::dvec3(0.1), false);
 	glClearColor(clearColor.r, clearColor.g, clearColor.b, 1.0f);
+}
+
+void LikertHCI::initializeText(int threadId, FONScontext* fs, int fontNormal, std::shared_ptr<GLSLProgram> shader, float textSize, std::vector<std::string> texts, std::string texKey, std::vector<std::vector<std::shared_ptr<Texture> > > &textures, std::vector<std::vector<glm::dvec2> > sizes)
+{
+
+	float sx, sy, lh = 0;
+	float border = 20;
+	unsigned int white = glfonsRGBA(255,255,255,255);
+	unsigned int gray = glfonsRGBA(81, 76, 76, 255);
+
+	fonsClearState(fs);
+	fonsSetSize(fs, textSize);
+	fonsSetFont(fs, fontNormal);
+	fonsSetColor(fs, white);
+	fonsSetAlign(fs, FONS_ALIGN_CENTER | FONS_ALIGN_MIDDLE);
+	fonsVertMetrics(fs, NULL, NULL, &lh);
+	sy = lh+(2.0*border);
+
+	for(int i=0; i < texts.size(); i++) {
+
+		float width = fonsTextBounds(fs, _questions[i].c_str(), NULL, NULL);
+		sx = width + (2.0f*border);
+
+		std::shared_ptr<Texture> depthTexture = Texture::createEmpty("depthTex", sx, sy, 1, 1, false, GL_TEXTURE_2D, GL_DEPTH_COMPONENT32F);
+		depthTexture->setTexParameteri(GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+		depthTexture->setTexParameteri(GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+		depthTexture->setTexParameteri(GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+		depthTexture->setTexParameteri(GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+		glFramebufferTexture(GL_DRAW_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, depthTexture->getID(), 0);
+
+		textures[threadId][i] = Texture::createEmpty("colorTex", sx, sy, 1, 4, false, GL_TEXTURE_2D, GL_RGBA8);
+		textures[threadId][i]->setTexParameteri(GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+		textures[threadId][i]->setTexParameteri(GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+		textures[threadId][i]->setTexParameteri(GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+		textures[threadId][i]->setTexParameteri(GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+		textures[threadId][i]->setTexParameterf(GL_TEXTURE_MAX_ANISOTROPY_EXT, 16.0);
+		glFramebufferTexture(GL_DRAW_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, textures[threadId][i]->getID(), 0);
+			
+		GLenum status = glCheckFramebufferStatus(GL_DRAW_FRAMEBUFFER);
+		switch(status) {
+		case GL_FRAMEBUFFER_INCOMPLETE_ATTACHMENT:
+			assert(false);
+			break;
+		case GL_FRAMEBUFFER_INCOMPLETE_MISSING_ATTACHMENT:
+			assert(false);
+			break;
+		case GL_FRAMEBUFFER_INCOMPLETE_DRAW_BUFFER:
+			assert(false);
+			break;
+		case GL_FRAMEBUFFER_INCOMPLETE_READ_BUFFER:
+			assert(false);
+			break;
+		case GL_FRAMEBUFFER_UNSUPPORTED:
+			assert(false);
+			break;
+		case GL_FRAMEBUFFER_INCOMPLETE_MULTISAMPLE:
+			assert(false);
+			break;
+		default:
+			break;
+		}
+		assert(status == GL_FRAMEBUFFER_COMPLETE);
+
+		sizes[threadId].push_back(glm::dvec2(sx, sy));
+
+		//Only set the answer bounds if we are rendering the answers
+		if (texts == _answers) {
+			glm::dvec3 start(offAxisCamera->getBottomLeft().x + _padding + _individualSize/2.0, 0.0, 0.5);
+			glm::dvec3 spacing(_individualSize, 0.0, 0.0);
+			double answerHeight = MinVR::ConfigVal("LikertAnswerHeight", 0.25, false);
+			double halfWidth = answerHeight * sx / sy / 2.0f;
+			double halfHeight = answerHeight / 2.0f;
+			glm::dvec3 centerPt = start+ (double)i*spacing;
+			glm::dvec3 low(-halfWidth, -0.001, -halfHeight);
+			glm::dvec3 high(halfWidth, 0.001, halfHeight);
+			AABox bounds(start + (double)i*spacing + low, start + (double)i*spacing +high);
+			_answerBounds.push_back(bounds);
+		}
+
+		glViewport(0,0, sx, sy);
+		glClear(GL_COLOR_BUFFER_BIT);
+
+		shader->setUniform("projection_mat", glm::ortho(0., (double)sx, (double)sy, 0., -1., 1.));
+		shader->setUniform("view_mat", glm::dmat4(1.0));
+		shader->setUniform("model_mat", glm::dmat4(1.0));
+		shader->setUniform("has_lambertian_texture", false);
+
+		glDisable(GL_DEPTH_TEST);
+
+
+		// Draw the darker interior quad so we get a white border around the outside from the clear color
+		float rim = border/4.0f;
+
+		GLfloat vertices[]  = {rim, sy-rim,    sx-rim, sy-rim,  rim, rim,  sx-rim, rim};
+		GLfloat texCoords[] = { 0, 1,   1, 1,  1, 0,  0, 0 };
+		GLfloat colors[]  = { 0.32, 0.3, 0.3, 1.0,   0.32, 0.3, 0.3, 1.0,   0.32, 0.3, 0.3, 1.0,   0.32, 0.3, 0.3, 1.0};
+
+		// create the vao
+		GLuint vaoID = 0;
+		glGenVertexArrays(1, &vaoID);
+		glBindVertexArray(vaoID);
+
+		GLuint quadVBO = 0;
+		glGenBuffers(1, &quadVBO);
+		glBindBuffer(GL_ARRAY_BUFFER, quadVBO);
+		glBufferData(GL_ARRAY_BUFFER, sizeof(vertices)+sizeof(texCoords)+sizeof(colors), 0, GL_STREAM_DRAW);
+		glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(vertices), vertices);                             // copy vertices starting from 0 offest
+		glBufferSubData(GL_ARRAY_BUFFER, sizeof(vertices), sizeof(texCoords), texCoords);                // copy texCoords after vertices
+		glBufferSubData(GL_ARRAY_BUFFER, sizeof(vertices)+sizeof(texCoords), sizeof(colors), colors);  // copy colours after normals
+
+		// set up vertex attributes
+		glEnableVertexAttribArray(0);
+		glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 0, 0);
+		glEnableVertexAttribArray(1);
+		glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 0, (void*)sizeof(vertices));
+		glEnableVertexAttribArray(2);
+		glVertexAttribPointer(2, 4, GL_FLOAT, GL_FALSE, 0, (void*)(sizeof(vertices)+sizeof(texCoords)));
+
+		glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+
+		glBindVertexArray(0);
+		glDeleteBuffers(1, &quadVBO);
+		glDeleteVertexArrays(1, &vaoID);
+
+		shader->setUniform("has_lambertian_texture", true);
+		glActiveTexture(GL_TEXTURE0);
+		shader->setUniform("lambertian_texture", 0);
+
+		glEnable(GL_BLEND);
+		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+		std::string text = boost::replace_all_copy(texts[i], "_", " ");
+		fonsDrawText(fs, sx/2.0, sy/2.0, text.c_str(), NULL);
+
+		glDisable(GL_BLEND);
+
+		textures[threadId][i]->generateMipMaps();
+		std::string textureKey = texKey + texts[i];
+		texMan->setTextureEntry(threadId, textureKey, textures[threadId][i]);
+
+		depthTexture.reset();
+	}
 }
 
 void LikertHCI::update(const std::vector<MinVR::EventRef> &events)
@@ -455,43 +355,33 @@ void LikertHCI::draw(int threadId, MinVR::AbstractCameraRef camera, MinVR::Windo
 	
 	_shader->setUniform("textureSampler",0);
 
+    double questionTextHeight = MinVR::ConfigVal("LikertQuestionHeight", 0.25, false);
+    double answerTextHeight = MinVR::ConfigVal("LikertAnswerHeight", 0.25, false);
+    //question on the upper part of the screen
+    glm::dvec3 normal(0.0, 1.0, 0.0);
+    glm::dvec3 right(1.0, 0.0, 0.0);
+
     if (!showPleaseWait) {
-        double questionTextHeight = MinVR::ConfigVal("LikertQuestionHeight", 0.25, false);
-        double answerTextHeight = MinVR::ConfigVal("LikertAnswerHeight", 0.25, false);
 
-        //question on the upper part of the screen
-        glm::dvec3 normal(0.0, 1.0, 0.0);
-        glm::dvec3 right(1.0, 0.0, 0.0);
-
-        drawText(threadId, true, _currentQuestion, offAxisCam, glm::dvec3(0.0, 0.0, -0.5), normal, right, questionTextHeight);
+        drawText(threadId, "QuestionText_", _questions, _questionSizes, _currentQuestion, offAxisCam, glm::dvec3(0.0, 0.0, -0.5), normal, right, questionTextHeight);
 
         glm::dvec3 start(offAxisCam->getBottomLeft().x + _padding + _individualSize/2.0, 0.0, 0.5);
         glm::dvec3 spacing(_individualSize, 0.0, 0.0);
 
         for(int i=0; i < _answers.size(); i++) {
-            drawText(threadId, false, i, offAxisCam, start + (double)i * spacing, normal, right, answerTextHeight);
+            drawText(threadId, "AnswerText_", _answers, _answerSizes, i, offAxisCam, start + (double)i * spacing, normal, right, answerTextHeight);
         }
     } else { // draw the prompt
-
-       // drawText(threadId, true, _currentQuestion, offAxisCam, glm::dvec3(0.0, 0.0, -0.5), normal, right, questionTextHeight);
-
+        drawText(threadId, "PromptText_", _prompts, _promptSizes, 0, offAxisCam, glm::dvec3(0.0, 0.0, -0.5), normal, right, questionTextHeight);
     }
-
-
 }
 
-void LikertHCI::drawText(int threadId, bool isQuestion, int indexNum, MinVR::CameraOffAxis* offAxisCamera, glm::dvec3 centerPt, glm::dvec3 normal, glm::dvec3 right, double textHeight)
+void LikertHCI::drawText(int threadId, std::string texKey, std::vector<std::string> texts, std::vector<std::vector<glm::dvec2> > sizes, int indexNum, MinVR::CameraOffAxis* offAxisCamera, glm::dvec3 centerPt, glm::dvec3 normal, glm::dvec3 right, double textHeight)
 {
 	glm::dvec3 up = glm::cross(normal, right);		
 
-	glm::dvec2 size;
-	if (isQuestion) {
-		size = _questionSizes[threadId][indexNum];
-	}
-	else {
-		size = _answerSizes[threadId][indexNum];
-	}
-
+	glm::dvec2 size = sizes[threadId][indexNum];
+	
 	double halfWidth = textHeight * size.x / size.y / 2.0f;
 	double halfHeight = textHeight / 2.0f;
 
@@ -526,12 +416,8 @@ void LikertHCI::drawText(int threadId, bool isQuestion, int indexNum, MinVR::Cam
 	glEnable(GL_CULL_FACE);
 	glCullFace(GL_BACK);
 
-	if(isQuestion) {
-		texMan->getTexture(threadId, "QuestionsText_"+_questions[indexNum])->bind(0);
-	}
-	else {
-		texMan->getTexture(threadId, "AnswerText_"+_answers[indexNum])->bind(0);
-	}
+	texMan->getTexture(threadId, texKey+texts[indexNum])->bind(0);
+	
 
 	glBindVertexArray(textVAO->getVAOID()); // Bind our Vertex Array Object  
 	glDrawArrays(GL_TRIANGLE_STRIP, 0, cpuIndexArray.size());
