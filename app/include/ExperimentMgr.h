@@ -74,6 +74,7 @@ private:
 	int likertCount;
 	int numTrials;
 	int numPracticeTrials;
+	double getError;
 	
 };
 
