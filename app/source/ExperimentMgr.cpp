@@ -51,6 +51,7 @@ void ExperimentMgr::initializeContextSpecificVars(int threadId, MinVR::WindowRef
 	numTrials = MinVR::ConfigVal("NumTrials", 5, false);
 	numPracticeTrials = MinVR::ConfigVal("NumPracticeTrials", 3, false);
 
+	/*
 	if(HCIExperiment == 0) {
 		currentHCIMgr->currentHCI.reset(new LikertHCI(window->getCamera(0), cFrameMgr, texMan, feedback));
 	}
@@ -74,7 +75,7 @@ void ExperimentMgr::initializeContextSpecificVars(int threadId, MinVR::WindowRef
 	}
 	
 	currentHCIMgr->currentHCI->initializeContextSpecificVars(threadId, window);
-
+	*/
 
 	// get translation transforms
 	glm::dmat4 transMat1 = MinVR::ConfigVal("TransMat1", glm::dmat4(0.0), false); 
@@ -255,6 +256,7 @@ bool ExperimentMgr::checkFinish() {
  
 		LikertHCI* likert = dynamic_cast<LikertHCI*>((currentHCIMgr->currentHCI).get());
 		if (likert->done) {
+			likert->done = false;
 			trialStart = getCurrentTime();
 			return true;
 		};
@@ -347,6 +349,7 @@ bool ExperimentMgr::checkFinish() {
 		// set to false for next trial
 		showCompleteTrial = false;
 		trialEnd = getCurrentTime();
+
 		return true;
 	}
 	

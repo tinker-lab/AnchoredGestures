@@ -32,14 +32,14 @@ public:
 	virtual ~LikertHCI();
 	void update(const std::vector<MinVR::EventRef> &events);
     void draw(int threadId, MinVR::AbstractCameraRef camera, MinVR::WindowRef window);
-	void initializeContextSpecificVars(int threadId,MinVR::WindowRef window);
+	void initializeContextSpecificVars(int threadId, MinVR::WindowRef window);
 	bool done;
     bool showPleaseWait;
 
 private:
-	void initializeText(int threadId);
-	void initializeText(int threadId, struct FONScontext* fs, int fontNormal, std::shared_ptr<GLSLProgram> shader, float textSize, std::vector<std::string> texts, std::string texKey, std::vector<std::vector<std::shared_ptr<Texture> > > &textures, std::vector<std::vector<glm::dvec2> > sizes);
-	void drawText(int threadId, std::string texKey, std::vector<std::string> texts, std::vector<std::vector<glm::dvec2> > sizes, int indexNum, MinVR::CameraOffAxis* offAxisCamera, glm::dvec3 centerPt, glm::dvec3 normal, glm::dvec3 right, double textHeight);
+	void initializeText(int threadId, MinVR::WindowRef window);
+	void initializeText(int threadId, struct FONScontext* fs, int fontNormal, float border, std::shared_ptr<GLSLProgram> shader, float textSize, const std::vector<std::string> &texts, std::string texKey, std::vector<std::vector<std::shared_ptr<Texture> > > &textures, std::vector<std::vector<glm::dvec2> > &sizes);
+	void drawText(int threadId, std::string texKey, const std::vector<std::string> &texts, const std::vector<std::vector<glm::dvec2> > &sizes, int indexNum, MinVR::CameraOffAxis* offAxisCamera, glm::dvec3 centerPt, glm::dvec3 normal, glm::dvec3 right, double textHeight);
 	glm::dvec3 convertScreenToRoomCoordinates(glm::dvec2 screenCoords);
 
 	std::shared_ptr<MinVR::CameraOffAxis> offAxisCamera;
@@ -62,6 +62,7 @@ private:
 	double _padding;
 	double _availableWidth;
 	double _individualSize;
+	double _answerTextHeight;
 	std::ofstream _answerRecorder;
 };
 

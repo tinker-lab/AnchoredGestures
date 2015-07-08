@@ -260,7 +260,7 @@ void Feedback::draw(int threadId, MinVR::AbstractCameraRef camera, MinVR::Window
 		texMan->getTexture(threadId, "practice")->bind(1);
 		shader->setUniform("textureSampler", 1);
 
-		glm::dvec4 quadTranslate(1.5, 0.0, 0.0, 1.0);
+		glm::dvec4 quadTranslate(2.5, 0.0, 0.0, 1.0);
 
 		// draw text here, remember to mess with the shader with the alpha value
 		glm::dmat4 quadAtCorner = glm::dmat4(1.0);

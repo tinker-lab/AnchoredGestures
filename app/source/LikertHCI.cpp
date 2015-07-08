@@ -46,9 +46,7 @@ LikertHCI::LikertHCI(MinVR::AbstractCameraRef camera, CFrameMgrRef cFrameMgr, Te
 	}
 
     showPleaseWait = true;
-    //_currentQuestion = 0;
-	std::cout<<"HEYYYYYYYYYYYY SET CURRENTQUESTION TO 2"<<std::endl;
-    _currentQuestion = _questions.size(); // start at the last question
+	_currentQuestion = _questions.size(); // start at the last question
 
 
 	int numThreads = 1;
@@ -90,12 +88,12 @@ void LikertHCI::initializeContextSpecificVars(int threadId,MinVR::WindowRef wind
 	_shader->compileShader(MinVR::DataFileUtils::findDataFile("tex.frag").c_str(), GLSLShader::FRAGMENT, args);
 	_shader->link();
 
-	initializeText(threadId);
+	initializeText(threadId, window);
 
 	std::cout << "Likert initialization" << std::endl;
 }
 
-void LikertHCI::initializeText(int threadId)
+void LikertHCI::initializeText(int threadId, MinVR::WindowRef window)
 {
 
 	
@@ -129,15 +127,36 @@ void LikertHCI::initializeText(int threadId)
 
 	glClearColor(1.0, 1.0, 1.0, 1.0);
 
-	initializeText(threadId, fs, fontNormal, shader, 124.0f, _questions, "QuestionText_", _questionTextures, _questionSizes);
+	initializeText(threadId, fs, fontNormal, 20.0f, shader, 124.0f, _questions, "QuestionText_", _questionTextures, _questionSizes);
+
+	initializeText(threadId, fs, fontNormal, 20.0f, shader, 30.0f, _answers, "AnswerText_", _answerTextures, _answerSizes);
+
+	double windowHeight = window->getHeight();
+	double windowWidth = window->getWidth();
+	double texHeight = _answerTextures[0][0]->getHeight(); // all answers are the same dimensions;
+	double texWidth = _answerTextures[0][0]->getWidth();
+	double quadHeightScreen =  texHeight/windowHeight;
+	double quadWidthScreen = texWidth/windowWidth;
+	glm::dvec3 quad = glm::abs(convertScreenToRoomCoordinates(glm::dvec2(quadWidthScreen+0.5, quadHeightScreen+0.5)));
+	_answerTextHeight = quad.z;
 
 	_padding = 0.25;
 	_availableWidth = glm::length(offAxisCamera->getBottomRight() - offAxisCamera->getBottomLeft()) - (2*_padding);
 	_individualSize = _availableWidth/ (_answers.size());
+	glm::dvec3 start(offAxisCamera->getBottomLeft().x + _padding + _individualSize/2.0, 0.0, 0.5);
+	glm::dvec3 spacing(_individualSize, 0.0, 0.0);
+	for(int i=0; i < _answers.size(); i++) {
+		glm::dvec2 size = _answerSizes[threadId][i];
+		double halfWidth = _answerTextHeight * size.x / size.y / 2.0f;
+		double halfHeight = _answerTextHeight / 2.0f;
+		glm::dvec3 centerPt = start+ (double)i*spacing;
+		glm::dvec3 low(-halfWidth, -0.001, -halfHeight);
+		glm::dvec3 high(halfWidth, 0.001, halfHeight);
+		AABox bounds(start + (double)i*spacing + low, start + (double)i*spacing +high);
+		_answerBounds.push_back(bounds);
+	}
 
-	initializeText(threadId, fs, fontNormal, shader, 40.0f, _answers, "AnswerText_", _answerTextures, _answerSizes);
-
-	initializeText(threadId, fs, fontNormal, shader, 124.0f, _prompts, "PromptText_", _promptTextures, _promptSizes);
+	initializeText(threadId, fs, fontNormal, 20.0f, shader, 124.0f, _prompts, "PromptText_", _promptTextures, _promptSizes);
 	
 	glfonsDelete(fs);
 	glUseProgram(0);
@@ -152,11 +171,10 @@ void LikertHCI::initializeText(int threadId)
 	glClearColor(clearColor.r, clearColor.g, clearColor.b, 1.0f);
 }
 
-void LikertHCI::initializeText(int threadId, FONScontext* fs, int fontNormal, std::shared_ptr<GLSLProgram> shader, float textSize, std::vector<std::string> texts, std::string texKey, std::vector<std::vector<std::shared_ptr<Texture> > > &textures, std::vector<std::vector<glm::dvec2> > sizes)
+void LikertHCI::initializeText(int threadId, FONScontext* fs, int fontNormal, float border, std::shared_ptr<GLSLProgram> shader, float textSize, const std::vector<std::string> &texts, std::string texKey, std::vector<std::vector<std::shared_ptr<Texture> > > &textures, std::vector<std::vector<glm::dvec2> > &sizes)
 {
 
 	float sx, sy, lh = 0;
-	float border = 20;
 	unsigned int white = glfonsRGBA(255,255,255,255);
 	unsigned int gray = glfonsRGBA(81, 76, 76, 255);
 
@@ -170,7 +188,7 @@ void LikertHCI::initializeText(int threadId, FONScontext* fs, int fontNormal, st
 
 	for(int i=0; i < texts.size(); i++) {
 
-		float width = fonsTextBounds(fs, _questions[i].c_str(), NULL, NULL);
+		float width = fonsTextBounds(fs, texts[i].c_str(), NULL, NULL);
 		sx = width + (2.0f*border);
 
 		std::shared_ptr<Texture> depthTexture = Texture::createEmpty("depthTex", sx, sy, 1, 1, false, GL_TEXTURE_2D, GL_DEPTH_COMPONENT32F);
@@ -214,20 +232,6 @@ void LikertHCI::initializeText(int threadId, FONScontext* fs, int fontNormal, st
 		assert(status == GL_FRAMEBUFFER_COMPLETE);
 
 		sizes[threadId].push_back(glm::dvec2(sx, sy));
-
-		//Only set the answer bounds if we are rendering the answers
-		if (texts == _answers) {
-			glm::dvec3 start(offAxisCamera->getBottomLeft().x + _padding + _individualSize/2.0, 0.0, 0.5);
-			glm::dvec3 spacing(_individualSize, 0.0, 0.0);
-			double answerHeight = MinVR::ConfigVal("LikertAnswerHeight", 0.25, false);
-			double halfWidth = answerHeight * sx / sy / 2.0f;
-			double halfHeight = answerHeight / 2.0f;
-			glm::dvec3 centerPt = start+ (double)i*spacing;
-			glm::dvec3 low(-halfWidth, -0.001, -halfHeight);
-			glm::dvec3 high(halfWidth, 0.001, halfHeight);
-			AABox bounds(start + (double)i*spacing + low, start + (double)i*spacing +high);
-			_answerBounds.push_back(bounds);
-		}
 
 		glViewport(0,0, sx, sy);
 		glClear(GL_COLOR_BUFFER_BIT);
@@ -303,15 +307,15 @@ void LikertHCI::update(const std::vector<MinVR::EventRef> &events)
 
         if (events[i]->getName() == "kbd_D_down" && (_currentQuestion > _questions.size() - 1)) {
             _currentQuestion = 0;
-			std::cout<<"currentQuestions: "<<_currentQuestion<<std::endl;
+			std::cout<<"Setting currentQuestions: "<<_currentQuestion<<std::endl;
+
+			_answerRecorder << std::endl;
 
             showPleaseWait = false;
             done = true;
-			std::cout<<"done and set current QUESTION TO 2"<<done<<std::endl;
-			break;
+			std::cout<<"done and set current QUESTION"<<done<<std::endl;
         }
-
-		if (boost::algorithm::starts_with(events[i]->getName(), "TUIO_Cursor_down")) {
+		else if (boost::algorithm::starts_with(events[i]->getName(), "TUIO_Cursor_down") && !showPleaseWait) {
 			glm::dvec3 roomCoord = convertScreenToRoomCoordinates(events[i]->get2DData());
 			//std::cout<< "User Touched at "<<glm::to_string(roomCoord)<<std::endl;
 			for(int j=0; j < _answerBounds.size(); j++) {
@@ -320,7 +324,7 @@ void LikertHCI::update(const std::vector<MinVR::EventRef> &events)
 					_answerRecorder << _currentQuestion<<", "<<j<<std::endl; 
 					
 					std::cout<< _answers[j] <<std::endl;
-
+					std::cout<<"Incrementing question"<<std::endl;
 					_currentQuestion++;
 					if (_currentQuestion > _questions.size()-1) {
                         //_currentQuestion = 0;
@@ -356,7 +360,6 @@ void LikertHCI::draw(int threadId, MinVR::AbstractCameraRef camera, MinVR::Windo
 	_shader->setUniform("textureSampler",0);
 
     double questionTextHeight = MinVR::ConfigVal("LikertQuestionHeight", 0.25, false);
-    double answerTextHeight = MinVR::ConfigVal("LikertAnswerHeight", 0.25, false);
     //question on the upper part of the screen
     glm::dvec3 normal(0.0, 1.0, 0.0);
     glm::dvec3 right(1.0, 0.0, 0.0);
@@ -368,15 +371,16 @@ void LikertHCI::draw(int threadId, MinVR::AbstractCameraRef camera, MinVR::Windo
         glm::dvec3 start(offAxisCam->getBottomLeft().x + _padding + _individualSize/2.0, 0.0, 0.5);
         glm::dvec3 spacing(_individualSize, 0.0, 0.0);
 
-        for(int i=0; i < _answers.size(); i++) {
-            drawText(threadId, "AnswerText_", _answers, _answerSizes, i, offAxisCam, start + (double)i * spacing, normal, right, answerTextHeight);
+
+		for(int i=0; i < _answers.size(); i++) {
+            drawText(threadId, "AnswerText_", _answers, _answerSizes, i, offAxisCam, start + (double)i * spacing, normal, right, _answerTextHeight);
         }
     } else { // draw the prompt
         drawText(threadId, "PromptText_", _prompts, _promptSizes, 0, offAxisCam, glm::dvec3(0.0, 0.0, -0.5), normal, right, questionTextHeight);
     }
 }
 
-void LikertHCI::drawText(int threadId, std::string texKey, std::vector<std::string> texts, std::vector<std::vector<glm::dvec2> > sizes, int indexNum, MinVR::CameraOffAxis* offAxisCamera, glm::dvec3 centerPt, glm::dvec3 normal, glm::dvec3 right, double textHeight)
+void LikertHCI::drawText(int threadId, std::string texKey, const std::vector<std::string> &texts, const std::vector<std::vector<glm::dvec2> > &sizes, int indexNum, MinVR::CameraOffAxis* offAxisCamera, glm::dvec3 centerPt, glm::dvec3 normal, glm::dvec3 right, double textHeight)
 {
 	glm::dvec3 up = glm::cross(normal, right);		
 

@@ -527,7 +527,6 @@ void App::initializeContextSpecificVars(int threadId,
 	feedback.reset(new Feedback(window->getCamera(0), cFrameMgr, texMan));
 
 	currentHCIMgr.reset(new CurrentHCIMgr());
-	currentHCIMgr->currentHCI.reset(new TestHCI(window->getCamera(0), cFrameMgr, texMan, feedback));//create promptHCI then reset later
 
 	likertHCI.reset(new LikertHCI(window->getCamera(0), cFrameMgr, texMan, feedback));
 	newYTransHCI.reset(new NewYTransExperimentHCI(window->getCamera(0), cFrameMgr, texMan, feedback));
@@ -544,6 +543,8 @@ void App::initializeContextSpecificVars(int threadId,
 	origYTransHCI->initializeContextSpecificVars(threadId, window);
 	origXZRotHCI->initializeContextSpecificVars(threadId, window);
 	origAnchoredHCI->initializeContextSpecificVars(threadId, window);
+
+	currentHCIMgr->currentHCI = likertHCI;
 
 	axis.reset(new Axis(window->getCamera(0), cFrameMgr, texMan));
 
@@ -885,30 +886,33 @@ void App::drawGraphics(int threadId, MinVR::AbstractCameraRef camera,
 	/////////////////////////////
 	// Draw Axes               // // These use the tex shader, not the phong shaders
 	/////////////////////////////
-	glm::dvec4 cornerTranslate(-1.7, 0.0, 0.95, 1.0); // modify fourth column
-	glm::dmat4 scaleAxisMat = glm::scale(
-			glm::dmat4(1.0),
-			glm::dvec3(0.1)); 
+	if (experimentMgr->HCIExperiment != 0) { 
 
-	//draw x axis
-	glm::dmat4 xAxisAtCorner = cFrameMgr->getVirtualToRoomSpaceFrame() * scaleAxisMat;
-	xAxisAtCorner[3] = cornerTranslate; // modify fourth column
-	camera->setObjectToWorldMatrix(xAxisAtCorner);
-	axis->draw(threadId, camera, window, "red");
+		glm::dvec4 cornerTranslate(-1.7, 0.0, 0.95, 1.0); // modify fourth column
+		glm::dmat4 scaleAxisMat = glm::scale(
+				glm::dmat4(1.0),
+				glm::dvec3(0.1)); 
+
+		//draw x axis
+		glm::dmat4 xAxisAtCorner = cFrameMgr->getVirtualToRoomSpaceFrame() * scaleAxisMat;
+		xAxisAtCorner[3] = cornerTranslate; // modify fourth column
+		camera->setObjectToWorldMatrix(xAxisAtCorner);
+		axis->draw(threadId, camera, window, "red");
 	
-	//draw y axis
-	glm::dmat4 yAxisRotMat = glm::rotate(glm::dmat4(1.0), 90.0, glm::dvec3(0.0, 0.0, 1.0));
-	glm::dmat4 yAxisAtCorner = (cFrameMgr->getVirtualToRoomSpaceFrame()* scaleAxisMat *yAxisRotMat);
-	yAxisAtCorner[3] = cornerTranslate; // modify fourth column
-	camera->setObjectToWorldMatrix(yAxisAtCorner);
-	axis->draw(threadId, camera, window, "green");
+		//draw y axis
+		glm::dmat4 yAxisRotMat = glm::rotate(glm::dmat4(1.0), 90.0, glm::dvec3(0.0, 0.0, 1.0));
+		glm::dmat4 yAxisAtCorner = (cFrameMgr->getVirtualToRoomSpaceFrame()* scaleAxisMat *yAxisRotMat);
+		yAxisAtCorner[3] = cornerTranslate; // modify fourth column
+		camera->setObjectToWorldMatrix(yAxisAtCorner);
+		axis->draw(threadId, camera, window, "green");
 
-	//// z-axis
-	glm::dmat4 zAxisRotMat = glm::rotate(glm::dmat4(1.0), -90.0, glm::dvec3(0.0, 1.0, 0.0));
-	glm::dmat4 zAxisAtCorner = (cFrameMgr->getVirtualToRoomSpaceFrame() * scaleAxisMat * zAxisRotMat);
-	zAxisAtCorner[3] = cornerTranslate; // modify fourth column
-	camera->setObjectToWorldMatrix(zAxisAtCorner);
-	axis->draw(threadId, camera, window, "blue");
+		//// z-axis
+		glm::dmat4 zAxisRotMat = glm::rotate(glm::dmat4(1.0), -90.0, glm::dvec3(0.0, 1.0, 0.0));
+		glm::dmat4 zAxisAtCorner = (cFrameMgr->getVirtualToRoomSpaceFrame() * scaleAxisMat * zAxisRotMat);
+		zAxisAtCorner[3] = cornerTranslate; // modify fourth column
+		camera->setObjectToWorldMatrix(zAxisAtCorner);
+		axis->draw(threadId, camera, window, "blue");
+	}
 
 	// draw text (actually just a texture)
 	//glEnable(GL_BLEND);
