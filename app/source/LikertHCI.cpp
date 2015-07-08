@@ -16,7 +16,6 @@ LikertHCI::LikertHCI(MinVR::AbstractCameraRef camera, CFrameMgrRef cFrameMgr, Te
 
 	_questions = MinVR::splitStringIntoArray(MinVR::ConfigVal("LikertQuestions", ""));
 	_answers = MinVR::splitStringIntoArray(MinVR::ConfigVal("LikertAnswers", ""));
-	_prompts.push_back("Please lift your hands and wait for instructions");
 
 	//Make all answers the same number of characters
 	int maxSize = 0;
@@ -45,9 +44,7 @@ LikertHCI::LikertHCI(MinVR::AbstractCameraRef camera, CFrameMgrRef cFrameMgr, Te
 		}
 	}
 
-    showPleaseWait = true;
-	_currentQuestion = _questions.size(); // start at the last question
-
+	_currentQuestion = 0;
 
 	int numThreads = 1;
 
@@ -55,12 +52,10 @@ LikertHCI::LikertHCI(MinVR::AbstractCameraRef camera, CFrameMgrRef cFrameMgr, Te
 	_questionSizes.resize(numThreads);
 	_answerTextures.resize(numThreads);
 	_answerSizes.resize(numThreads);
-	_promptTextures.resize(numThreads);
-	_promptSizes.resize(numThreads);
+
 	for(int i=0; i < numThreads; i++) {
 		_questionTextures[i].resize(_questions.size());
 		_answerTextures[i].resize(_answers.size());
-		_promptTextures[i].resize(_prompts.size());
 	}
 
 	boost::posix_time::time_facet* facet = new boost::posix_time::time_facet();
@@ -155,8 +150,6 @@ void LikertHCI::initializeText(int threadId, MinVR::WindowRef window)
 		AABox bounds(start + (double)i*spacing + low, start + (double)i*spacing +high);
 		_answerBounds.push_back(bounds);
 	}
-
-	initializeText(threadId, fs, fontNormal, 20.0f, shader, 124.0f, _prompts, "PromptText_", _promptTextures, _promptSizes);
 	
 	glfonsDelete(fs);
 	glUseProgram(0);
@@ -305,17 +298,7 @@ void LikertHCI::update(const std::vector<MinVR::EventRef> &events)
 
 	for(int i=0; i < events.size(); i++) {
 
-        if (events[i]->getName() == "kbd_D_down" && (_currentQuestion > _questions.size() - 1)) {
-            _currentQuestion = 0;
-			std::cout<<"Setting currentQuestions: "<<_currentQuestion<<std::endl;
-
-			_answerRecorder << std::endl;
-
-            showPleaseWait = false;
-            done = true;
-			std::cout<<"done and set current QUESTION"<<done<<std::endl;
-        }
-		else if (boost::algorithm::starts_with(events[i]->getName(), "TUIO_Cursor_down") && !showPleaseWait) {
+        if (boost::algorithm::starts_with(events[i]->getName(), "TUIO_Cursor_down")) {
 			glm::dvec3 roomCoord = convertScreenToRoomCoordinates(events[i]->get2DData());
 			//std::cout<< "User Touched at "<<glm::to_string(roomCoord)<<std::endl;
 			for(int j=0; j < _answerBounds.size(); j++) {
@@ -327,9 +310,8 @@ void LikertHCI::update(const std::vector<MinVR::EventRef> &events)
 					std::cout<<"Incrementing question"<<std::endl;
 					_currentQuestion++;
 					if (_currentQuestion > _questions.size()-1) {
-                        //_currentQuestion = 0;
-                        //done = true;
-                        showPleaseWait = true;
+                        _currentQuestion = 0;
+                        done = true;
 					}
 					break;
 				}
@@ -364,19 +346,15 @@ void LikertHCI::draw(int threadId, MinVR::AbstractCameraRef camera, MinVR::Windo
     glm::dvec3 normal(0.0, 1.0, 0.0);
     glm::dvec3 right(1.0, 0.0, 0.0);
 
-    if (!showPleaseWait) {
 
-        drawText(threadId, "QuestionText_", _questions, _questionSizes, _currentQuestion, offAxisCam, glm::dvec3(0.0, 0.0, -0.5), normal, right, questionTextHeight);
+    drawText(threadId, "QuestionText_", _questions, _questionSizes, _currentQuestion, offAxisCam, glm::dvec3(0.0, 0.0, -0.5), normal, right, questionTextHeight);
 
-        glm::dvec3 start(offAxisCam->getBottomLeft().x + _padding + _individualSize/2.0, 0.0, 0.5);
-        glm::dvec3 spacing(_individualSize, 0.0, 0.0);
+    glm::dvec3 start(offAxisCam->getBottomLeft().x + _padding + _individualSize/2.0, 0.0, 0.5);
+    glm::dvec3 spacing(_individualSize, 0.0, 0.0);
 
 
-		for(int i=0; i < _answers.size(); i++) {
-            drawText(threadId, "AnswerText_", _answers, _answerSizes, i, offAxisCam, start + (double)i * spacing, normal, right, _answerTextHeight);
-        }
-    } else { // draw the prompt
-        drawText(threadId, "PromptText_", _prompts, _promptSizes, 0, offAxisCam, glm::dvec3(0.0, 0.0, -0.5), normal, right, questionTextHeight);
+	for(int i=0; i < _answers.size(); i++) {
+        drawText(threadId, "AnswerText_", _answers, _answerSizes, i, offAxisCam, start + (double)i * spacing, normal, right, _answerTextHeight);
     }
 }
 
