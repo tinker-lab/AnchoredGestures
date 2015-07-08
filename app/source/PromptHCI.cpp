@@ -3,9 +3,9 @@
 //font stash stuff
 #include <stdio.h>
 #include <string.h>
-#define FONTSTASH_IMPLEMENTATION
+//#define FONTSTASH_IMPLEMENTATION
 #include "fontstash.h"
-#define GLFONTSTASH_IMPLEMENTATION
+//#define GLFONTSTASH_IMPLEMENTATION
 #include "glfontstash.h"
 
 PromptHCI::PromptHCI(MinVR::AbstractCameraRef camera, CFrameMgrRef cFrameMgr, TextureMgrRef texMan, FeedbackRef feedback) : AbstractHCI(cFrameMgr, feedback) {
@@ -106,14 +106,28 @@ void PromptHCI::initializeText(int threadId, FONScontext* fs, int fontNormal, fl
 	fonsSetSize(fs, textSize);
 	fonsSetFont(fs, fontNormal);
 	fonsSetColor(fs, white);
-	fonsSetAlign(fs, FONS_ALIGN_CENTER | FONS_ALIGN_MIDDLE);
+	fonsSetAlign(fs, FONS_ALIGN_CENTER | FONS_ALIGN_TOP);
 	fonsVertMetrics(fs, NULL, NULL, &lh);
-	sy = lh+(2.0*border);
 
 	for(int i=0; i < texts.size(); i++) {
 
-		float width = fonsTextBounds(fs, texts[i].c_str(), NULL, NULL);
-		sx = width + (2.0f*border);
+		size_t numLines = std::count(texts[i].begin(), texts[i].end(), '\n');
+		sy = border;
+
+		std::stringstream ss(texts[i]);
+		std::string line;
+		std::vector<std::string> lines;
+
+		float maxWidth = 0;
+		while(std::getline(ss, line, '\n')){
+			float width = fonsTextBounds(fs, line.c_str(), NULL, NULL);
+			if (width > maxWidth) {
+				maxWidth = width;
+			}
+			lines.push_back(line);
+		}
+
+		sx = maxWidth + (2.0f*border);
 
 		std::shared_ptr<Texture> depthTexture = Texture::createEmpty("depthTex", sx, sy, 1, 1, false, GL_TEXTURE_2D, GL_DEPTH_COMPONENT32F);
 		depthTexture->setTexParameteri(GL_TEXTURE_MIN_FILTER, GL_LINEAR);
@@ -155,12 +169,13 @@ void PromptHCI::initializeText(int threadId, FONScontext* fs, int fontNormal, fl
 		}
 		assert(status == GL_FRAMEBUFFER_COMPLETE);
 
-		sizes[threadId].push_back(glm::dvec2(sx, sy));
+		float height = lh*numLines+2.0*border;
+		sizes[threadId].push_back(glm::dvec2(sx, height));
 
-		glViewport(0,0, sx, sy);
+		glViewport(0,0, sx, height);
 		glClear(GL_COLOR_BUFFER_BIT);
 
-		shader->setUniform("projection_mat", glm::ortho(0., (double)sx, (double)sy, 0., -1., 1.));
+		shader->setUniform("projection_mat", glm::ortho(0., (double)sx, (double)height, 0., -1., 1.));
 		shader->setUniform("view_mat", glm::dmat4(1.0));
 		shader->setUniform("model_mat", glm::dmat4(1.0));
 		shader->setUniform("has_lambertian_texture", false);
@@ -171,7 +186,7 @@ void PromptHCI::initializeText(int threadId, FONScontext* fs, int fontNormal, fl
 		// Draw the darker interior quad so we get a white border around the outside from the clear color
 		float rim = border/4.0f;
 
-		GLfloat vertices[]  = {rim, sy-rim,    sx-rim, sy-rim,  rim, rim,  sx-rim, rim};
+		GLfloat vertices[]  = {rim, height-rim,    sx-rim, height-rim,  rim, rim,  sx-rim, rim};
 		GLfloat texCoords[] = { 0, 1,   1, 1,  1, 0,  0, 0 };
 		GLfloat colors[]  = { 0.32, 0.3, 0.3, 1.0,   0.32, 0.3, 0.3, 1.0,   0.32, 0.3, 0.3, 1.0,   0.32, 0.3, 0.3, 1.0};
 
@@ -209,27 +224,12 @@ void PromptHCI::initializeText(int threadId, FONScontext* fs, int fontNormal, fl
 		glEnable(GL_BLEND);
 		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
-		std::string text = boost::replace_all_copy(texts[i], "_", " ");
-		fonsDrawText(fs, sx/2.0, sy/2.0, text.c_str(), NULL);
-		/*
-		const char* start = text.c_str();
-		const char* end = text.c_str();
-		while (*end) {
-			if (*end == '\r' || *end == '\n') {
-				fonsDrawText(fs, sx/2.0, sy/2.0, start, end, NULL);
-				y += lineHeight;
-				end++;
-				// handle cr-lf, and lf-cr too.
-				if (*end == '\r' || *end == '\n')
-					str++;
-				start = end;
-			} else {
-				str++;
-			}
+		for(int j=0; j < lines.size(); j++) { 
+			std::string text = boost::replace_all_copy(lines[j], "_", " ");
+			fonsDrawText(fs, sx/2.0, sy, text.c_str(), NULL);
+			sy += lh;
 		}
-		if (start != end)
-			fonsDrawText(fs, x,y, start, end, NULL);
-			*/
+
 		glDisable(GL_BLEND);
 
 		textures[threadId][i]->generateMipMaps();
