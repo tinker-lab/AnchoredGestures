@@ -109,7 +109,7 @@ bool OrigXZRotExperimentHCI::offerTouchDown(MinVR::EventRef event)
 			else {
 				_centerAxis = _touch1->getCurrRoomPos() + (0.5*(_touch2->getCurrRoomPos()-_touch1->getCurrRoomPos()));
 			}
-			feedback->centOfRot = _centerAxis;
+            //feedback->centOfRot = _centerAxis;
 			//_feedbackWidget->setFingerIndicatorPositions(_touch1.pos, _touch2.pos);
 		}
 		//cout << "Touch1 down"<<endl;
@@ -126,7 +126,7 @@ bool OrigXZRotExperimentHCI::offerTouchDown(MinVR::EventRef event)
 			else {
 				_centerAxis = _touch1->getCurrRoomPos() + (0.5*(_touch2->getCurrRoomPos()-_touch1->getCurrRoomPos()));
 			}
-			feedback->centOfRot = _centerAxis;
+            //feedback->centOfRot = _centerAxis;
 			//_feedbackWidget->setFingerIndicatorPositions(_touch1.pos, _touch2.pos);
 		}
 		//cout << "Touch2 down"<<endl;
@@ -199,7 +199,7 @@ void OrigXZRotExperimentHCI::offerTouchMove(MinVR::EventRef event)
 		else {
 			_centerAxis = _touch1->getCurrRoomPos() + (0.5*(_touch2->getCurrRoomPos()-_touch1->getCurrRoomPos()));
 		}
-		feedback->centOfRot = _centerAxis;
+        //feedback->centOfRot = _centerAxis;
 		//_feedbackWidget->setFingerIndicatorPositions(_touch1.pos, _touch2.pos);
 	}
 

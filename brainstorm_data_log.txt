@@ -37,3 +37,9 @@ As a whole, which set of gesture techniques felt easier?
 As a whole, which set of gesture techniques did you enjoy using the most?
 
 Do you have any final comments or suggestions?
+
+
+----- Misc. -----
+Collect data like error margin. Distance from each corresponding point, divided by 4.
+We can answer questions like, was one group able to perform more accurately than another. 
+translation - rotation graph thing
