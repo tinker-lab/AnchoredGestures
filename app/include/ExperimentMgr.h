@@ -42,7 +42,7 @@ public:
 	bool checkFinish();
 	void draw(int threadId, MinVR::AbstractCameraRef camera, MinVR::WindowRef window);
 	void resetTimer();
-	
+	float getError(float A, float B, float C, float D);
 	MinVR::TimeStamp trialStart;
 	MinVR::TimeStamp trialEnd;
 	int HCIExperiment;
@@ -74,6 +74,7 @@ private:
 	int likertCount;
 	int numTrials;
 	int numPracticeTrials;
+	double Error;
 	
 };
 

@@ -447,37 +447,59 @@ void App::doUserInputAndPreDrawComputation(const std::vector<MinVR::EventRef>& e
 	currentHCIMgr->currentHCI->update(events);
 	//local time stamp to check how long user taking
 	MinVR::TimeStamp check = getCurrentTime();
+	std::cout<<"trialtimelimit"<<trailTimeLimit<<std::endl;
 	std::cout<<"trialStart: "<<experimentMgr->trialStart<<std::endl;
 	std::cout<<"check: "<<check<<std::endl;
 	double currentLengthOfTrial = (getDuration(check, experimentMgr->trialStart)).total_milliseconds();
 	std::cout<<"currentLengthOfTrial: "<<currentLengthOfTrial<<std::endl;
-	if(currentLengthOfTrial == 9.22337*10^15){
-		currentLengthOfTrial = trailTimeLimit - 1;
-		//std::cout<<"guarding"<<std::endl;
-	}
 
 
-	if (experimentMgr->checkFinish() || currentLengthOfTrial > trailTimeLimit) {
-		
-		experimentMgr->advance(newOld);
-		if (experimentMgr->HCIExperiment == 0) {
-			currentHCIMgr->currentHCI = likertHCI;
-		} else if (experimentMgr->HCIExperiment == 1) {
-			currentHCIMgr->currentHCI = newYTransHCI;
-		} else if (experimentMgr->HCIExperiment == 2) {
-			currentHCIMgr->currentHCI = newXZRotHCI;
-		} else if (experimentMgr->HCIExperiment == 3) {
-			currentHCIMgr->currentHCI = newAnchoredHCI;
-		} else if (experimentMgr->HCIExperiment == 4) {
-			currentHCIMgr->currentHCI = origYTransHCI;
-		} else if (experimentMgr->HCIExperiment == 5) {
-			currentHCIMgr->currentHCI = origXZRotHCI;
-		} else if (experimentMgr->HCIExperiment == 6) {
-			currentHCIMgr->currentHCI = origAnchoredHCI;
+	if(experimentMgr->HCIExperiment != 0){
+		if (experimentMgr->checkFinish() || currentLengthOfTrial > trailTimeLimit ) {
+
+			experimentMgr->advance(newOld);
+			if (experimentMgr->HCIExperiment == 0) {
+				currentHCIMgr->currentHCI = likertHCI;
+			} else if (experimentMgr->HCIExperiment == 1) {
+				currentHCIMgr->currentHCI = newYTransHCI;
+			} else if (experimentMgr->HCIExperiment == 2) {
+				currentHCIMgr->currentHCI = newXZRotHCI;
+			} else if (experimentMgr->HCIExperiment == 3) {
+				currentHCIMgr->currentHCI = newAnchoredHCI;
+			} else if (experimentMgr->HCIExperiment == 4) {
+				currentHCIMgr->currentHCI = origYTransHCI;
+			} else if (experimentMgr->HCIExperiment == 5) {
+				currentHCIMgr->currentHCI = origXZRotHCI;
+			} else if (experimentMgr->HCIExperiment == 6) {
+				currentHCIMgr->currentHCI = origAnchoredHCI;
+			}
+
+
 		}
+	}
+	else{
+		if (experimentMgr->checkFinish()) {
+
+			experimentMgr->advance(newOld);
+			if (experimentMgr->HCIExperiment == 0) {
+				currentHCIMgr->currentHCI = likertHCI;
+			} else if (experimentMgr->HCIExperiment == 1) {
+				currentHCIMgr->currentHCI = newYTransHCI;
+			} else if (experimentMgr->HCIExperiment == 2) {
+				currentHCIMgr->currentHCI = newXZRotHCI;
+			} else if (experimentMgr->HCIExperiment == 3) {
+				currentHCIMgr->currentHCI = newAnchoredHCI;
+			} else if (experimentMgr->HCIExperiment == 4) {
+				currentHCIMgr->currentHCI = origYTransHCI;
+			} else if (experimentMgr->HCIExperiment == 5) {
+				currentHCIMgr->currentHCI = origXZRotHCI;
+			} else if (experimentMgr->HCIExperiment == 6) {
+				currentHCIMgr->currentHCI = origAnchoredHCI;
+			}
 
 
-	} 
+		}
+	}
 }
 
 void App::initializeContextSpecificVars(int threadId,
@@ -493,8 +515,8 @@ void App::initializeContextSpecificVars(int threadId,
 	////////////////////////////////////////////////////
 	///where we manually swith two overall experiments//
 	////////////////////////////////////////////////////
-
-	trailTimeLimit = 15000;
+	
+	trailTimeLimit = MinVR::ConfigVal("TrialTimeLimit", 50000, false); 
 
 	texMan.reset(new TextureMgr());
 	texMan->loadTexturesFromConfigVal(threadId, "LoadTextures");

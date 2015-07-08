@@ -315,8 +315,6 @@ void LikertHCI::update(const std::vector<MinVR::EventRef> &events)
 					
 					std::cout<< _answers[j] <<std::endl;
 
-
-
 					_currentQuestion++;
 					if (_currentQuestion > _questions.size()-1) {
                         //_currentQuestion = 0;
