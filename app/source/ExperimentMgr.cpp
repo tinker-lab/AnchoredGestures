@@ -274,8 +274,8 @@ bool ExperimentMgr::checkFinish() {
 
 	//Automatically advance to the next trial if they took too long
 	currentLengthOfTrial = (getDuration(getCurrentTime(), trialStart)).total_milliseconds();
-	std::cout<<"Trial Time: "<<currentLengthOfTrial<<std::endl;
-	if (HCIExperiment != 0 && currentLengthOfTrial > trialTimeLimit) {
+	//std::cout<<"Trial Time: "<<currentLengthOfTrial<<std::endl;
+	if (HCIExperiment != 0 && currentLengthOfTrial > trialTimeLimit && trialCount >= numPracticeTrials) {
 		_answerRecorder << currentLengthOfTrial << ", " << -1 << ", " << 1 << std::endl;
 		return true;
 	}

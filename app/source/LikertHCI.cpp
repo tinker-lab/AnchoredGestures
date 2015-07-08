@@ -16,7 +16,7 @@ LikertHCI::LikertHCI(MinVR::AbstractCameraRef camera, CFrameMgrRef cFrameMgr, Te
 
 	_questions = MinVR::splitStringIntoArray(MinVR::ConfigVal("LikertQuestions", ""));
 	_answers = MinVR::splitStringIntoArray(MinVR::ConfigVal("LikertAnswers", ""));
-	_prompts.push_back("Please wait for instructions");
+	_prompts.push_back("Please lift your hands and wait for instructions");
 
 	//Make all answers the same number of characters
 	int maxSize = 0;

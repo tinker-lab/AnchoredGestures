@@ -28,6 +28,10 @@ TouchData::~TouchData() {
 
 }
 
+std::string TouchData::toString() {
+	return currEvent->toString();
+}
+
 void TouchData::setCurrentEvent(MinVR::EventRef event) {
 	prevEvent = currEvent;
 	currEvent = event;

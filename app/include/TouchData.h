@@ -27,6 +27,7 @@ public:
 	void setBelongTo(int hand);
 	glm::dvec3 roomPositionDifference();
 	int getBelongTo();
+	std::string toString();
 
 	enum Hand{
 		RIGHT_HAND=1,

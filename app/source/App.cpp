@@ -430,6 +430,10 @@ void App::doUserInputAndPreDrawComputation(const std::vector<MinVR::EventRef>& e
 			} else if (experimentMgr->HCIExperiment == 6) {
 				currentHCIMgr->currentHCI = origAnchoredHCI;
 			}
+
+			cFrameMgr->setRoomToVirtualSpaceFrame(glm::dmat4(1.0));
+			feedback->registeredTouchData.clear();
+
 		}
 		//Save to the bytestream
 		if (std::find(_logIgnoreList.begin(), _logIgnoreList.end(), events[i]->getName()) == _logIgnoreList.end()) {
@@ -465,6 +469,9 @@ void App::doUserInputAndPreDrawComputation(const std::vector<MinVR::EventRef>& e
 		} else if (experimentMgr->HCIExperiment == 6) {
 			currentHCIMgr->currentHCI = origAnchoredHCI;
 		}
+
+		cFrameMgr->setRoomToVirtualSpaceFrame(glm::dmat4(1.0));
+		feedback->registeredTouchData.clear();
 
 	}
 

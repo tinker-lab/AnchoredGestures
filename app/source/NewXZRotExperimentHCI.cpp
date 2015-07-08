@@ -73,6 +73,12 @@ void NewXZRotExperimentHCI::update(const std::vector<MinVR::EventRef> &events){
 			if (it != registeredTouchData.end()) { // if id is found
 				registeredTouchData.erase(it);	   //erase value associate with that it
 				//std::cout << "UP" <<std::endl;
+			} else {
+				std::cout<<"ERROR: Received touch up for a cursor not in the registered touch data!"<<std::endl;
+				std::cout << events[p]->toString() << std::endl;
+				for (auto iter = registeredTouchData.begin(); iter != registeredTouchData.end(); iter++) {
+					std::cout << "\t" << iter->second->toString() << std::endl;
+				}
 			}
 
 		} else if (boost::algorithm::starts_with(name, "TUIO_Cursor_down")) {

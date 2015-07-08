@@ -78,6 +78,10 @@ void NewYTransExperimentHCI::update(const std::vector<MinVR::EventRef> &events){
 			}
 			else {
 				std::cout<<"ERROR: Received touch up for a cursor not in the registered touch data!"<<std::endl;
+				std::cout << events[p]->toString() << std::endl;
+				for (auto iter = registeredTouchData.begin(); iter != registeredTouchData.end(); iter++) {
+					std::cout << "\t" << iter->second->toString() << std::endl;
+				}
 			}
 
 		} else if (boost::algorithm::starts_with(name, "TUIO_Cursor_down")) {
