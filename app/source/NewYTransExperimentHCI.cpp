@@ -1,7 +1,8 @@
 #include "app/include/NewYTransExperimentHCI.h"
 
 const double THRESH = 0.00134;
-
+#define FINGER_AXIS_ANGLE_LOW_THRESH 1.04719755
+#define FINGER_AXIS_ANGLE_HIGH_THRESH 2.0943951
 
 NewYTransExperimentHCI::NewYTransExperimentHCI(MinVR::AbstractCameraRef camera, CFrameMgrRef cFrameMgr, TextureMgrRef texMan, FeedbackRef feedback) : AbstractHCI(cFrameMgr, feedback) {
 	offAxisCamera = std::dynamic_pointer_cast<MinVR::CameraOffAxis>(camera);
@@ -243,7 +244,8 @@ void NewYTransExperimentHCI::update(const std::vector<MinVR::EventRef> &events){
 				angle = -angle;
 			}
 			//std::cout<<"angle: "<<angle<<std::endl;
-			if (glm::abs(angle) > (M_PI/720.0)) { 
+			if (glm::abs(angle) < FINGER_AXIS_ANGLE_HIGH_THRESH&&
+				glm::abs(angle) > FINGER_AXIS_ANGLE_LOW_THRESH) { 
 				double scale = 1.0;
 				double transBy = scale * angle / (M_PI/2.0);
 
