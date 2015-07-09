@@ -1,0 +1,10 @@
+What we want to learn from study/ hypothesis.
+
+Hyp:
+
+	Original Anchored is more fluid than New Anchored HCI.
+	New xz-rotation is more precise than orig
+	New Y-trans is more precise
+	
+	New Anchored gestures is less tiring.
+	New Anchored feels more restrictive.
