@@ -19,7 +19,13 @@ ExperimentMgr::ExperimentMgr(CurrentHCIMgrRef currentHCIMgr, CFrameMgrRef mgr, M
 	this->feedback = feedback;
 	offAxisCamera = std::dynamic_pointer_cast<MinVR::CameraOffAxis>(camera);
 	startTime = getCurrentTime();
-	trialTimeLimit = MinVR::ConfigVal("TrialTimeLimit", 50000, false); 
+	trialTimeLimit = MinVR::ConfigVal("TrialTimeLimit", 300000, false); 
+
+	std::vector<std::string> expOrderString = MinVR::splitStringIntoArray(MinVR::ConfigVal("ExperimentOrder", "", false));
+	for (int i = 0; i < expOrderString.size(); i++) {
+		experimentOrder.push_back(MinVR::stringToInt(expOrderString[i]));
+		//std::cout << experimentOrder[i] << std::endl;
+	}
 
 	boost::posix_time::time_facet* facet = new boost::posix_time::time_facet();
 	facet->format("%Y-%m-%d.%H.%M.%S");
@@ -40,7 +46,7 @@ ExperimentMgr::~ExperimentMgr() {
 
 void ExperimentMgr::initializeContextSpecificVars(int threadId, MinVR::WindowRef window){
 
-	likertCount = 0;
+	
 	
 	//numberQuestions = MinVR::ConfigVal("NumberQuestions", 1, false); 
 	showCompleteTrial = false;
@@ -53,13 +59,17 @@ void ExperimentMgr::initializeContextSpecificVars(int threadId, MinVR::WindowRef
 	//////////////////////////
 	// Experiment Variables //
 	//////////////////////////
+	likertCount = 0;
 	trialCount = 0; // 0 - 4
-	trialSet = 1; // 1 - 2, for updating HCIExperiment number
+	trialSet = 1; // 1 - 4, for updating HCIExperiment number
 	HCIExperiment = 0; // 0 - 6
 	newAnchored = MinVR::ConfigVal("newAnchored", false, false); 
 	transformIndex = 1; // 1 - 5 but randomized
 	numTrials = MinVR::ConfigVal("NumTrials", 5, false);
 	numPracticeTrials = MinVR::ConfigVal("NumPracticeTrials", 3, false);
+
+	experimentProgress = 0; // increments upward along the experimentOrder vector
+
 
 	/*
 	if(HCIExperiment == 0) {
@@ -152,8 +162,11 @@ void ExperimentMgr::initializeContextSpecificVars(int threadId, MinVR::WindowRef
 	std::vector<std::string> strings = MinVR::splitStringIntoArray(MinVR::ConfigVal("TestMulti", "", false));
 }
 
-int ExperimentMgr::getExperimentNumber() {
-	return trialSet;
+bool ExperimentMgr::finishedEverything() {
+	if (experimentProgress == experimentOrder.size()) {
+		return true;
+	}
+	return false;
 }
 
 // each trial is a tetra's orientation specified by a dmat4, in a config file
@@ -162,32 +175,55 @@ int ExperimentMgr::getExperimentNumber() {
 
 
 // Does the following:
-// switch HCI
+// switch HCI !!! App actually changes the HCI
 // update trial number
 // update experiment number
 // point to next matrices we need for experiment
-void ExperimentMgr::advance (bool newOld) {
+void ExperimentMgr::advance() {
 
-	if(HCIExperiment != 0){
-		double diff = (getDuration(trialEnd, trialStart)).total_milliseconds();
-		std::cout<<"Total Time In Trial"<<diff<<std::endl;
-		std::cout<< "The start time was: " << trialStart << std::endl;
-		std::cout<< "The end time was  : " << trialEnd << std::endl;
-		trialStart = getCurrentTime();
+	// Do not record time when: Likert, Prompt, or practice trials are active
+	// record time for everything else
+	if(HCIExperiment != HCI::LIKERT && HCIExperiment != HCI::PROMPT){
+		trialCount++;
+		bool doingRealTrial = trialCount > numPracticeTrials;
+		if (doingRealTrial) {
+			double diff = (getDuration(trialEnd, trialStart)).total_milliseconds();
+			std::cout<<"Total Time In Trial"<<diff<<std::endl;
+			std::cout<< "The start time was: " << trialStart << std::endl;
+			std::cout<< "The end time was  : " << trialEnd << std::endl;
+			trialStart = getCurrentTime();
+		}
 	}
 
+	// finished a technique
+	if (trialCount == 9) {
+		experimentProgress++;
+		HCIExperiment = experimentOrder[experimentProgress]; // new HCI should be loaded by App
+		trialCount == 1;
+	}
+
+	// finished the study
+	if (experimentProgress == experimentOrder.size()) {
+		std::cout << "Finished :D" << std::endl;
+		if (_answerRecorder.is_open()) {
+			std::flush(_answerRecorder);
+			_answerRecorder.close();
+		}
+	}
+
+	//
 
 
 	if(newOld){
 		//trialSet = 1;
 	    //likertCount = 0;
-		if (trialSet == 4 ) {
-			std::cout << "Finished :D" << std::endl;
-			if (_answerRecorder.is_open()) {
-				std::flush(_answerRecorder);
-				_answerRecorder.close();
-			}
-		}
+		//if (trialSet == 4 ) {
+		//	//std::cout << "Finished :D" << std::endl;
+		//	/*if (_answerRecorder.is_open()) {
+		//		std::flush(_answerRecorder);
+		//		_answerRecorder.close();
+		//	}*/
+		//}
 		trialCount += 1;
 		if(trialCount == numTrials){ //finish a set of trials
 			trialCount = 0;		
@@ -244,7 +280,7 @@ void ExperimentMgr::advance (bool newOld) {
 	}
 	
 	
-	if(HCIExperiment != 0 && trialCount < numPracticeTrials) {
+	if(HCIExperiment != HCI::LIKERT && trialCount < numPracticeTrials) {
 		feedback->displayPractice = true;
 	}
 	else {

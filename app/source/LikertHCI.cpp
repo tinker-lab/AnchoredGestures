@@ -301,7 +301,7 @@ void LikertHCI::initializeText(int threadId, FONScontext* fs, int fontNormal, fl
 void LikertHCI::update(const std::vector<MinVR::EventRef> &events)
 {	
 	//std::cout << "Begin likert update" << std::endl;
-	std::cout<<"currentQuestions: "<<_currentQuestion<<std::endl;
+	//std::cout<<"currentQuestions: "<<_currentQuestion<<std::endl;
 
 	for(int i=0; i < events.size(); i++) {
 

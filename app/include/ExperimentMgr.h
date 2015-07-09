@@ -31,22 +31,23 @@
 #include "OrigYTransExperimentHCI.h"
 
 typedef std::shared_ptr<class ExperimentMgr> ExperimentMgrRef;
-static const double nearEnough = 0.03;
+static const double nearEnough = 0.07;
 
 class ExperimentMgr {
 public:
 	ExperimentMgr(CurrentHCIMgrRef currentHCIMgr, CFrameMgrRef cFrameMgr, MinVR::AbstractCameraRef camera, TextureMgrRef texMan, FeedbackRef feedback); //maybe need ampersand
 	virtual ~ExperimentMgr();
-	void advance (bool newOld);
+	void advance (); // change function signature and call
 	void initializeContextSpecificVars(int threadId, MinVR::WindowRef window);
 	bool checkFinish();
 	void draw(int threadId, MinVR::AbstractCameraRef camera, MinVR::WindowRef window);
 	double getError(double A, double B, double C, double D);
 	MinVR::TimeStamp trialStart;
 	MinVR::TimeStamp trialEnd;
-	int HCIExperiment;
+	int HCIExperiment; // for old advance()
 	void userGivedUp();
-	int getExperimentNumber();
+	//int getExperimentNumber();
+	bool finishedEverything();
 
 private:
 	void initGL();
@@ -56,12 +57,22 @@ private:
 	std::vector<glm::dmat4> transforms;
 	TextureMgrRef texMan;
 	FeedbackRef feedback;
-	int trialCount; // 0 to 4
-	bool newAnchored;
-	bool inPosition;
-	bool secondTimer;
-	bool showCompleteTrial;
+
+	int trialCount; // 1 to 8 // NEED THIS
+	bool inPosition; // for checkFinish()
+	bool secondTimer; // for checkFinish()
+	bool showCompleteTrial;  // for checkFinish()
+	
+	// for advance()
 	int trialSet;
+	int likertCount;
+	int numTrials;
+	int numPracticeTrials;
+
+	// for advance()'s revisions
+	std::vector<int> experimentOrder;
+	int experimentProgress;
+
 	MinVR::TimeStamp startInZone;
 	double totalTimeInZone;
 	MinVR::TimeStamp startTime;
@@ -72,13 +83,24 @@ private:
 	std::vector<glm::dmat4> transMats;
 	std::vector<glm::dmat4> rotMats;
 	std::vector<glm::dmat4> combinedMats;
-	int likertCount;
-	int numTrials;
-	int numPracticeTrials;
+	
 	double Error;
 	std::ofstream _answerRecorder;
 	int trialTimeLimit;
 	double currentLengthOfTrial;
+
+	
+
+	enum HCI {
+		PROMPT			=-1,
+		LIKERT			= 0,
+		NEWYTRANS		= 1,
+		NEWXZTRANS		= 2,
+		NEWANCHORED		= 3,
+		ORIGYTRANS		= 4,
+		ORIGXZROT		= 5,
+		ORIGANCHORED	= 6
+	};
 };
 
 #endif /* EXPERIMENTMGR_H_ */

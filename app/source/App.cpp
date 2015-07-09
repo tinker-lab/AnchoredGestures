@@ -414,7 +414,7 @@ void App::doUserInputAndPreDrawComputation(const std::vector<MinVR::EventRef>& e
 		else if (events[i]->getName() == "kbd_N_down") {
 		
 			experimentMgr->userGivedUp();
-			experimentMgr->advance(newOld);
+			experimentMgr->advance();
 			if (experimentMgr->HCIExperiment == 0) {
 				currentHCIMgr->currentHCI = likertHCI;
 			} else if (experimentMgr->HCIExperiment == 1) {
@@ -453,7 +453,8 @@ void App::doUserInputAndPreDrawComputation(const std::vector<MinVR::EventRef>& e
 	
 	if (experimentMgr->checkFinish()) {
 
-		experimentMgr->advance(newOld);
+		experimentMgr->advance();
+		// App needs to look at the correct place in experiment Manager's vector
 		if (experimentMgr->HCIExperiment == 0) {
 			currentHCIMgr->currentHCI = likertHCI;
 		} else if (experimentMgr->HCIExperiment == 1) {
@@ -476,7 +477,7 @@ void App::doUserInputAndPreDrawComputation(const std::vector<MinVR::EventRef>& e
 	}
 
 	// We are only doing 3 experiments, so end when 4
-	if (experimentMgr->getExperimentNumber() == 4) {
+	if (experimentMgr->finishedEverything()) {
 		std::string eventStreamFile = MinVR::ConfigVal("EventStreamFilePrefix", "EventStream", false);
 		boost::posix_time::time_facet* facet = new boost::posix_time::time_facet();
 		facet->format("%Y-%m-%d.%H.%M.%S");
