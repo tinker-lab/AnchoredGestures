@@ -12,6 +12,7 @@
 #include <glm/gtc/matrix_access.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
+#include <glm/gtc/epsilon.hpp>
 #include <MVRCore/DataFileUtils.H>
 #include "app/include/TextureMgr.h"
 #include "app/include/TouchData.h"
@@ -28,6 +29,8 @@ public:
 	void update(const std::vector<MinVR::EventRef> &events);
     void draw(int threadId, MinVR::AbstractCameraRef camera, MinVR::WindowRef window);
 	virtual void initializeContextSpecificVars(int threadId,MinVR::WindowRef window);
+
+	void reset();
 
 private:
 

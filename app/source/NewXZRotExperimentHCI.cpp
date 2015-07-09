@@ -34,7 +34,16 @@ void NewXZRotExperimentHCI::initializeContextSpecificVars(int threadId,MinVR::Wi
 }
 
 
-
+void NewXZRotExperimentHCI::reset() {
+	prevHandPos1 = glm::dvec3(DBL_MAX, -1.0, DBL_MAX);
+	prevHandPos2 = glm::dvec3(DBL_MAX, -1.0, DBL_MAX);
+	currHandPos1 = glm::dvec3(DBL_MAX, -1.0, DBL_MAX);
+	currHandPos2 = glm::dvec3(DBL_MAX, -1.0, DBL_MAX);
+	xzRotFlag = false;
+	centerRotMode = false;
+	liftedFingers = true;
+	registeredTouchData.clear();
+}
 
 
 

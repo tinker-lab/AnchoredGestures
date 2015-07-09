@@ -30,6 +30,8 @@ public:
     void draw(int threadId, MinVR::AbstractCameraRef camera, MinVR::WindowRef window);
 	virtual void initializeContextSpecificVars(int threadId,MinVR::WindowRef window);
 
+	void reset();
+
 private:
 
 	struct movement{

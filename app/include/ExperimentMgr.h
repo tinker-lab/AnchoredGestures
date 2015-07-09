@@ -32,10 +32,11 @@
 #include "app/include/PromptHCI.h"
 
 typedef std::shared_ptr<class ExperimentMgr> ExperimentMgrRef;
-static const double nearEnough = 0.07;
 
 class ExperimentMgr {
 public:
+
+	static const double NEARENOUGH;
 	ExperimentMgr(CurrentHCIMgrRef currentHCIMgr, CFrameMgrRef cFrameMgr, MinVR::AbstractCameraRef camera, TextureMgrRef texMan, FeedbackRef feedback); //maybe need ampersand
 	virtual ~ExperimentMgr();
 	void advance (); // change function signature and call

@@ -15,7 +15,6 @@ NewAnchoredExperimentHCI::~NewAnchoredExperimentHCI(){
 }
 
 void NewAnchoredExperimentHCI::initializeContextSpecificVars(int threadId,MinVR::WindowRef window) {
-
 	
 	std::cout<<"TuioHCIinit is been called"<<std::endl;
 	prevHandPos1 = glm::dvec3(DBL_MAX, -1.0, DBL_MAX);
@@ -34,7 +33,17 @@ void NewAnchoredExperimentHCI::initializeContextSpecificVars(int threadId,MinVR:
 }
 
 
-
+void NewAnchoredExperimentHCI::reset()
+{
+	registeredTouchData.clear();
+	prevHandPos1 = glm::dvec3(DBL_MAX, -1.0, DBL_MAX);
+	prevHandPos2 = glm::dvec3(DBL_MAX, -1.0, DBL_MAX);
+	currHandPos1 = glm::dvec3(DBL_MAX, -1.0, DBL_MAX);
+	currHandPos2 = glm::dvec3(DBL_MAX, -1.0, DBL_MAX);
+	xzRotFlag = false;
+	centerRotMode = false;
+	liftedFingers = true;
+}
 
 
 //void NewAnchoredExperimentHCI::testForCrazyInput

@@ -7,7 +7,7 @@ NewYTransExperimentHCI::NewYTransExperimentHCI(MinVR::AbstractCameraRef camera, 
 	offAxisCamera = std::dynamic_pointer_cast<MinVR::CameraOffAxis>(camera);
 	this->texMan = texMan;
 	startTime = getCurrentTime();
-	std::cout<<"NewYTansExperimentHCI has been created"<<std::endl;
+	//std::cout<<"NewYTansExperimentHCI has been created"<<std::endl;
 	
 }
 
@@ -18,7 +18,7 @@ NewYTransExperimentHCI::~NewYTransExperimentHCI(){
 void NewYTransExperimentHCI::initializeContextSpecificVars(int threadId,MinVR::WindowRef window) {
 
 	initVBO(threadId);
-	std::cout<<"NewYTansExperimentHCI  is been called"<<std::endl;
+	//std::cout<<"NewYTansExperimentHCI  is been called"<<std::endl;
 	prevHandPos1 = glm::dvec3(DBL_MAX, -1.0, DBL_MAX);
 	prevHandPos2 = glm::dvec3(DBL_MAX, -1.0, DBL_MAX);
 	currHandPos1 = glm::dvec3(DBL_MAX, -1.0, DBL_MAX);
@@ -34,7 +34,17 @@ void NewYTransExperimentHCI::initializeContextSpecificVars(int threadId,MinVR::W
 	}
 }
 
-
+void NewYTransExperimentHCI::reset() 
+{
+	prevHandPos1 = glm::dvec3(DBL_MAX, -1.0, DBL_MAX);
+	prevHandPos2 = glm::dvec3(DBL_MAX, -1.0, DBL_MAX);
+	currHandPos1 = glm::dvec3(DBL_MAX, -1.0, DBL_MAX);
+	currHandPos2 = glm::dvec3(DBL_MAX, -1.0, DBL_MAX);
+	xzRotFlag = false;
+	centerRotMode = false;
+	liftedFingers = true;
+	registeredTouchData.clear();
+}
 
 
 
@@ -243,14 +253,14 @@ void NewYTransExperimentHCI::update(const std::vector<MinVR::EventRef> &events){
 
 				cFrameMgr->setRoomToVirtualSpaceFrame(cFrameMgr->getRoomToVirtualSpaceFrame() * yTransMat);
 
-				std::cout<<"Translating by: "<<transBy<<std::endl;
+				//std::cout<<"Translating by: "<<transBy<<std::endl;
 			}
 			else {
-				std::cout<<"Not translating because angle is too little"<<std::endl;
+				//std::cout<<"Not translating because angle is too little"<<std::endl;
 			}
 		}
 		else {
-			std::cout<<"Not translating because there are more than 4 touches, but not 2 per hand. Left: "<<numTouchForHand1<<" Right: "<<numTouchForHand2<<std::endl;
+			//std::cout<<"Not translating because there are more than 4 touches, but not 2 per hand. Left: "<<numTouchForHand1<<" Right: "<<numTouchForHand2<<std::endl;
 		}
 	}
 

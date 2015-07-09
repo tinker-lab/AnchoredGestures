@@ -27,3 +27,7 @@ int AbstractHCI::getNumberTouches(){
 
 	return 0;
 }
+
+void AbstractHCI::reset()
+{
+}

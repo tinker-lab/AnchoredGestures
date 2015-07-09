@@ -40,6 +40,8 @@ public:
 	// matrix transforms
 	void translate(glm::dmat4 transMat);
 	void yRotationAndScale(TouchDataRef centOfRotData, TouchDataRef otherTouchData);
+
+	void reset();
 	
 
 private:

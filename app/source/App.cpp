@@ -43,25 +43,34 @@ void App::generateTrials()
 	std::ofstream trials("TrialGeneration.txt");
 	int numTrials = MinVR::ConfigVal("NumTrials", 8, false);
 	for(int i=0; i < numTrials; i++) {
-		double randVal = -0.25 + (double)rand()/(double)(RAND_MAX/ 0.5);//(-0.25, 0.25); // randomly move within 3 in.
+		double randVal = 0;
+		while (glm::abs(randVal) < ExperimentMgr::NEARENOUGH) {
+			randVal = -0.25 + (double)rand()/(double)(RAND_MAX/ 0.5);//(-0.25, 0.25); // randomly move within 3 in.
+		}
 		glm::dmat4 transform = glm::translate(glm::dmat4(1.0), glm::dvec3(0.0, randVal, 0.0));
-		trials << "TransMat"<<i+1<<" "<<transform<<std::endl;
+		trials << "TransMat"<<i<<" "<<transform<<std::endl;
 	}
 	trials <<std::endl;
 
 	for(int i=0; i < numTrials; i++) {
 		glm::dvec2 circleVec = glm::circularRand(1.0);
 		glm::dvec3 axis = glm::normalize(glm::dvec3(circleVec.x, 0.0, circleVec.y));
-		double angle = -45 + (double)rand()/(double)(RAND_MAX/ 90); // -45 to 45
+		double angle = 0; 
+		while (glm::abs(angle) < 10) {
+			angle = -45 + (double)rand()/(double)(RAND_MAX/ 90); // -45 to 45
+		}
 		glm::dmat4 transform = glm::rotate(glm::dmat4(1.0), angle, axis);
 		trials<<"# Rotate: "<<axis<< " by "<<angle<<" degrees"<<std::endl;
-		trials << "RotMat"<<i+1<<" "<<transform<<std::endl;
+		trials << "RotMat"<<i<<" "<<transform<<std::endl;
 	}
 	trials <<std::endl;
 
 	for(int i=0; i < numTrials; i++) {
 		glm::dvec3 axis = glm::sphericalRand(1.0);
-		double angle = -45 + (double)rand()/(double)(RAND_MAX/ 90); // -45 to 45
+		double angle = 0; 
+		while (glm::abs(angle) < 10) {
+			angle = -45 + (double)rand()/(double)(RAND_MAX/ 90); // -45 to 45
+		}
 		glm::dmat4 transform = glm::rotate(glm::dmat4(1.0), angle, axis);
 		int doScale = rand()%2;
 		double scaleVal = 1.0;
@@ -75,7 +84,7 @@ void App::generateTrials()
 		glm::dvec3 translation = glm::dvec3(x, y, z); // randomly move within 3 in.
 		transform = glm::translate(transform, translation);
 		trials<<"# Rotate: "<<axis<< " by "<<angle<<" degrees; Scale: "<<scaleVal<<" Translate: "<<translation<<std::endl;
-		trials << "CombinedMat"<<i+1<<" "<<transform<<std::endl;
+		trials << "CombinedMat"<<i<<" "<<transform<<std::endl;
 	}
 	trials <<std::endl;
 	std::flush(trials);
@@ -99,15 +108,16 @@ void App::saveEventStream(const std::string &eventStreamFilename)
 	stream.writeInt(numEvents);
 
 	for(int i=0; i < _eventsToSave.size(); i++){
-		//if (i > _eventsToSave.size() - 100) {
-		//	std::cout<< byteDataToEvent(_eventsToSave[i])->toString()<<std::endl;
-		//}
+		if (i % 10000 == 0) {
+			std::cout<<"\t"<< ((double)i)/numEvents * 100 << "% done"<<std::endl;
+		}
 		stream.writeByteData(_eventsToSave[i]);
 	}
-
+	std::cout<<"\t"<< "100% done"<<std::endl;
 	FILE * pFile;
 	unsigned char* buffer = stream.getByteArray();
 	pFile = fopen (eventStreamFilename.c_str(), "wb");
+	std::cout<<"Opened file for writing"<<std::endl;
 	fwrite (buffer , sizeof(unsigned char), stream.getSize(), pFile);
 	fclose (pFile);
 }
@@ -461,15 +471,15 @@ void App::changeHCI(){
 		currentHCIMgr->currentHCI = likertHCI;
 	} else if (experimentMgr->HCIExperiment == ExperimentMgr::NEWYTRANS) {
 		currentHCIMgr->currentHCI = newYTransHCI;
-	} else if (experimentMgr->HCIExperiment == 2) {
+	} else if (experimentMgr->HCIExperiment == ExperimentMgr::NEWXZROT) {
 		currentHCIMgr->currentHCI = newXZRotHCI;
-	} else if (experimentMgr->HCIExperiment == 3) {
+	} else if (experimentMgr->HCIExperiment == ExperimentMgr::NEWANCHORED) {
 		currentHCIMgr->currentHCI = newAnchoredHCI;
-	} else if (experimentMgr->HCIExperiment == 4) {
+	} else if (experimentMgr->HCIExperiment == ExperimentMgr::ORIGYTRANS) {
 		currentHCIMgr->currentHCI = origYTransHCI;
-	} else if (experimentMgr->HCIExperiment == 5) {
+	} else if (experimentMgr->HCIExperiment == ExperimentMgr::ORIGXZROT) {
 		currentHCIMgr->currentHCI = origXZRotHCI;
-	} else if (experimentMgr->HCIExperiment == 6) {
+	} else if (experimentMgr->HCIExperiment == ExperimentMgr::ORIGANCHORED) {
 		currentHCIMgr->currentHCI = origAnchoredHCI;
 	}
 

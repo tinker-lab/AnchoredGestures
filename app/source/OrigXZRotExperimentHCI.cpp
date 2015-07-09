@@ -24,12 +24,23 @@ OrigXZRotExperimentHCI::OrigXZRotExperimentHCI(MinVR::AbstractCameraRef camera, 
 	_touch2IsValid = false;
 	_rotating = false;
 	_lastRotationAxis = glm::dvec3(1,0,0);
+	_lastRightAxis = glm::dvec3(1.0, 0, 0);
 	_centerAxis = glm::dvec3(0.0);
 		
 }
 
 OrigXZRotExperimentHCI::~OrigXZRotExperimentHCI()
 {
+}
+
+void OrigXZRotExperimentHCI::reset()
+{
+	_touch1IsValid = false;
+	_touch2IsValid = false;
+	_rotating = false;
+	_lastRotationAxis = glm::dvec3(1,0,0);
+	_lastRightAxis = glm::dvec3(1.0, 0, 0);
+	_centerAxis = glm::dvec3(0.0);
 }
 
 void OrigXZRotExperimentHCI::initializeContextSpecificVars(int threadId,MinVR::WindowRef window)
@@ -146,7 +157,6 @@ bool OrigXZRotExperimentHCI::offerTouchUp(int id)
 		_leftAxisHistory.clear();
 		_rightAxisHistory.clear();
 		//cout << "Touch1 up"<<endl;
-		return true;
 	}
 	else if (_touch2IsValid && _touch2->getCurrentEvent()->getId() == id) {
 		_touch2IsValid = false;
@@ -156,7 +166,6 @@ bool OrigXZRotExperimentHCI::offerTouchUp(int id)
 		_leftAxisHistory.clear();
 		_rightAxisHistory.clear();
 		//cout << "Touch2 up"<<endl;
-		return true;
 	}
 
 	std::map<int, TouchDataRef>::iterator it = registeredTouchData.find(id); 
@@ -164,6 +173,7 @@ bool OrigXZRotExperimentHCI::offerTouchUp(int id)
 	if (it != registeredTouchData.end()) { // if id is found
 		registeredTouchData.erase(it);	   //erase value associate with that it
 		//std::cout << "UP" <<std::endl;
+		return true;
 	}
 
 	return false;	
@@ -392,6 +402,12 @@ void OrigXZRotExperimentHCI::updateTrackers(const glm::dmat4 &rightTrackerFrame,
 			double leftAngle = glm::acos(glm::clamp(glm::dot(curLeftVec, oldLeftVec), -1.0, 1.0));
 			double rotationAngle = (rightAngle + leftAngle)/2.0;
 		
+			//TEST to get rid of a normalize zero vector
+			if (glm::epsilonEqual(rightAngle, 0.0, 0.00001) || glm::epsilonEqual(leftAngle, 0.0, 0.000001)) {
+				return;
+			}
+
+
 			glm::dvec3 rightAxisOnTable;
 			glm::dvec3 leftAxisOnTable;
 			

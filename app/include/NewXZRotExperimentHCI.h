@@ -34,7 +34,7 @@ public:
 	void closestTouchPair(std::map<int, TouchDataRef> thisRegisteredTouchData, glm::dvec3 &pos1, glm::dvec3 &pos2, double &minDistance);
 	void updateHandPos(const std::vector<MinVR::EventRef>& events);
 	
-	// matrix transforms
+	void reset();
 	
 	
 	

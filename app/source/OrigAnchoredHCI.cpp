@@ -24,6 +24,7 @@ OrigAnchoredHCI::OrigAnchoredHCI(MinVR::AbstractCameraRef camera, CFrameMgrRef c
 	_touch2IsValid = false;
 	_rotating = false;
 	_lastRotationAxis = glm::dvec3(1,0,0);
+	_lastRightAxis = glm::dvec3(1.0, 0, 0);
 	_centerAxis = glm::dvec3(0.0);
 		
 }
@@ -35,6 +36,15 @@ OrigAnchoredHCI::~OrigAnchoredHCI()
 
 void OrigAnchoredHCI::initializeContextSpecificVars(int threadId,MinVR::WindowRef window)
 {
+}
+
+void OrigAnchoredHCI::reset() {
+	_touch1IsValid = false;
+	_touch2IsValid = false;
+	_rotating = false;
+	_lastRotationAxis = glm::dvec3(1,0,0);
+	_lastRightAxis = glm::dvec3(1.0, 0, 0);
+	_centerAxis = glm::dvec3(0.0);
 }
 
 void OrigAnchoredHCI::update(const std::vector<MinVR::EventRef> &events)
@@ -146,8 +156,7 @@ bool OrigAnchoredHCI::offerTouchUp(int id)
 		//_touch1Moves.clear();
 		_leftAxisHistory.clear();
 		_rightAxisHistory.clear();
-		cout << "Touch1 up"<<endl;
-		return true;
+		//cout << "Touch1 up"<<endl;
 	}
 	else if (_touch2IsValid && _touch2->getCurrentEvent()->getId() == id) {
 		_touch2IsValid = false;
@@ -156,8 +165,7 @@ bool OrigAnchoredHCI::offerTouchUp(int id)
 		//_touch2Moves.clear();
 		_leftAxisHistory.clear();
 		_rightAxisHistory.clear();
-		cout << "Touch2 up"<<endl;
-		return true;
+		//cout << "Touch2 up"<<endl;
 	}
 
 	std::map<int, TouchDataRef>::iterator it = registeredTouchData.find(id); 
@@ -165,6 +173,7 @@ bool OrigAnchoredHCI::offerTouchUp(int id)
 	if (it != registeredTouchData.end()) { // if id is found
 		registeredTouchData.erase(it);	   //erase value associate with that it
 		//std::cout << "UP" <<std::endl;
+		return true;
 	}
 	else {
 		std::cout<<"Could not find id="<<id<<" in registeredTouchData"<<std::endl;
@@ -250,7 +259,7 @@ void OrigAnchoredHCI::offerTouchMove(MinVR::EventRef event)
 
 void OrigAnchoredHCI::alignXform(glm::dvec3 src1, glm::dvec3 src2, glm::dvec3 dst1)
 {
-	double scale = glm::length(src2 - dst1) / glm::length(src2 - src1);
+	double scale = glm::length(src2 - src1) / glm::length(src2 - dst1);
 	
 	glm::dmat4 scalemat(scale);
 	scalemat[3][3] = 1.0;
@@ -357,9 +366,12 @@ void OrigAnchoredHCI::updateTrackers(const glm::dmat4 &rightTrackerFrame, const 
 		// If the two touch points are on the same hand we just assume that it is rotating if the fingers are still
 		// Use the distances between touch points and the tracker to identify which hand they belong to.
 		if(_touch1->getBelongTo() == TouchData::LEFT_HAND && _touch2->getBelongTo() == TouchData::LEFT_HAND) {
+
+			
 			// both point are on the left hand
 			cout << " === both points on LEFT hand"<<endl;
-			glm::dvec3 oldVec = glm::normalize(glm::dvec3(glm::column(_previousLeftTrackerFrame, 3)) - _touch1->getCurrRoomPos());
+			
+			/*glm::dvec3 oldVec = glm::normalize(glm::dvec3(glm::column(_previousLeftTrackerFrame, 3)) - _touch1->getCurrRoomPos());
 			glm::dvec3 curVec = glm::normalize(glm::dvec3(glm::column(_currentLeftTrackerFrame, 3)) - _touch1->getCurrRoomPos());
 			glm::dvec3 axis = glm::normalize(glm::cross(curVec, oldVec));
 			double angle = glm::acos(glm::clamp(glm::dot(curVec, oldVec), -1.0, 1.0));
@@ -391,11 +403,14 @@ void OrigAnchoredHCI::updateTrackers(const glm::dmat4 &rightTrackerFrame, const 
 				//_totalRotationAngle+=abs(angle);
 			}
 			_rotating = true;
+			*/
 		}
 		else if(_touch1->getBelongTo() == TouchData::RIGHT_HAND && _touch2->getBelongTo() == TouchData::RIGHT_HAND) {
+			
 			// both points are on right hand
 			cout << "+++ both points on RIGHT hand"<<endl;
-			glm::dvec3 oldVec = glm::normalize(glm::dvec3(glm::column(_previousRightTrackerFrame, 3)) - _touch1->getCurrRoomPos());
+			
+			/*glm::dvec3 oldVec = glm::normalize(glm::dvec3(glm::column(_previousRightTrackerFrame, 3)) - _touch1->getCurrRoomPos());
 			glm::dvec3 curVec = glm::normalize(glm::dvec3(glm::column(_currentRightTrackerFrame, 3)) - _touch1->getCurrRoomPos());
 			glm::dvec3 axis = glm::normalize(glm::cross(curVec, oldVec));
 			double angle = glm::acos(glm::clamp(glm::dot(curVec, oldVec), -1.0, 1.0));
@@ -430,6 +445,7 @@ void OrigAnchoredHCI::updateTrackers(const glm::dmat4 &rightTrackerFrame, const 
 				//_totalRotationAngle+=abs(angle);
 			}
 			_rotating = true;
+			*/
 		}
 		else {
 			glm::dvec3 oldLeftVec, oldRightVec;
@@ -453,6 +469,12 @@ void OrigAnchoredHCI::updateTrackers(const glm::dmat4 &rightTrackerFrame, const 
 			double leftAngle = glm::acos(glm::clamp(glm::dot(curLeftVec, oldLeftVec), -1.0, 1.0));
 			double rotationAngle = (rightAngle + leftAngle)/2.0;
 		
+			//TEST to get rid of a normalize zero vector
+			if (glm::epsilonEqual(rightAngle, 0.0, 0.00001) || glm::epsilonEqual(leftAngle, 0.0, 0.000001)) {
+				return;
+			}
+
+
 			glm::dvec3 rightAxisOnTable;
 			glm::dvec3 leftAxisOnTable;
 			

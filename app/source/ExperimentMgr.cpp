@@ -10,6 +10,7 @@ Need to know how to switch the currentHCI with another HCI
 
 #include "app/include/ExperimentMgr.h"
 
+const double ExperimentMgr::NEARENOUGH = 0.0656168;
 
 ExperimentMgr::ExperimentMgr(CurrentHCIMgrRef currentHCIMgr, CFrameMgrRef mgr, MinVR::AbstractCameraRef camera, TextureMgrRef texMan, FeedbackRef feedback) { //might need ampersand
 	
@@ -57,7 +58,7 @@ void ExperimentMgr::initializeContextSpecificVars(int threadId, MinVR::WindowRef
 	secondTimer = false;
 	inPosition = false;
 	// ExperimentMgr doesn't need texture manager, but tetrahedron does.
-	tetra.reset(new Tetrahedron(window->getCamera(0), cFrameMgr, texMan, nearEnough));
+	tetra.reset(new Tetrahedron(window->getCamera(0), cFrameMgr, texMan, NEARENOUGH));
 	tetra->initializeContextSpecificVars(threadId);
 
 	//////////////////////////
@@ -70,65 +71,26 @@ void ExperimentMgr::initializeContextSpecificVars(int threadId, MinVR::WindowRef
 
 
 	// get translation transforms
-	glm::dmat4 transMat1 = MinVR::ConfigVal("TransMat1", glm::dmat4(0.0), false); 
-	glm::dmat4 transMat2 = MinVR::ConfigVal("TransMat2", glm::dmat4(0.0), false); 
-	glm::dmat4 transMat3 = MinVR::ConfigVal("TransMat3", glm::dmat4(0.0), false); 
-	glm::dmat4 transMat4 = MinVR::ConfigVal("TransMat4", glm::dmat4(0.0), false); 
-	glm::dmat4 transMat5 = MinVR::ConfigVal("TransMat5", glm::dmat4(0.0), false);
-	glm::dmat4 transMat6 = MinVR::ConfigVal("TransMat6", glm::dmat4(0.0), false); 
-	glm::dmat4 transMat7 = MinVR::ConfigVal("TransMat7", glm::dmat4(0.0), false);
-	glm::dmat4 transMat8 = MinVR::ConfigVal("TransMat8", glm::dmat4(0.0), false);
-
-	// put transforms into a vector
-	transMats.push_back(transMat1);
-	transMats.push_back(transMat2);
-	transMats.push_back(transMat3);
-	transMats.push_back(transMat4);
-	transMats.push_back(transMat5);
-	transMats.push_back(transMat6);
-	transMats.push_back(transMat7);
-	transMats.push_back(transMat8);
+	for(int i=0; i < numTrials; i++) {
+		std::string key = "TransMat"+MinVR::intToString(i);
+		glm::dmat4 transMat = MinVR::ConfigVal(key, glm::dmat4(0.0), false);
+		transMats.push_back(transMat);
+	}
 
 	//// get rotation transforms
-	glm::dmat4 rotMat1 = MinVR::ConfigVal("RotMat1", glm::dmat4(0.0), false); 
-	glm::dmat4 rotMat2 = MinVR::ConfigVal("RotMat2", glm::dmat4(0.0), false); 
-	glm::dmat4 rotMat3 = MinVR::ConfigVal("RotMat3", glm::dmat4(0.0), false); 
-	glm::dmat4 rotMat4 = MinVR::ConfigVal("RotMat4", glm::dmat4(0.0), false); 
-	glm::dmat4 rotMat5 = MinVR::ConfigVal("RotMat5", glm::dmat4(0.0), false);
-	glm::dmat4 rotMat6 = MinVR::ConfigVal("RotMat6", glm::dmat4(0.0), false);
-	glm::dmat4 rotMat7 = MinVR::ConfigVal("RotMat7", glm::dmat4(0.0), false);
-	glm::dmat4 rotMat8 = MinVR::ConfigVal("RotMat8", glm::dmat4(0.0), false);
-
-	// put transforms into a vector
-	rotMats.push_back(rotMat1);
-	rotMats.push_back(rotMat2);
-	rotMats.push_back(rotMat3);
-	rotMats.push_back(rotMat4);
-	rotMats.push_back(rotMat5);
-	rotMats.push_back(rotMat6);
-	rotMats.push_back(rotMat7);
-	rotMats.push_back(rotMat8);
-
+	for(int i=0; i < numTrials; i++) {
+		std::string key = "RotMat"+MinVR::intToString(i);
+		glm::dmat4 rotMat = MinVR::ConfigVal(key, glm::dmat4(0.0), false);
+		rotMats.push_back(rotMat);
+	}
+	
 	//// get combined transforms
-	glm::dmat4 combinedMat1 = MinVR::ConfigVal("CombinedMat1", glm::dmat4(0.0), false); 
-	glm::dmat4 combinedMat2 = MinVR::ConfigVal("CombinedMat2", glm::dmat4(0.0), false); 
-	glm::dmat4 combinedMat3 = MinVR::ConfigVal("CombinedMat3", glm::dmat4(0.0), false); 
-	glm::dmat4 combinedMat4 = MinVR::ConfigVal("CombinedMat4", glm::dmat4(0.0), false); 
-	glm::dmat4 combinedMat5 = MinVR::ConfigVal("CombinedMat5", glm::dmat4(0.0), false);
-	glm::dmat4 combinedMat6 = MinVR::ConfigVal("CombinedMat6", glm::dmat4(0.0), false); 
-	glm::dmat4 combinedMat7 = MinVR::ConfigVal("CombinedMat7", glm::dmat4(0.0), false); 
-	glm::dmat4 combinedMat8 = MinVR::ConfigVal("CombinedMat8", glm::dmat4(0.0), false); 
-
-	// put transforms into a vector
-	combinedMats.push_back(combinedMat1);
-	combinedMats.push_back(combinedMat2);
-	combinedMats.push_back(combinedMat3);
-	combinedMats.push_back(combinedMat4);
-	combinedMats.push_back(combinedMat5);
-	combinedMats.push_back(combinedMat6);
-	combinedMats.push_back(combinedMat7);
-	combinedMats.push_back(combinedMat8);
-
+	for(int i=0; i < numTrials; i++) {
+		std::string key = "CombinedMat"+MinVR::intToString(i);
+		glm::dmat4 combinedMat = MinVR::ConfigVal(key, glm::dmat4(0.0), false); 
+		combinedMats.push_back(combinedMat);
+	}
+	
  // initialization depends on config file.
 	double d = MinVR::ConfigVal("Test", 0.5, false);
 	std::vector<std::string> strings = MinVR::splitStringIntoArray(MinVR::ConfigVal("TestMulti", "", false));
@@ -176,6 +138,8 @@ void ExperimentMgr::advance() {
 			return;
 		}
 
+		currentHCIMgr->currentHCI->reset();
+		feedback->displayText = "";
 		HCIExperiment = experimentOrder[experimentProgress];
 	}
 
@@ -288,10 +252,10 @@ bool ExperimentMgr::checkFinish() {
 	double bDist = glm::distance(transformableTetraPointB, staticTetraPointB);
 	double cDist = glm::distance(transformableTetraPointC, staticTetraPointC);
 	double dDist = glm::distance(transformableTetraPointD, staticTetraPointD);
-	bool nearA = aDist < nearEnough;
-	bool nearB = bDist < nearEnough;
-	bool nearC = cDist < nearEnough;
-	bool nearD = dDist < nearEnough;
+	bool nearA = aDist < NEARENOUGH;
+	bool nearB = bDist < NEARENOUGH;
+	bool nearC = cDist < NEARENOUGH;
+	bool nearD = dDist < NEARENOUGH;
 	bool prevInPosition = inPosition;
 
 	if (nearA && nearB && nearC && nearD){ //if in the correct posisition
@@ -333,6 +297,8 @@ bool ExperimentMgr::checkFinish() {
 		
 		// set to false for next trial
 		showCompleteTrial = false;
+		inPosition = false;
+		secondTimer = false;
 		trialEnd = getCurrentTime();
 
 		double diff = (getDuration(trialEnd, trialStart)).total_milliseconds();

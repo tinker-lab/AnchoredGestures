@@ -38,6 +38,8 @@ public:
 	void translate(glm::dmat4 transMat);
 	
 	int getNumberTouches();
+
+	void reset();
 	
 
 private:

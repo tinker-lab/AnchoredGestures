@@ -4,7 +4,7 @@ Tetrahedron::Tetrahedron(MinVR::AbstractCameraRef camera, CFrameMgrRef cFrameMgr
 	offAxisCamera = std::dynamic_pointer_cast<MinVR::CameraOffAxis>(camera);
 	this->texMan = texMan;
 	this->cFrameMgr = cFrameMgr;
-	this->sphereRadius = errorMargin - 0.01; // try - 0.02 maybe
+	this->sphereRadius = errorMargin - 0.02; // try - 0.02 maybe
     this->guideCylinderLength = errorMargin;
 
 }

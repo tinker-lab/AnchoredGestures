@@ -22,6 +22,7 @@ OrigYTransExperimentHCI::OrigYTransExperimentHCI(MinVR::AbstractCameraRef camera
 	_touch2IsValid = false;
 	_rotating = false;
 	_lastRotationAxis = glm::dvec3(1,0,0);
+	_lastRightAxis = glm::dvec3(1.0, 0, 0);
 	_centerAxis = glm::dvec3(0.0);
 		
 }
@@ -32,6 +33,16 @@ OrigYTransExperimentHCI::~OrigYTransExperimentHCI()
 
 void OrigYTransExperimentHCI::initializeContextSpecificVars(int threadId,MinVR::WindowRef window)
 {
+}
+
+void OrigYTransExperimentHCI::reset()
+{
+	_touch1IsValid = false;
+	_touch2IsValid = false;
+	_rotating = false;
+	_lastRotationAxis = glm::dvec3(1,0,0);
+	_lastRightAxis = glm::dvec3(1.0, 0, 0);
+	_centerAxis = glm::dvec3(0.0);
 }
 
 void OrigYTransExperimentHCI::update(const std::vector<MinVR::EventRef> &events)
@@ -107,7 +118,7 @@ bool OrigYTransExperimentHCI::offerTouchDown(MinVR::EventRef event)
 			else {
 				_centerAxis = _touch1->getCurrRoomPos() + (0.5*(_touch2->getCurrRoomPos()-_touch1->getCurrRoomPos()));
 			}
-			feedback->centOfRot = _centerAxis;
+			//feedback->centOfRot = _centerAxis;
 			//_feedbackWidget->setFingerIndicatorPositions(_touch1.pos, _touch2.pos);
 		}
 		//cout << "Touch1 down"<<endl;
@@ -124,7 +135,7 @@ bool OrigYTransExperimentHCI::offerTouchDown(MinVR::EventRef event)
 			else {
 				_centerAxis = _touch1->getCurrRoomPos() + (0.5*(_touch2->getCurrRoomPos()-_touch1->getCurrRoomPos()));
 			}
-			feedback->centOfRot = _centerAxis;
+			//feedback->centOfRot = _centerAxis;
 			//_feedbackWidget->setFingerIndicatorPositions(_touch1.pos, _touch2.pos);
 		}
 		//cout << "Touch2 down"<<endl;
@@ -144,7 +155,6 @@ bool OrigYTransExperimentHCI::offerTouchUp(int id)
 		_leftAxisHistory.clear();
 		_rightAxisHistory.clear();
 		//cout << "Touch1 up"<<endl;
-		return true;
 	}
 	else if (_touch2IsValid && _touch2->getCurrentEvent()->getId() == id) {
 		_touch2IsValid = false;
@@ -154,7 +164,6 @@ bool OrigYTransExperimentHCI::offerTouchUp(int id)
 		_leftAxisHistory.clear();
 		_rightAxisHistory.clear();
 		//cout << "Touch2 up"<<endl;
-		return true;
 	}
 
 	std::map<int, TouchDataRef>::iterator it = registeredTouchData.find(id); 
@@ -162,6 +171,7 @@ bool OrigYTransExperimentHCI::offerTouchUp(int id)
 	if (it != registeredTouchData.end()) { // if id is found
 		registeredTouchData.erase(it);	   //erase value associate with that it
 		//std::cout << "UP" <<std::endl;
+		return true;
 	}
 	else {
 		std::cout<<"Could not find id="<<id<<" in registeredTouchData"<<std::endl;
@@ -282,7 +292,7 @@ void OrigYTransExperimentHCI::updateTrackers(const glm::dmat4 &rightTrackerFrame
 		
 		_translating = false;
 
-		feedback->displayText = "rotating";
+		//feedback->displayText = "rotating";
 		
 		// If the two touch points are on the same hand we just assume that it is rotating if the fingers are still
 		// Use the distances between touch points and the tracker to identify which hand they belong to.
@@ -316,6 +326,11 @@ void OrigYTransExperimentHCI::updateTrackers(const glm::dmat4 &rightTrackerFrame
 			double leftAngle = glm::acos(glm::clamp(glm::dot(curLeftVec, oldLeftVec), -1.0, 1.0));
 			double rotationAngle = (rightAngle + leftAngle)/2.0;
 		
+			//TEST to get rid of a normalize zero vector
+			if (glm::epsilonEqual(rightAngle, 0.0, 0.00001) || glm::epsilonEqual(leftAngle, 0.0, 0.000001)) {
+				return;
+			}
+
 			glm::dvec3 rightAxisOnTable;
 			glm::dvec3 leftAxisOnTable;
 			

@@ -24,6 +24,7 @@ public:
 	virtual void initGL();
 	virtual int getNumberTouches();
 	FeedbackRef feedback;
+	virtual void reset();
 
 
 protected:
