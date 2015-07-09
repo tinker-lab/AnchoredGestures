@@ -1,18 +1,23 @@
 ----- General -------------
 
-gender:
+// within subjects somehow balances out
 height:
 shoulder distance from table:
-Color blindness: 
+Color blindness:
+
+ 
 Experience with virtual reality interfaces before:
 
 time to complete each trial: 
-fluidity rating:
+Ease of transitioning between gestures:
 support rating:
 fun rating: 
 
 old or new HCI:
 Any medical condition with your hands, wrists that limit flexibility or motion:
+
+// mandatory
+gender:
 age:
 
 ----- Likert Questions -------------
@@ -31,12 +36,18 @@ Which method di you like better for XZ-Rotation?
 
 As a whole, which set of gesture techniques felt more fluid?
 As a whole, which set of gesture techniques felt more stable?
-As a whole, which set of gesture techniques felt more precise?
+As a whole, which set of gesture techniques felt more precise? // use error measurement
 
 As a whole, which set of gesture techniques felt easier?
 As a whole, which set of gesture techniques did you enjoy using the most?
 
 Do you have any final comments or suggestions?
+
+How tiring did this technique feel?
+
+:::::::::: what do we do?
+scale of 1 - 5?
+Do we need to ask the opposite question?
 
 
 ----- Misc. -----
