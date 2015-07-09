@@ -34,6 +34,7 @@
 #include "app/include/CurrentHCIMgr.h"
 #include "ByteData.h"
 #include "ByteStream.h"
+#include "app/include/PromptHCI.h"
 
 class App : public MinVR::AbstractMVRApp {
 public:
@@ -45,6 +46,7 @@ public:
 	void postInitialization();
 	void drawGraphics(int threadId, MinVR::AbstractCameraRef camera, MinVR::WindowRef window);
 	glm::dvec3 convertScreenToRoomCoordinates(glm::dvec2 screenCoords);
+	void changeHCI();
 
 private:
 	void initGL();
@@ -81,6 +83,7 @@ private:
 	AbstractHCIRef origYTransHCI;
 	AbstractHCIRef origXZRotHCI;
 	AbstractHCIRef origAnchoredHCI;
+	AbstractHCIRef promptHCI;
 	std::vector<std::string>							_logIgnoreList;
 	std::vector<ByteData>								_eventsToSave;
 	bool												_replayingStream;

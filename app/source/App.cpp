@@ -412,28 +412,9 @@ void App::doUserInputAndPreDrawComputation(const std::vector<MinVR::EventRef>& e
 			loadEventStream(eventStreamFile);
 		}
 		else if (events[i]->getName() == "kbd_N_down") {
-		
 			experimentMgr->userGivedUp();
 			experimentMgr->advance();
-			if (experimentMgr->HCIExperiment == 0) {
-				currentHCIMgr->currentHCI = likertHCI;
-			} else if (experimentMgr->HCIExperiment == 1) {
-				currentHCIMgr->currentHCI = newYTransHCI;
-			} else if (experimentMgr->HCIExperiment == 2) {
-				currentHCIMgr->currentHCI = newXZRotHCI;
-			} else if (experimentMgr->HCIExperiment == 3) {
-				currentHCIMgr->currentHCI = newAnchoredHCI;
-			} else if (experimentMgr->HCIExperiment == 4) {
-				currentHCIMgr->currentHCI = origYTransHCI;
-			} else if (experimentMgr->HCIExperiment == 5) {
-				currentHCIMgr->currentHCI = origXZRotHCI;
-			} else if (experimentMgr->HCIExperiment == 6) {
-				currentHCIMgr->currentHCI = origAnchoredHCI;
-			}
-
-			cFrameMgr->setRoomToVirtualSpaceFrame(glm::dmat4(1.0));
-			feedback->registeredTouchData.clear();
-
+			changeHCI();
 		}
 		//Save to the bytestream
 		if (std::find(_logIgnoreList.begin(), _logIgnoreList.end(), events[i]->getName()) == _logIgnoreList.end()) {
@@ -452,28 +433,8 @@ void App::doUserInputAndPreDrawComputation(const std::vector<MinVR::EventRef>& e
 	currentHCIMgr->currentHCI->update(events);
 	
 	if (experimentMgr->checkFinish()) {
-
 		experimentMgr->advance();
-		// App needs to look at the correct place in experiment Manager's vector
-		if (experimentMgr->HCIExperiment == 0) {
-			currentHCIMgr->currentHCI = likertHCI;
-		} else if (experimentMgr->HCIExperiment == 1) {
-			currentHCIMgr->currentHCI = newYTransHCI;
-		} else if (experimentMgr->HCIExperiment == 2) {
-			currentHCIMgr->currentHCI = newXZRotHCI;
-		} else if (experimentMgr->HCIExperiment == 3) {
-			currentHCIMgr->currentHCI = newAnchoredHCI;
-		} else if (experimentMgr->HCIExperiment == 4) {
-			currentHCIMgr->currentHCI = origYTransHCI;
-		} else if (experimentMgr->HCIExperiment == 5) {
-			currentHCIMgr->currentHCI = origXZRotHCI;
-		} else if (experimentMgr->HCIExperiment == 6) {
-			currentHCIMgr->currentHCI = origAnchoredHCI;
-		}
-
-		cFrameMgr->setRoomToVirtualSpaceFrame(glm::dmat4(1.0));
-		feedback->registeredTouchData.clear();
-
+		changeHCI();
 	}
 
 	// We are only doing 3 experiments, so end when 4
@@ -489,6 +450,32 @@ void App::doUserInputAndPreDrawComputation(const std::vector<MinVR::EventRef>& e
 
 		exit(0);
 	}
+}
+
+
+void App::changeHCI(){
+	// App needs to look at the correct place in experiment Manager's vector
+	if(experimentMgr->HCIExperiment == ExperimentMgr::PROMPT) {
+		currentHCIMgr->currentHCI = promptHCI;
+	} else if(experimentMgr->HCIExperiment == ExperimentMgr::LIKERT) {
+		currentHCIMgr->currentHCI = likertHCI;
+	} else if (experimentMgr->HCIExperiment == ExperimentMgr::NEWYTRANS) {
+		currentHCIMgr->currentHCI = newYTransHCI;
+	} else if (experimentMgr->HCIExperiment == 2) {
+		currentHCIMgr->currentHCI = newXZRotHCI;
+	} else if (experimentMgr->HCIExperiment == 3) {
+		currentHCIMgr->currentHCI = newAnchoredHCI;
+	} else if (experimentMgr->HCIExperiment == 4) {
+		currentHCIMgr->currentHCI = origYTransHCI;
+	} else if (experimentMgr->HCIExperiment == 5) {
+		currentHCIMgr->currentHCI = origXZRotHCI;
+	} else if (experimentMgr->HCIExperiment == 6) {
+		currentHCIMgr->currentHCI = origAnchoredHCI;
+	}
+
+	cFrameMgr->setRoomToVirtualSpaceFrame(glm::dmat4(1.0));
+	feedback->registeredTouchData.clear();
+
 }
 
 void App::initializeContextSpecificVars(int threadId,
@@ -515,6 +502,7 @@ void App::initializeContextSpecificVars(int threadId,
 
 	currentHCIMgr.reset(new CurrentHCIMgr());
 
+	promptHCI.reset(new PromptHCI(window->getCamera(0), cFrameMgr, texMan, feedback));
 	likertHCI.reset(new LikertHCI(window->getCamera(0), cFrameMgr, texMan, feedback));
 	newYTransHCI.reset(new NewYTransExperimentHCI(window->getCamera(0), cFrameMgr, texMan, feedback));
 	newXZRotHCI.reset(new NewXZRotExperimentHCI(window->getCamera(0), cFrameMgr, texMan, feedback));
@@ -523,6 +511,7 @@ void App::initializeContextSpecificVars(int threadId,
 	origXZRotHCI.reset(new OrigXZRotExperimentHCI(window->getCamera(0), cFrameMgr, texMan, feedback));
 	origAnchoredHCI.reset(new OrigAnchoredHCI(window->getCamera(0), cFrameMgr, texMan, feedback));
 
+	promptHCI->initializeContextSpecificVars(threadId, window);
 	likertHCI->initializeContextSpecificVars(threadId, window);
 	newYTransHCI->initializeContextSpecificVars(threadId, window);
 	newXZRotHCI->initializeContextSpecificVars(threadId, window);
@@ -531,12 +520,11 @@ void App::initializeContextSpecificVars(int threadId,
 	origXZRotHCI->initializeContextSpecificVars(threadId, window);
 	origAnchoredHCI->initializeContextSpecificVars(threadId, window);
 
-	currentHCIMgr->currentHCI = likertHCI;
-
 	axis.reset(new Axis(window->getCamera(0), cFrameMgr, texMan));
 
 	experimentMgr.reset(new ExperimentMgr(currentHCIMgr, cFrameMgr, window->getCamera(0), texMan, feedback));
-	
+	experimentMgr->initializeContextSpecificVars(threadId, window);
+	changeHCI();
 
 	initGL();
 	initVBO(threadId, window);
@@ -544,7 +532,7 @@ void App::initializeContextSpecificVars(int threadId,
 
 	axis->initializeContextSpecificVars(threadId, window);
 	feedback->initializeContextSpecificVars(threadId, window);
-	experimentMgr->initializeContextSpecificVars(threadId, window);
+
 	
 	GLenum err;
 	if((err = glGetError()) != GL_NO_ERROR) {
@@ -750,7 +738,7 @@ void App::initGL()
 	bgShader->link();
 
 	//initGL for the HCIs
-	currentHCIMgr->currentHCI->initGL();
+	//currentHCIMgr->currentHCI->initGL();
 
 
 	GLenum err;
@@ -873,7 +861,7 @@ void App::drawGraphics(int threadId, MinVR::AbstractCameraRef camera,
 	/////////////////////////////
 	// Draw Axes               // // These use the tex shader, not the phong shaders
 	/////////////////////////////
-	if (experimentMgr->HCIExperiment != 0) { 
+	if (experimentMgr->HCIExperiment != ExperimentMgr::LIKERT && experimentMgr->HCIExperiment != ExperimentMgr::PROMPT) { 
 
 		glm::dvec4 cornerTranslate(-1.7, 0.0, 0.95, 1.0); // modify fourth column
 		glm::dmat4 scaleAxisMat = glm::scale(

@@ -29,6 +29,7 @@
 #include "OrigAnchoredHCI.h"
 #include "OrigXZRotExperimentHCI.h"
 #include "OrigYTransExperimentHCI.h"
+#include "app/include/PromptHCI.h"
 
 typedef std::shared_ptr<class ExperimentMgr> ExperimentMgrRef;
 static const double nearEnough = 0.07;
@@ -48,6 +49,17 @@ public:
 	void userGivedUp();
 	//int getExperimentNumber();
 	bool finishedEverything();
+
+	enum HCI {
+		PROMPT			=-1,
+		LIKERT			= 0,
+		NEWYTRANS		= 1,
+		NEWXZROT		= 2,
+		NEWANCHORED		= 3,
+		ORIGYTRANS		= 4,
+		ORIGXZROT		= 5,
+		ORIGANCHORED	= 6
+	};
 
 private:
 	void initGL();
@@ -89,18 +101,6 @@ private:
 	int trialTimeLimit;
 	double currentLengthOfTrial;
 
-	
-
-	enum HCI {
-		PROMPT			=-1,
-		LIKERT			= 0,
-		NEWYTRANS		= 1,
-		NEWXZTRANS		= 2,
-		NEWANCHORED		= 3,
-		ORIGYTRANS		= 4,
-		ORIGXZROT		= 5,
-		ORIGANCHORED	= 6
-	};
 };
 
 #endif /* EXPERIMENTMGR_H_ */

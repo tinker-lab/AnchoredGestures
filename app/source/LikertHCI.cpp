@@ -166,7 +166,7 @@ void LikertHCI::initializeText(int threadId, MinVR::WindowRef window)
 
 void LikertHCI::initializeText(int threadId, FONScontext* fs, int fontNormal, float border, std::shared_ptr<GLSLProgram> shader, float textSize, const std::vector<std::string> &texts, std::string texKey, std::vector<std::vector<std::shared_ptr<Texture> > > &textures, std::vector<std::vector<glm::dvec2> > &sizes)
 {
-float sx, sy, lh = 0;
+	float sx, sy, lh = 0;
 	unsigned int white = glfonsRGBA(255,255,255,255);
 	unsigned int gray = glfonsRGBA(81, 76, 76, 255);
 
@@ -179,7 +179,6 @@ float sx, sy, lh = 0;
 
 	for(int i=0; i < texts.size(); i++) {
 
-		size_t numLines = std::count(texts[i].begin(), texts[i].end(), '\n');
 		sy = border;
 
 		std::stringstream ss(texts[i]);
@@ -196,15 +195,16 @@ float sx, sy, lh = 0;
 		}
 
 		sx = maxWidth + (2.0f*border);
+		float height = lh*lines.size()+2.0*border;
 
-		std::shared_ptr<Texture> depthTexture = Texture::createEmpty("depthTex", sx, sy, 1, 1, false, GL_TEXTURE_2D, GL_DEPTH_COMPONENT32F);
+		std::shared_ptr<Texture> depthTexture = Texture::createEmpty("depthTex", sx, height, 1, 1, false, GL_TEXTURE_2D, GL_DEPTH_COMPONENT32F);
 		depthTexture->setTexParameteri(GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 		depthTexture->setTexParameteri(GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 		depthTexture->setTexParameteri(GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
 		depthTexture->setTexParameteri(GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 		glFramebufferTexture(GL_DRAW_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, depthTexture->getID(), 0);
 
-		textures[threadId][i] = Texture::createEmpty("colorTex", sx, sy, 1, 4, false, GL_TEXTURE_2D, GL_RGBA8);
+		textures[threadId][i] = Texture::createEmpty("colorTex", sx, height, 1, 4, false, GL_TEXTURE_2D, GL_RGBA8);
 		textures[threadId][i]->setTexParameteri(GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 		textures[threadId][i]->setTexParameteri(GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 		textures[threadId][i]->setTexParameteri(GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
@@ -237,7 +237,6 @@ float sx, sy, lh = 0;
 		}
 		assert(status == GL_FRAMEBUFFER_COMPLETE);
 
-		float height = lh*numLines+2.0*border;
 		sizes[threadId].push_back(glm::dvec2(sx, height));
 
 		glViewport(0,0, sx, height);

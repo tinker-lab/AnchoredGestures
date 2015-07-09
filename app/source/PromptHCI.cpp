@@ -14,7 +14,7 @@ PromptHCI::PromptHCI(MinVR::AbstractCameraRef camera, CFrameMgrRef cFrameMgr, Te
 	offAxisCamera = std::dynamic_pointer_cast<MinVR::CameraOffAxis>(camera);
 	this->texMan = texMan;
 
-	_prompts.push_back("Please lift your hands and wait for instructions");
+	_prompts.push_back("Please lift your hands\nand wait for instructions");
 
 	_currentPrompt = 0;
 
@@ -111,7 +111,6 @@ void PromptHCI::initializeText(int threadId, FONScontext* fs, int fontNormal, fl
 
 	for(int i=0; i < texts.size(); i++) {
 
-		size_t numLines = std::count(texts[i].begin(), texts[i].end(), '\n');
 		sy = border;
 
 		std::stringstream ss(texts[i]);
@@ -128,15 +127,16 @@ void PromptHCI::initializeText(int threadId, FONScontext* fs, int fontNormal, fl
 		}
 
 		sx = maxWidth + (2.0f*border);
+		float height = lh*lines.size()+2.0*border;
 
-		std::shared_ptr<Texture> depthTexture = Texture::createEmpty("depthTex", sx, sy, 1, 1, false, GL_TEXTURE_2D, GL_DEPTH_COMPONENT32F);
+		std::shared_ptr<Texture> depthTexture = Texture::createEmpty("depthTex", sx, height, 1, 1, false, GL_TEXTURE_2D, GL_DEPTH_COMPONENT32F);
 		depthTexture->setTexParameteri(GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 		depthTexture->setTexParameteri(GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 		depthTexture->setTexParameteri(GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
 		depthTexture->setTexParameteri(GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 		glFramebufferTexture(GL_DRAW_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, depthTexture->getID(), 0);
 
-		textures[threadId][i] = Texture::createEmpty("colorTex", sx, sy, 1, 4, false, GL_TEXTURE_2D, GL_RGBA8);
+		textures[threadId][i] = Texture::createEmpty("colorTex", sx, height, 1, 4, false, GL_TEXTURE_2D, GL_RGBA8);
 		textures[threadId][i]->setTexParameteri(GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 		textures[threadId][i]->setTexParameteri(GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 		textures[threadId][i]->setTexParameteri(GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
@@ -169,7 +169,6 @@ void PromptHCI::initializeText(int threadId, FONScontext* fs, int fontNormal, fl
 		}
 		assert(status == GL_FRAMEBUFFER_COMPLETE);
 
-		float height = lh*numLines+2.0*border;
 		sizes[threadId].push_back(glm::dvec2(sx, height));
 
 		glViewport(0,0, sx, height);
