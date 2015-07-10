@@ -21,20 +21,25 @@ gender:
 age:
 
 ----- Likert Questions -------------
-On a scale of 1- 5, how do you feel about the following statements?
+How much do you agree with the following statements? (1 - 5)
 
-The gesture was fluid
-The gesture was easy to initiate
-It was easy to stop the gesture
-It required a lot of mental effort to use. 
-I could do what I wanted to do. 
-It was clear to me how to perform the task at hand.
+I was able to be precise.
+Please rank the level of difficulty to perform the gesture? (very difficult, somewhat difficult, not difficult, somewhat easy, very easy)
+How comfortable was performing the gesture? (very uncomfortable-- )
+The interaction technique was often frustrating. (strongly disagree-- )
+I find it easy to get the interaction technique to do what I want.
 
+
+
+// okay end questions will be handled by the questionaire
 ------- Likert End Questions --------
-Which method did you like better for Y-Translation?
+Which method did you like better for Y-Translation? (first, second, no preference)
 Which method di you like better for XZ-Rotation?
 
+
 As a whole, which set of gesture techniques felt more fluid?
+It was easy to transition between gestures.
+
 As a whole, which set of gesture techniques felt more stable?
 As a whole, which set of gesture techniques felt more precise? // use error measurement
 
