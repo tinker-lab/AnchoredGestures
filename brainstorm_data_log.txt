@@ -34,7 +34,7 @@ I find it easy to get the interaction technique to do what I want.
 // okay end questions will be handled by the questionaire
 ------- Likert End Questions --------
 Which method did you like better for Y-Translation? (first, second, no preference)
-Which method di you like better for XZ-Rotation?
+Which method did you like better for XZ-Rotation?
 
 
 As a whole, which set of gesture techniques felt more fluid?

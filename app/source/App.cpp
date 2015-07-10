@@ -18,6 +18,7 @@ App::App() : MinVR::AbstractMVRApp() {
 		}
 	}
 
+	/*
 	boost::posix_time::time_facet* facet = new boost::posix_time::time_facet();
 	facet->format("%Y-%m-%d.%H.%M.%S");
 	std::stringstream stream;
@@ -25,6 +26,7 @@ App::App() : MinVR::AbstractMVRApp() {
 	stream << boost::posix_time::second_clock::local_time();
 	std::string eventStreamFile = "EventsText-" + stream.str() + ".txt";
 	_eventsForText.open(eventStreamFile);
+	*/
 
 }
 
@@ -33,7 +35,7 @@ App::~App() {
 		glDeleteBuffersARB(1, &iterator->second);
 	}
 
-	_eventsForText.close();
+	//_eventsForText.close();
 }
 
 void App::generateTrials()
