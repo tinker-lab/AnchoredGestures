@@ -101,6 +101,7 @@ private:
 	std::ofstream _answerRecorder;
 	int trialTimeLimit;
 	double currentLengthOfTrial;
+	double inZoneTime;
 
 };
 

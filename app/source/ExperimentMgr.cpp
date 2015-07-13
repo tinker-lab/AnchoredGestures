@@ -35,7 +35,14 @@ ExperimentMgr::ExperimentMgr(CurrentHCIMgrRef currentHCIMgr, CFrameMgrRef mgr, M
 	stream << boost::posix_time::second_clock::local_time();
 	std::string eventStreamFile = "Results-" + stream.str() + ".txt";
 	_answerRecorder.open(eventStreamFile);
+	if (experimentOrder[1] == HCI::NEWYTRANS) { // second element in ExperimentOrder in cfg
+		_answerRecorder << "Experiment NEW" << std::endl;
+	} else {
+		_answerRecorder << "Experiment ORIG" << std::endl;
+	}
 	_answerRecorder <<"Time (ms), Error (ft), Failed Trial"<<std::endl;
+
+	inZoneTime = MinVR::ConfigVal("InZoneTime", 1500, false);
 
 	// increments upward along the experimentOrder vector
 	experimentProgress = 0;
@@ -293,7 +300,7 @@ bool ExperimentMgr::checkFinish() {
 	
 	//std::cout<<"total time in zone :  " <<totalTimeInZone<<std::endl;
 
-	if (nearA && nearB && nearC && nearD &&  totalTimeInZone > 1000.0 ) {
+	if (nearA && nearB && nearC && nearD &&  totalTimeInZone > inZoneTime ) {
 		
 		// set to false for next trial
 		showCompleteTrial = false;

@@ -90,6 +90,7 @@ private:
 
 	std::ofstream										_eventsForText;
 	MinVR::TimeStamp trialStart;
+	MinVR::TimeStamp programStart;
 };
 
 #endif /* APP_H_ */

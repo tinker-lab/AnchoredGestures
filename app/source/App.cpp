@@ -27,7 +27,7 @@ App::App() : MinVR::AbstractMVRApp() {
 	std::string eventStreamFile = "EventsText-" + stream.str() + ".txt";
 	_eventsForText.open(eventStreamFile);
 	*/
-
+	programStart = getCurrentTime();
 }
 
 App::~App() {
@@ -99,10 +99,13 @@ void App::saveEventStream(const std::string &eventStreamFilename)
 		return;
 	}
 
-	long totalSize = sizeof(int);
+	long totalSize = sizeof(int)*(_eventsToSave.size()+1); // one int for the num events, 1 int for each event
 	for(int i=0; i < _eventsToSave.size(); i++){
 		totalSize += _eventsToSave[i].getSize();
 	}
+
+	//Give us some padding just to be safe
+	totalSize += sizeof(double)*16;
 
 	ByteStream stream(totalSize);
 	long numEvents = _eventsToSave.size();
@@ -116,12 +119,69 @@ void App::saveEventStream(const std::string &eventStreamFilename)
 		stream.writeByteData(_eventsToSave[i]);
 	}
 	std::cout<<"\t"<< "100% done"<<std::endl;
+	std::flush(std::cout);
 	FILE * pFile;
 	unsigned char* buffer = stream.getByteArray();
+	std::cout<<"Got byte array"<<std::endl;
+
+	/*
 	pFile = fopen (eventStreamFilename.c_str(), "wb");
 	std::cout<<"Opened file for writing"<<std::endl;
+	std::flush(std::cout);
 	fwrite (buffer , sizeof(unsigned char), stream.getSize(), pFile);
 	fclose (pFile);
+	*/
+
+	// Create a new file - returns quickly
+	HANDLE hFile = CreateFile(eventStreamFilename.c_str(),                // name of the write
+                       GENERIC_WRITE,          // open for writing
+                       0,                      // do not share
+                       NULL,                   // default security
+                       CREATE_ALWAYS,             // create new file only
+                       FILE_ATTRIBUTE_NORMAL | FILE_FLAG_WRITE_THROUGH ,  // normal file
+                       NULL);                  // no attr. template
+
+	if (hFile == INVALID_HANDLE_VALUE) 
+    { 
+        std::cout<<"Terminal failure: Unable to open file for write."<<std::endl;
+        return;
+    }
+
+
+	// make the file the correct size
+	SetFilePointer(hFile, stream.getSize(), NULL, FILE_BEGIN);
+	SetEndOfFile(hFile);
+
+	SetFilePointer(hFile, 0, NULL, FILE_BEGIN);
+	// this write call takes several seconds!
+	DWORD dwBytesWritten = 0;
+	DWORD dwBytesToWrite = (DWORD)stream.getSize();
+	BOOL bErrorFlag = WriteFile(      hFile,           // open file handle
+                    buffer,      // start of data to write
+					dwBytesToWrite,  // number of bytes to write
+                    &dwBytesWritten, // number of bytes that were written
+                    NULL);            // no overlapped structure
+
+	if (FALSE == bErrorFlag) {
+        std::cout<<"Terminal failure: Unable to write to file."<<std::endl;
+    }
+    else {
+        if (dwBytesWritten != dwBytesToWrite) {
+            // This is an error because a synchronous write that results in
+            // success (WriteFile returns TRUE) should write all data as
+            // requested. This would not necessarily be the case for
+            // asynchronous writes.
+           std::cout<<"Error: dwBytesWritten != dwBytesToWrite"<<std::endl;
+        }
+        else {
+            std::cout<<"Wrote "<< dwBytesWritten <<" bytes to successfully." <<std::endl;
+        }
+    }
+
+
+	CloseHandle(hFile);
+	std::cout<<"Closed file"<<std::endl;
+
 }
 
 void App::loadEventStream(const std::string &eventStreamFilename)
@@ -163,6 +223,8 @@ void App::replayEventStream(ByteStream stream)
 {
 	int numEvents = stream.readInt();
 
+	bool replayInRealTime = true;
+
 	_replayingStream = true;
 
 	//Throw all of the current state away
@@ -173,6 +235,8 @@ void App::replayEventStream(ByteStream stream)
 	std::vector<EventRef> queue;
 
 	std::cout<<"Replaying "<<numEvents<<" events."<<std::endl;
+
+	MinVR::TimeStamp start = getCurrentTime();
 	for(int i=0; i < numEvents; i++) {
 		ByteData data = stream.readByteData();
 		//if (i > numEvents - 1000) {
@@ -181,6 +245,15 @@ void App::replayEventStream(ByteStream stream)
 		//}
 		MinVR::EventRef event = byteDataToEvent(data);
 		if (event->getName() == "FinishedQueue") {
+			double timeOffset = event->get1DData();
+
+			if (replayInRealTime) {
+				while((getDuration(getCurrentTime(), start)).total_milliseconds() < timeOffset) {
+					boost::this_thread::sleep_for(boost::chrono::milliseconds(2));
+				}
+				//std::cout<<"TimeOffset "<<timeOffset<<" Duration: "<< (getDuration(getCurrentTime(), start)).total_milliseconds()<<std::endl;
+			}
+
 			doUserInputAndPreDrawComputation(queue, 0.0);
 			queue.clear();
 		}
@@ -404,6 +477,7 @@ void App::doUserInputAndPreDrawComputation(const std::vector<MinVR::EventRef>& e
 			exit(0);
 		}
 		else if (events[i]->getName() == "kbd_SPACE_down") {
+			experimentMgr->trialStart = getCurrentTime();
 			cFrameMgr->setRoomToVirtualSpaceFrame(glm::dmat4(1.0)); 
 		}
 		else if (events[i]->getName() == "kbd_G_down") {
@@ -425,6 +499,8 @@ void App::doUserInputAndPreDrawComputation(const std::vector<MinVR::EventRef>& e
 		}
 		else if (events[i]->getName() == "kbd_N_down") {
 			experimentMgr->userGivedUp();
+			MinVR::EventRef finishTrialEvent(new Event("FinishedTrial", (getDuration(getCurrentTime(), programStart)).total_milliseconds()));
+			_eventsToSave.push_back(eventToByteData(finishTrialEvent));
 			experimentMgr->advance();
 			changeHCI();
 		}
@@ -437,14 +513,12 @@ void App::doUserInputAndPreDrawComputation(const std::vector<MinVR::EventRef>& e
 
 	}
 
-	MinVR::EventRef finishEvent(new Event("FinishedQueue", glfwGetTime()));
-	_eventsToSave.push_back(eventToByteData(finishEvent));
-	//_eventsForText << finishEvent->toString() << std::endl;
-	
-
 	currentHCIMgr->currentHCI->update(events);
 	
 	if (experimentMgr->checkFinish()) {
+		MinVR::EventRef finishTrialEvent(new Event("FinishedTrial", (getDuration(getCurrentTime(), programStart)).total_milliseconds()));
+		_eventsToSave.push_back(eventToByteData(finishTrialEvent));
+
 		experimentMgr->advance();
 		changeHCI();
 	}
@@ -461,11 +535,22 @@ void App::doUserInputAndPreDrawComputation(const std::vector<MinVR::EventRef>& e
 		saveEventStream(eventStreamFile);
 
 		exit(0);
-	}
+	}	
+	
+	double timeOffset =  (getDuration(getCurrentTime(), programStart)).total_milliseconds();
+	//std::cout<<"Timeoffset "<<timeOffset<<std::endl;
+	MinVR::EventRef finishEvent(new Event("FinishedQueue", timeOffset));
+	//std::cout<<"\tFinish Event "<<finishEvent->toString()<<std::endl;
+	//std::cout<<"\tdata: "<<finishEvent->get1DData()<<std::endl;
+	//std::cout<<"\tdata: "<<byteDataToEvent(eventToByteData(finishEvent))->get1DData()<<std::endl;
+	_eventsToSave.push_back(eventToByteData(finishEvent));
 }
 
 
 void App::changeHCI(){
+
+	AbstractHCIRef previous = currentHCIMgr->currentHCI;
+
 	// App needs to look at the correct place in experiment Manager's vector
 	if(experimentMgr->HCIExperiment == ExperimentMgr::PROMPT) {
 		currentHCIMgr->currentHCI = promptHCI;
@@ -483,6 +568,11 @@ void App::changeHCI(){
 		currentHCIMgr->currentHCI = origXZRotHCI;
 	} else if (experimentMgr->HCIExperiment == ExperimentMgr::ORIGANCHORED) {
 		currentHCIMgr->currentHCI = origAnchoredHCI;
+	}
+
+	if (currentHCIMgr->currentHCI != previous) {
+		MinVR::EventRef finishEvent(new Event("ChangedHCI", (getDuration(getCurrentTime(), programStart)).total_milliseconds()));
+		_eventsToSave.push_back(eventToByteData(finishEvent));
 	}
 
 	cFrameMgr->setRoomToVirtualSpaceFrame(glm::dmat4(1.0));
