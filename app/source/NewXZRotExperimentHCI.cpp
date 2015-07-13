@@ -275,12 +275,12 @@ void NewXZRotExperimentHCI::update(const std::vector<MinVR::EventRef> &events){
 					setxzRotFlag = false; 
 					countFingers += 1;
 
-				} else{ // touch point not in box, assume as center of rotation
-					centOfRot = iter->second->getCurrRoomPos();
-					centerRotMode = true;
-					//std::cout << "Cent of Rot set" << std::endl;
-					feedback->centOfRot = centOfRot;
-				}
+				} //else{ // touch point not in box, assume as center of rotation
+				//	centOfRot = iter->second->getCurrRoomPos();
+				//	centerRotMode = true;
+				//	//std::cout << "Cent of Rot set" << std::endl;
+				//	feedback->centOfRot = centOfRot;
+				//}
 
 				// only tries to change the xzRotFlag at the end of the data in the map
 				if(iter == std::prev(registeredTouchData.end(),1) && setxzRotFlag) {

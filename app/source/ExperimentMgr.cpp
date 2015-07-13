@@ -124,6 +124,8 @@ void ExperimentMgr::advance() {
 
 	if (HCIExperiment != HCI::LIKERT && HCIExperiment != HCI::PROMPT) {
 		trialCount++;
+		Beep(235, 500);
+		//std::cout << "\a"<<std::endl;
 	}
 
 	bool firstTrialAfterPractice = trialCount == numPracticeTrials;
